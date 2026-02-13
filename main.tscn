@@ -1,0 +1,123 @@
+[gd_scene format=3 uid="uid://bm61mflsgkswc"]
+
+[ext_resource type="Script" uid="uid://cqn6mjj5hc4h4" path="res://scripts/main.gd" id="1_7mycd"]
+[ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://assets/brackeys-proto-controller/proto_controller/proto_controller.tscn" id="1_ig7tw"]
+[ext_resource type="PackedScene" uid="uid://c50xveeglo2ae" path="res://assets/models/house.glb" id="4_7mycd"]
+[ext_resource type="Script" uid="uid://cjjee5mgjgolf" path="res://assets/brackeys-proto-controller/proto_controller/proto_controller.gd" id="4_272bh"]
+[ext_resource type="PackedScene" uid="uid://b283xn1q63xkt" path="res://assets/models/human.glb" id="5_272bh"]
+[ext_resource type="Script" uid="uid://df6lh8814kg7s" path="res://scripts/hud.gd" id="5_lquwl"]
+[ext_resource type="Script" uid="uid://2wiayn662mfs" path="res://scripts/pause_menu.gd" id="6_7mycd"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_7dm0k"]
+size = Vector2(100, 100)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0xm2m"]
+albedo_color = Color(0.25882354, 0.5176471, 0.2509804, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_0xm2m"]
+size = Vector3(100, 0.1, 100)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0xm2m"]
+sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+ground_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+
+[sub_resource type="Sky" id="Sky_o4wv7"]
+sky_material = SubResource("ProceduralSkyMaterial_0xm2m")
+radiance_size = 4
+
+[sub_resource type="Environment" id="Environment_h2yge"]
+background_mode = 2
+sky = SubResource("Sky_o4wv7")
+tonemap_mode = 2
+glow_enabled = true
+fog_enabled = true
+fog_mode = 1
+fog_density = 1.0
+fog_sky_affect = 0.0
+fog_depth_curve = 3.03144
+fog_depth_begin = 500.0
+fog_depth_end = 3386.6
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1bvp3"]
+size = Vector3(3, 5, 4)
+
+[node name="BasicWorld" type="Node3D" unique_id=1337950811]
+script = ExtResource("1_7mycd")
+
+[node name="PauseMenu" type="CanvasLayer" parent="." unique_id=1681885348]
+script = ExtResource("6_7mycd")
+
+[node name="Controls" type="Label" parent="PauseMenu" unique_id=267871028]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -11.5
+offset_right = 20.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "Press ESC to close this menu
+Press E to interact with the world"
+
+[node name="ProtoController" parent="." unique_id=821808883 instance=ExtResource("1_ig7tw")]
+script = ExtResource("4_272bh")
+can_sprint = true
+can_freefly = true
+sprint_speed = 15.0
+
+[node name="Ground" type="StaticBody3D" parent="." unique_id=2095662480]
+
+[node name="PlaneMesh" type="MeshInstance3D" parent="Ground" unique_id=867671209]
+mesh = SubResource("PlaneMesh_7dm0k")
+surface_material_override/0 = SubResource("StandardMaterial3D_0xm2m")
+
+[node name="GroundCollider" type="CollisionShape3D" parent="Ground" unique_id=413163075]
+shape = SubResource("BoxShape3D_0xm2m")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2119691324]
+environment = SubResource("Environment_h2yge")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=189870739]
+transform = Transform3D(0.75831103, 0.29884702, -0.5793573, 0.48453504, -0.8529355, 0.19423431, -0.43610802, -0.4280089, -0.79159224, 2.22284, 2.17665, 1.08004)
+shadow_enabled = true
+
+[node name="human" parent="." unique_id=189843764 instance=ExtResource("5_272bh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5.8259125)
+
+[node name="HouseBody" type="StaticBody3D" parent="." unique_id=949341017]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HouseBody" unique_id=1266808278]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -11.141119)
+shape = SubResource("BoxShape3D_1bvp3")
+
+[node name="house" parent="HouseBody" unique_id=1927163650 instance=ExtResource("4_7mycd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -11.141119)
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=583198182]
+script = ExtResource("5_lquwl")
+
+[node name="PlayTime" type="Label" parent="HUD" unique_id=1126246572]
+offset_right = 94.0
+offset_bottom = 23.0
+text = "Play Time:"
+
+[node name="TimePlayed" type="Label" parent="HUD" unique_id=819631954]
+custom_minimum_size = Vector2(10, 0)
+offset_left = 87.0
+offset_right = 167.0
+offset_bottom = 23.0
+
+[node name="FPS" type="Label" parent="HUD" unique_id=1849834923]
+offset_top = 30.0
+offset_right = 40.0
+offset_bottom = 53.0
+text = "FPS:"
+
+[node name="CurrentFPS" type="Label" parent="HUD" unique_id=1606692876]
+offset_left = 40.0
+offset_top = 30.0
+offset_right = 80.0
+offset_bottom = 53.0
