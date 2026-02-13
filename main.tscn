@@ -62,15 +62,20 @@ grow_vertical = 2
 text = "Press ESC to close this menu
 Press E to interact with the world"
 
-[node name="ProtoController" parent="." unique_id=821808883 instance=ExtResource("1_ig7tw")]
+[node name="Player" parent="." unique_id=821808883 instance=ExtResource("1_ig7tw")]
 script = ExtResource("4_272bh")
 can_sprint = true
 can_freefly = true
 sprint_speed = 15.0
 
+[node name="InteractRaycast" type="RayCast3D" parent="Player" unique_id=144849483]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 1.7, -0.5)
+target_position = Vector3(0, -1.2, 0)
+
 [node name="Ground" type="StaticBody3D" parent="." unique_id=2095662480]
 
 [node name="PlaneMesh" type="MeshInstance3D" parent="Ground" unique_id=867671209]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.003232956, 0.004675865, -0.0006195307)
 mesh = SubResource("PlaneMesh_7dm0k")
 surface_material_override/0 = SubResource("StandardMaterial3D_0xm2m")
 
@@ -85,7 +90,7 @@ transform = Transform3D(0.75831103, 0.29884702, -0.5793573, 0.48453504, -0.85293
 shadow_enabled = true
 
 [node name="human" parent="." unique_id=189843764 instance=ExtResource("5_272bh")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5.8259125)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25.588495, 0, 5.8259125)
 
 [node name="HouseBody" type="StaticBody3D" parent="." unique_id=949341017]
 
