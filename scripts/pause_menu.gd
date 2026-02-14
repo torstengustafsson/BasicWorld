@@ -1,38 +1,43 @@
 extends CanvasLayer
 
-# Container for the parent node
-var node: Node
+var settings_menu_open: bool = false
+var inventory_open: bool = false
 
-# Keeps track of whether the pause menu can be resumed
-# This is set to true, when ESC has been released after being
-# pressed in the parent node
-# If we didn't do this, the pause menu would immediately resume
-# because both instances recognize the ESC key is down
-var is_paused: bool = false
+@onready var inventory = $Inventory
 
 func _ready() -> void:
+	# This node and its subnodes is the only ones that is not paused on pause
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	# Start by ensuring the pause menu is hidden
 	hide()
+	inventory.hide()
 
 func _process(_delta: float) -> void:
-	# If the ESC button has been released since being pressed in the parent
-	# node (can_resume), and ESC is now pressed again, we resume the game
 	if Input.is_action_just_pressed("ui_cancel"):
-		if is_paused:
+		if settings_menu_open || inventory_open:
 			resume()
 		else:
-			pause()
+			open_settings_menu()
 
+	if !settings_menu_open && Input.is_action_just_pressed("open_inventory"):
+		if inventory_open:
+			resume()
+		else:
+			open_inventory()
 
-# Resume the game by hiding the pause menu and unpausing the parent node's tree
+# Close all menus and unpause the game
 func resume() -> void:
 	hide()
-	is_paused = false
-	node.get_tree().paused = false
+	inventory.hide()
+	settings_menu_open = false
+	inventory_open = false
+	get_tree().paused = false
 
-# Pause game by showing the menu and pausing the parent node's tree
-func pause() -> void:
+func open_settings_menu() -> void:
 	show()
-	is_paused = true
-	node.get_tree().paused = true
+	settings_menu_open = true
+	get_tree().paused = true
+
+func open_inventory() -> void:
+	inventory.show()
+	inventory_open = true
+	get_tree().paused = true

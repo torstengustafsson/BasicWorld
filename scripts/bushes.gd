@@ -73,8 +73,11 @@ func _process(delta):
 			continue
 		berrybush.berries_fill_secs += delta
 
-func interact(collider):
+# Returns amount of berries gained
+func interact(collider) -> int:
 	for berrybush_index in berrybushes:
 		var berrybush = berrybushes[berrybush_index]
 		if berrybush.instance == collider && berrybush.is_filled:
 			berrybush.reset()
+			return 1
+	return 0

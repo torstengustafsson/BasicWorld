@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://cqn6mjj5hc4h4" path="res://scripts/main.gd" id="1_7mycd"]
 [ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://assets/brackeys-proto-controller/proto_controller/proto_controller.tscn" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://c50xveeglo2ae" path="res://assets/models/house.glb" id="4_7mycd"]
-[ext_resource type="Script" uid="uid://cjjee5mgjgolf" path="res://assets/brackeys-proto-controller/proto_controller/proto_controller.gd" id="4_272bh"]
 [ext_resource type="PackedScene" uid="uid://b283xn1q63xkt" path="res://assets/models/human.glb" id="5_272bh"]
 [ext_resource type="Script" uid="uid://df6lh8814kg7s" path="res://scripts/hud.gd" id="5_lquwl"]
 [ext_resource type="Script" uid="uid://2wiayn662mfs" path="res://scripts/pause_menu.gd" id="6_7mycd"]
@@ -44,26 +43,7 @@ size = Vector3(3, 5, 4)
 [node name="BasicWorld" type="Node3D" unique_id=1337950811]
 script = ExtResource("1_7mycd")
 
-[node name="PauseMenu" type="CanvasLayer" parent="." unique_id=1681885348]
-script = ExtResource("6_7mycd")
-
-[node name="Controls" type="Label" parent="PauseMenu" unique_id=267871028]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -11.5
-offset_right = 20.0
-offset_bottom = 11.5
-grow_horizontal = 2
-grow_vertical = 2
-text = "Press ESC to close this menu
-Press E to interact with the world"
-
 [node name="Player" parent="." unique_id=821808883 instance=ExtResource("1_ig7tw")]
-script = ExtResource("4_272bh")
 can_sprint = true
 can_freefly = true
 sprint_speed = 15.0
@@ -101,7 +81,57 @@ shape = SubResource("BoxShape3D_1bvp3")
 [node name="house" parent="HouseBody" unique_id=1927163650 instance=ExtResource("4_7mycd")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -11.141119)
 
+[node name="PauseMenu" type="CanvasLayer" parent="." unique_id=1681885348]
+script = ExtResource("6_7mycd")
+
+[node name="Controls" type="Label" parent="PauseMenu" unique_id=267871028]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -11.5
+offset_right = 20.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "Press ESC to close this menu
+Press E to interact with the world
+Press I to open inventory"
+
+[node name="Inventory" type="CanvasLayer" parent="PauseMenu" unique_id=277370228]
+visible = false
+
+[node name="Berries" type="Label" parent="PauseMenu/Inventory" unique_id=1620793781]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -11.5
+offset_right = 20.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "Berries: "
+
+[node name="PlayerBerries" type="Label" parent="PauseMenu/Inventory" unique_id=633851926]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 34.0
+offset_top = -11.5
+offset_right = 74.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+
 [node name="HUD" type="CanvasLayer" parent="." unique_id=583198182]
+visible = false
 script = ExtResource("5_lquwl")
 
 [node name="PlayTime" type="Label" parent="HUD" unique_id=1126246572]

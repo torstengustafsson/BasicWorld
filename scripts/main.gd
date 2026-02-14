@@ -13,9 +13,10 @@ var bushes_script = BushesScript.new()
 var trees
 var berrybushes
 
-func _ready() -> void:
-	pause_menu.node = self
+@onready var playerBerriesText = $PauseMenu/Inventory/PlayerBerries
+var playerBerries: int = 0
 
+func _ready() -> void:
 	var size_x = ground.get_aabb().size.x
 	var size_z = ground.get_aabb().size.z
 	var margin = 5.0
@@ -27,6 +28,8 @@ func _ready() -> void:
 
 	bushes_script.create_berrybushes(size_x, size_z, margin, step_berrybushes)
 	add_child(bushes_script)
+
+	playerBerriesText.text = str(playerBerries)
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact"):
@@ -48,6 +51,6 @@ func interact_pressed():
 	var result = space_state.intersect_ray(query)
 	if not result:
 		return
-	# TODO: How to access berry bush from here?
-	print(result)
-	bushes_script.interact(result.collider)
+	var got_berry = bushes_script.interact(result.collider)
+	playerBerries = playerBerries + got_berry
+	playerBerriesText.text = str(playerBerries)
