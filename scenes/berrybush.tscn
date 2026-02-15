@@ -8,6 +8,7 @@ radius = 0.7
 [node name="Berrybush" type="StaticBody3D" unique_id=408939922]
 
 [node name="berrybush" parent="." unique_id=2045857609 instance=ExtResource("1_yluy8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
 
 [node name="Collider" type="CollisionShape3D" parent="." unique_id=501803415]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)

@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://s2y3dy6jsxln"]
+
+[ext_resource type="PackedScene" uid="uid://dxs62jvh0fsul" path="res://assets/models/items/axe.glb" id="1_odgf8"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_725vr"]
+height = 1.2
+radius = 0.05
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_odgf8"]
+size = Vector3(0.33, 0.25, 0.05)
+
+[sub_resource type="Curve" id="Curve_6pa1j"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.722973, 0.92134833), 0.0, 0.0, 0, 0, Vector2(1, 0.04494381), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_asnwc"]
+curve = SubResource("Curve_6pa1j")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_f40fb"]
+lifetime_randomness = 0.1
+particle_flag_align_y = true
+emission_shape = 1
+emission_sphere_radius = 0.3
+angle_min = 1.0728835e-05
+angle_max = 1.0728835e-05
+direction = Vector3(0, -1, 0)
+spread = 180.0
+initial_velocity_min = 1.0
+initial_velocity_max = 1.0
+gravity = Vector3(0, 2, 0)
+scale_curve = SubResource("CurveTexture_asnwc")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6pa1j"]
+albedo_color = Color(1, 1, 0.39215687, 1)
+emission_enabled = true
+emission = Color(1, 1, 0.36078432, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_asnwc"]
+material = SubResource("StandardMaterial3D_6pa1j")
+size = Vector2(0.05, 0.05)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_6pa1j"]
+size = Vector3(0.5, 1.2, 0.5)
+
+[node name="Axe" type="RigidBody3D" unique_id=218984902]
+mass = 2.0
+
+[node name="axe" parent="." unique_id=1953763240 instance=ExtResource("1_odgf8")]
+
+[node name="CollisionShapeHandle" type="CollisionShape3D" parent="." unique_id=822369630]
+shape = SubResource("CylinderShape3D_725vr")
+
+[node name="CollisionShapeShaft" type="CollisionShape3D" parent="." unique_id=355019755]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.091813646, 0.46688128, 0)
+shape = SubResource("BoxShape3D_odgf8")
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="." unique_id=1111944110]
+amount = 64
+amount_ratio = 0.8
+speed_scale = 0.3
+randomness = 0.1
+process_material = SubResource("ParticleProcessMaterial_f40fb")
+draw_pass_1 = SubResource("QuadMesh_asnwc")
+
+[node name="PickableArea" type="Area3D" parent="." unique_id=890804568]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PickableArea" unique_id=824024328]
+shape = SubResource("BoxShape3D_6pa1j")

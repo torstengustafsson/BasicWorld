@@ -1,10 +1,9 @@
 extends Node
 
-
 const BERRYBUSH_FULL_SECS = 30
 
 class BerryBush:
-	static var berrybush_scene = preload("res://berrybush.tscn")
+	static var berrybush_scene = preload("res://scenes/berrybush.tscn")
 	static var berrybush_empty = preload("res://assets/models/berrybush-empty.glb")
 	static var berrybush_full = preload("res://assets/models/berrybush-full.glb")
 	const BERRYBUSH_NAME = "berrybush"
@@ -29,7 +28,6 @@ class BerryBush:
 		object.name = BERRYBUSH_NAME
 		instance.add_child(object)
 
-
 	func reset():
 		is_filled = false
 		berries_fill_secs = 0.0
@@ -42,18 +40,15 @@ class BerryBush:
 
 var berrybushes: Dictionary[Vector2, BerryBush] = {}
 
-func create_berrybushes(size_x, size_z, margin, step):
-	var start_pos_x = size_x / 2 - size_x + margin
-	var start_pos_z = size_z / 2 - size_z + margin
-
-	for x in (size_x - 2 * margin) / step:
-		for z in (size_z - 2 * margin) / step:
+func create_berrybushes(start_pos_x, start_pos_z, size_x, size_z, step):
+	for x in size_x / step:
+		for z in size_z / step:
 			var rand_value_x = -step / 2 + randf_range(0.0, step) 
 			var rand_value_z = -step / 2 + randf_range(0.0, step) 
 			var position = Vector3(start_pos_x + x * step + rand_value_x, 0.0, start_pos_z + z * step + rand_value_z)
 
 			# Skip if out-of-bounds
-			if position.x < - size_x / 2 + margin || position.z < -size_z / 2 + margin || position.x > size_x / 2 - margin || position.z > size_z / 2 - margin:
+			if position.x < start_pos_x || position.z < start_pos_z || position.x > start_pos_x + size_x || position.z > start_pos_z + size_z:
 				continue
 
 			var scale = randf_range(1.0, 1.25)

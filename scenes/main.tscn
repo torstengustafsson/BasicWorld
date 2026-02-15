@@ -1,11 +1,11 @@
 [gd_scene format=3 uid="uid://bm61mflsgkswc"]
 
-[ext_resource type="Script" uid="uid://cqn6mjj5hc4h4" path="res://scripts/main.gd" id="1_7mycd"]
-[ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://assets/brackeys-proto-controller/proto_controller/proto_controller.tscn" id="1_ig7tw"]
-[ext_resource type="PackedScene" uid="uid://c50xveeglo2ae" path="res://assets/models/house.glb" id="4_7mycd"]
-[ext_resource type="PackedScene" uid="uid://b283xn1q63xkt" path="res://assets/models/human.glb" id="5_272bh"]
-[ext_resource type="Script" uid="uid://df6lh8814kg7s" path="res://scripts/hud.gd" id="5_lquwl"]
-[ext_resource type="Script" uid="uid://2wiayn662mfs" path="res://scripts/pause_menu.gd" id="6_7mycd"]
+[ext_resource type="Script" uid="uid://cqn6mjj5hc4h4" path="res://scripts/main.gd" id="1_o6xl0"]
+[ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://assets/brackeys-proto-controller/proto_controller/proto_controller.tscn" id="2_tipki"]
+[ext_resource type="PackedScene" uid="uid://b283xn1q63xkt" path="res://assets/models/human.glb" id="3_85g3d"]
+[ext_resource type="PackedScene" uid="uid://c50xveeglo2ae" path="res://assets/models/house.glb" id="4_choun"]
+[ext_resource type="Script" uid="uid://2wiayn662mfs" path="res://scripts/pause_menu.gd" id="5_ya4ey"]
+[ext_resource type="Script" uid="uid://df6lh8814kg7s" path="res://scripts/hud.gd" id="6_eb6dy"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_7dm0k"]
 size = Vector2(100, 100)
@@ -41,12 +41,12 @@ fog_depth_end = 3386.6
 size = Vector3(3, 5, 4)
 
 [node name="BasicWorld" type="Node3D" unique_id=1337950811]
-script = ExtResource("1_7mycd")
+script = ExtResource("1_o6xl0")
 
-[node name="Player" parent="." unique_id=821808883 instance=ExtResource("1_ig7tw")]
+[node name="Player" parent="." unique_id=821808883 instance=ExtResource("2_tipki")]
 can_sprint = true
 can_freefly = true
-sprint_speed = 15.0
+sprint_speed = 12.0
 
 [node name="InteractRaycast" type="RayCast3D" parent="Player" unique_id=144849483]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 1.7, -0.5)
@@ -69,7 +69,7 @@ environment = SubResource("Environment_h2yge")
 transform = Transform3D(0.75831103, 0.29884702, -0.5793573, 0.48453504, -0.8529355, 0.19423431, -0.43610802, -0.4280089, -0.79159224, 2.22284, 2.17665, 1.08004)
 shadow_enabled = true
 
-[node name="human" parent="." unique_id=189843764 instance=ExtResource("5_272bh")]
+[node name="human" parent="." unique_id=189843764 instance=ExtResource("3_85g3d")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25.588495, 0, 5.8259125)
 
 [node name="HouseBody" type="StaticBody3D" parent="." unique_id=949341017]
@@ -78,11 +78,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25.588495, 0, 5.8259125)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -11.141119)
 shape = SubResource("BoxShape3D_1bvp3")
 
-[node name="house" parent="HouseBody" unique_id=1927163650 instance=ExtResource("4_7mycd")]
+[node name="house" parent="HouseBody" unique_id=1927163650 instance=ExtResource("4_choun")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -11.141119)
 
 [node name="PauseMenu" type="CanvasLayer" parent="." unique_id=1681885348]
-script = ExtResource("6_7mycd")
+visible = false
+script = ExtResource("5_ya4ey")
 
 [node name="Controls" type="Label" parent="PauseMenu" unique_id=267871028]
 anchors_preset = 8
@@ -101,9 +102,8 @@ Press E to interact with the world
 Press I to open inventory"
 
 [node name="Inventory" type="CanvasLayer" parent="PauseMenu" unique_id=277370228]
-visible = false
 
-[node name="Berries" type="Label" parent="PauseMenu/Inventory" unique_id=1620793781]
+[node name="DisplayText" type="Label" parent="PauseMenu/Inventory" unique_id=1620793781]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -117,22 +117,9 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Berries: "
 
-[node name="PlayerBerries" type="Label" parent="PauseMenu/Inventory" unique_id=633851926]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = 34.0
-offset_top = -11.5
-offset_right = 74.0
-offset_bottom = 11.5
-grow_horizontal = 2
-grow_vertical = 2
-
 [node name="HUD" type="CanvasLayer" parent="." unique_id=583198182]
 visible = false
-script = ExtResource("5_lquwl")
+script = ExtResource("6_eb6dy")
 
 [node name="PlayTime" type="Label" parent="HUD" unique_id=1126246572]
 offset_right = 94.0
