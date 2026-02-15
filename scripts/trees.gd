@@ -1,5 +1,7 @@
 extends Node
 
+class_name Trees
+
 var tree = preload("res://scenes/tree.tscn")
 
 var trees: Dictionary[Vector2, Node] = {}

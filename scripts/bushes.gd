@@ -1,5 +1,7 @@
 extends Node
 
+class_name Bushes
+
 const BERRYBUSH_FULL_SECS = 30
 
 class BerryBush:

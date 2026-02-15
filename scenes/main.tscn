@@ -7,6 +7,10 @@
 [ext_resource type="Script" uid="uid://2wiayn662mfs" path="res://scripts/pause_menu.gd" id="5_ya4ey"]
 [ext_resource type="Script" uid="uid://df6lh8814kg7s" path="res://scripts/hud.gd" id="6_eb6dy"]
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tefeu"]
+rough = true
+absorbent = true
+
 [sub_resource type="PlaneMesh" id="PlaneMesh_7dm0k"]
 size = Vector2(100, 100)
 
@@ -53,6 +57,7 @@ transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 1
 target_position = Vector3(0, -1.2, 0)
 
 [node name="Ground" type="StaticBody3D" parent="." unique_id=2095662480]
+physics_material_override = SubResource("PhysicsMaterial_tefeu")
 
 [node name="PlaneMesh" type="MeshInstance3D" parent="Ground" unique_id=867671209]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.003232956, 0.004675865, -0.0006195307)
@@ -99,6 +104,27 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Press ESC to close this menu
 Press E to interact with the world
+Press left mouse button to use item
+Press F to put away item
+Press I to open inventory"
+
+[node name="Controls" type="Label" parent="PauseMenu/Controls" unique_id=1170975234]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -11.5
+offset_right = 20.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "Press ESC to close this menu
+Press E to interact with the world
+Press left mouse button to use item
+Press F to put away item
 Press I to open inventory"
 
 [node name="Inventory" type="CanvasLayer" parent="PauseMenu" unique_id=277370228]
