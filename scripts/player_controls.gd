@@ -5,13 +5,15 @@ var player_camera: Camera3D
 var player_inventory: PlayerInventory
 var world_items: WorldItems
 var bushes_script: Bushes
+var npcs_script: NPCS
 
-func _init(_space_state, _inventory_text, _player_camera, _world_items, _bushes_script):
+func _init(_space_state, _inventory_text, _player_camera, _world_items, _bushes_script, _npcs_script):
 	space_state = _space_state
 	player_camera = _player_camera
 	player_inventory = preload("res://scripts/player_inventory.gd").new(_inventory_text, player_camera, world_items)
 	world_items = _world_items
 	bushes_script = _bushes_script
+	npcs_script = _npcs_script
 	add_child(player_inventory)
 
 
@@ -50,3 +52,5 @@ func handle_interaction():
 	var item_picked = world_items.interact(result.collider)
 	if item_picked:
 		player_inventory.add_item(item_picked)
+
+	npcs_script.interact(result.collider)
