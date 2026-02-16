@@ -5,14 +5,16 @@ var player_camera: Camera3D
 var player_inventory: PlayerInventory
 var world_items: WorldItems
 var bushes_script: Bushes
+var trees_script: Trees
 var npcs_script: NPCS
 
-func _init(_space_state, _inventory_text, _player_camera, _world_items, _bushes_script, _npcs_script):
+func _init(_space_state, _inventory_text, _player_camera, _world_items, _bushes_script, _trees_script, _npcs_script):
 	space_state = _space_state
 	player_camera = _player_camera
 	player_inventory = preload("res://scripts/player_inventory.gd").new(_inventory_text, player_camera, world_items)
 	world_items = _world_items
 	bushes_script = _bushes_script
+	trees_script = _trees_script
 	npcs_script = _npcs_script
 	add_child(player_inventory)
 
@@ -22,6 +24,7 @@ func _input(event: InputEvent) -> void:
 		handle_interaction()
 	if event.is_action_pressed("use_item"):
 		player_inventory.use_equipped_item()
+		handle_use_item()
 	if event.is_action_pressed("put_away_item"):
 			player_inventory.put_away_equipped_item()
 	if event.is_action_pressed("hotkey_1"):
@@ -53,4 +56,24 @@ func handle_interaction():
 	if item_picked:
 		player_inventory.add_item(item_picked)
 
-	npcs_script.interact(result.collider)
+	if player_inventory.item_in_hand:
+		var took_item: bool = npcs_script.interact_equipped_item(result.collider, player_inventory.equipped_item)
+		if took_item:
+			player_inventory.delete_equipped_item()
+	else:
+		npcs_script.interact(result.collider)
+
+func handle_use_item():
+	const RAY_LENGTH = 1.8
+	var mousepos = get_viewport().get_mouse_position()
+	var origin = player_camera.project_ray_origin(mousepos)
+	var end = origin + player_camera.project_ray_normal(mousepos) * RAY_LENGTH
+	var query = PhysicsRayQueryParameters3D.create(origin, end)
+
+	var result = space_state.intersect_ray(query)
+	if not result:
+		return
+
+	if player_inventory.equipped_item.properties.name_singular == "Axe":
+		var direction = end - origin
+		trees_script.handle_chop(result.collider, direction)

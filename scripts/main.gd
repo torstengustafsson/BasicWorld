@@ -4,16 +4,17 @@ extends Node3D
 @onready var ground = $Ground/PlaneMesh
 @onready var player = $Player
 
-var trees_script = preload("res://scripts/trees.gd").new()
+var world_items = preload("res://scripts/world_items.gd").new()
+var trees_script = preload("res://scripts/trees.gd").new(world_items)
 var bushes_script = preload("res://scripts/bushes.gd").new()
 var npcs_script = preload("res://scripts/npcs.gd").new()
-var world_items = preload("res://scripts/world_items.gd").new()
 @onready var player_controls = preload("res://scripts/player_controls.gd").new(
 	get_world_3d().direct_space_state,
 	$PauseMenu/Inventory/DisplayText,
 	player.get_node("Head/Camera3D"),
 	world_items,
 	bushes_script,
+	trees_script,
 	npcs_script)
 
 var trees
@@ -37,19 +38,20 @@ func _ready() -> void:
 	bushes_script.create_berrybushes(start_pos_x, start_pos_z, size_x_margin, size_z_margin, step_berrybushes)
 	add_child(bushes_script)
 
-	var num_npcs = 10
+	var num_npcs = 50
 	npcs_script.create_npcs(start_pos_x, start_pos_z, size_x_margin, size_z_margin, num_npcs)
 	add_child(npcs_script)
 
-	#var axe_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))
-	var axe_position = Vector3(0.0, 5.0, -3.0)
+	var axe_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))
 	world_items.spawn_item(axe_position, ItemProperties.AXE_ITEM)
 
-	var berry_position = Vector3(0.0, 10.0, -4.0)
-	world_items.spawn_item(berry_position, ItemProperties.BERRY_ITEM)
+	for berry in 5:
+		var berry_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))
+		world_items.spawn_item(berry_position, ItemProperties.BERRY_ITEM)
 
-	var wood_position = Vector3(2.0, 5.0, -4.0)
-	world_items.spawn_item(wood_position, ItemProperties.WOOD_ITEM)
+	for wood in 5:
+		var wood_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))
+		world_items.spawn_item(wood_position, ItemProperties.WOOD_ITEM)
 
 	add_child(world_items)
 

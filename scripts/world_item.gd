@@ -12,3 +12,6 @@ func _init(_name_singular: String, _name_plural: String, _resource: PackedScene)
 
 static func create_item(item: ItemProperties) -> WorldItem:
 	return WorldItem.new(item.name_singular, item.name_plural, item.resource)
+
+func eq(other: WorldItem) -> bool:
+	return properties.eq(other.properties)

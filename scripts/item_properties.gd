@@ -18,3 +18,6 @@ func _init(_name_singular: String, _name_plural: String, _resource: PackedScene)
 	name_singular = _name_singular
 	name_plural = _name_plural
 	resource = _resource
+
+func eq(other: ItemProperties) -> bool:
+	return name_singular == other.name_singular

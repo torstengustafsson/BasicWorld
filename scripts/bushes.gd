@@ -11,7 +11,6 @@ class BerryBush:
 	const BERRYBUSH_NAME = "berrybush"
 
 	var instance: Node3D
-	var collider: CollisionShape3D
 	var berries_fill_secs: float
 	var is_filled: bool = false
 
@@ -20,7 +19,7 @@ class BerryBush:
 		berries_fill_secs = randf_range(0.0, BERRYBUSH_FULL_SECS)
 		instance.position = pos
 		instance.scale = Vector3(scale, scale, scale)
-	
+
 	func fill():
 		is_filled = true
 		var object = instance.get_node(BERRYBUSH_NAME)
