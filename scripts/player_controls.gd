@@ -14,20 +14,25 @@ func _init(_space_state, _inventory_text, _player_camera, _world_items, _bushes_
 	bushes_script = _bushes_script
 	add_child(player_inventory)
 
+
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact"):
-		interact_pressed()
+		handle_interaction()
 	if event.is_action_pressed("use_item"):
 		player_inventory.use_equipped_item()
 	if event.is_action_pressed("put_away_item"):
 			player_inventory.put_away_equipped_item()
+	if event.is_action_pressed("hotkey_1"):
+			player_inventory.equip_item_index(0)
+	if event.is_action_pressed("hotkey_2"):
+			player_inventory.equip_item_index(1)
+	if event.is_action_pressed("hotkey_3"):
+			player_inventory.equip_item_index(2)
 
 
-func interact_pressed():
+func handle_interaction():
 	const RAY_LENGTH = 1.8
-	
 	var mousepos = get_viewport().get_mouse_position()
-
 	var origin = player_camera.project_ray_origin(mousepos)
 	var end = origin + player_camera.project_ray_normal(mousepos) * RAY_LENGTH
 	var query = PhysicsRayQueryParameters3D.create(origin, end)

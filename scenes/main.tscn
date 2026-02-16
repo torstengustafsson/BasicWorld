@@ -87,7 +87,6 @@ shape = SubResource("BoxShape3D_1bvp3")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -11.141119)
 
 [node name="PauseMenu" type="CanvasLayer" parent="." unique_id=1681885348]
-visible = false
 script = ExtResource("5_ya4ey")
 
 [node name="Controls" type="Label" parent="PauseMenu" unique_id=267871028]
@@ -102,32 +101,33 @@ offset_right = 20.0
 offset_bottom = 11.5
 grow_horizontal = 2
 grow_vertical = 2
-text = "Press ESC to close this menu
-Press E to interact with the world
-Press left mouse button to use item
-Press F to put away item
-Press I to open inventory"
+text = "Controls:
+ESC to close this menu
+WASD to move around
+Hold SHIFT to sprint
+E to interact with the world
+Left Mouse Button to use item
+F to put away item
+I to open inventory
+1,2,3 keys to switch equipped item"
 
-[node name="Controls" type="Label" parent="PauseMenu/Controls" unique_id=1170975234]
-layout_mode = 1
+[node name="ColorRect" type="ColorRect" parent="PauseMenu" unique_id=1340893024]
+z_index = -1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -11.5
-offset_right = 20.0
-offset_bottom = 11.5
+offset_left = -151.0
+offset_top = -129.0
+offset_right = 149.0
+offset_bottom = 135.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Press ESC to close this menu
-Press E to interact with the world
-Press left mouse button to use item
-Press F to put away item
-Press I to open inventory"
+color = Color(0.49747372, 0.49747366, 0.49747378, 1)
 
 [node name="Inventory" type="CanvasLayer" parent="PauseMenu" unique_id=277370228]
+visible = false
 
 [node name="DisplayText" type="Label" parent="PauseMenu/Inventory" unique_id=1620793781]
 anchors_preset = 8
@@ -141,7 +141,6 @@ offset_right = 20.0
 offset_bottom = 11.5
 grow_horizontal = 2
 grow_vertical = 2
-text = "Berries: "
 
 [node name="HUD" type="CanvasLayer" parent="." unique_id=583198182]
 visible = false
