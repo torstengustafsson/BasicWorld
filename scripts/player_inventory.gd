@@ -90,7 +90,7 @@ func equip_item(item: ItemProperties):
 
 
 func equip_item_index(index: int):
-	if hotkey_assignments.size() > index:
+	if hotkey_assignments.size() > index and inventory.has(hotkey_assignments[index].name_singular):
 		equip_item(hotkey_assignments[index])
 
 
