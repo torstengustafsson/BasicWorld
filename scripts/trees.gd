@@ -7,7 +7,6 @@ class ForestTree:
 	var tree_scene = preload("res://scenes/tree.tscn")
 	var instance: Node3D
 	var collider: CollisionShape3D
-	var berries_fill_secs: float
 	var health = 3
 
 	func _init(pos: Vector3, scale: float):

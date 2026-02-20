@@ -77,3 +77,4 @@ func handle_use_item():
 	if player_inventory.equipped_item.properties.name_singular == "Axe":
 		var direction = end - origin
 		trees_script.handle_chop(result.collider, direction)
+		npcs_script.handle_chop(result.collider, direction)
