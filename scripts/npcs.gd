@@ -53,6 +53,10 @@ func create_npcs(start_pos_x, start_pos_z, size_x, size_z, amount):
 			continue
 
 		var npc: NPC = NPC.new(human, position, rotation)
+		var animationplayer: AnimationPlayer = npc.object.get_node("animated_human").get_node("AnimationPlayer")
+		animationplayer.get_animation("Armature|Armature|ArmatureAction").loop_mode = Animation.LOOP_LINEAR
+		animationplayer.play("Armature|Armature|ArmatureAction")
+		animationplayer
 		npcs.append(npc)
 		add_child(npc.object)
 		add_child(npc.audio_player)
