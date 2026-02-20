@@ -27,7 +27,7 @@ var POINTS_AROUND: Array[Vector2i] = [
 ]
 
 var WORLD_SIZE: int
-const WORLD_GRID_STEP: int = 10
+const WORLD_GRID_STEP: int = 18
 var ROAD_WIDTH: float
 var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
 

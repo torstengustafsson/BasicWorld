@@ -14,8 +14,8 @@ class SettlementData:
 		num_houses = _num_houses
 
 # spread must be less than half of grid step to avoid overlap
-const SETTLEMENT_GRID_STEP = 10
-const SETTLEMENT_GRID_SPREAD = 3
+const SETTLEMENT_GRID_STEP = 5
+const SETTLEMENT_GRID_SPREAD = 1
 const WORLD_EDGE_MARGIN = 1 + SETTLEMENT_GRID_SPREAD
 
 var houses: Array[WorldObject] = []
