@@ -12,7 +12,7 @@ func _ready() -> void:
 	inventory.hide()
 
 func _process(_delta: float) -> void:
-	if Input.is_action_just_pressed("open_info"):
+	if Input.is_action_just_pressed("open_settings"):
 		if settings_menu_open || inventory_open:
 			resume()
 		else:

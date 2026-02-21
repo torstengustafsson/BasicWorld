@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://dhaksq5wolwly"]
+
+[ext_resource type="Script" uid="uid://df6lh8814kg7s" path="res://scripts/hud.gd" id="1_ahhtf"]
+
+[node name="HUD" type="CanvasLayer" unique_id=1854515904]
+script = ExtResource("1_ahhtf")
+
+[node name="TopLeftArea" type="Node2D" parent="." unique_id=1642771810]
+
+[node name="PlayTime" type="Label" parent="TopLeftArea" unique_id=2145586605]
+offset_right = 94.0
+offset_bottom = 23.0
+text = "Play Time:"
+
+[node name="CurrentPlayTime" type="Label" parent="TopLeftArea" unique_id=130613104]
+custom_minimum_size = Vector2(10, 0)
+offset_left = 87.0
+offset_right = 167.0
+offset_bottom = 23.0
+
+[node name="FPS" type="Label" parent="TopLeftArea" unique_id=887026949]
+offset_top = 30.0
+offset_right = 40.0
+offset_bottom = 53.0
+text = "FPS:"
+
+[node name="CurrentFPS" type="Label" parent="TopLeftArea" unique_id=1500971497]
+offset_left = 40.0
+offset_top = 30.0
+offset_right = 80.0
+offset_bottom = 53.0
+
+[node name="Info" type="Label" parent="TopLeftArea" unique_id=467474244]
+offset_left = 2.0
+offset_top = 52.0
+offset_right = 231.0
+offset_bottom = 75.0
+text = "Tip: Press Q for information"
+
+[node name="ScreenSize" type="Label" parent="TopLeftArea" unique_id=1282012415]
+offset_top = 80.0
+offset_right = 96.0
+offset_bottom = 103.0
+text = "Screen Size: "
+
+[node name="CurrentScreenSize" type="Label" parent="TopLeftArea" unique_id=1912237822]
+offset_left = 100.0
+offset_top = 80.0
+offset_right = 140.0
+offset_bottom = 103.0
+
+[node name="MobileControls" type="Node2D" parent="." unique_id=1943453143]

@@ -10,7 +10,7 @@ var bushes_script = preload("res://scripts/bushes.gd").new()
 var npcs_script = preload("res://scripts/npcs.gd").new()
 @onready var player_controls = preload("res://scripts/player_controls.gd").new(
 	get_world_3d().direct_space_state,
-	$PauseMenu/Inventory/DisplayText,
+	$PauseMenu/Inventory/InventoryText,
 	player.get_node("Head/Camera3D"),
 	world_items,
 	bushes_script,
