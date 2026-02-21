@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://cqn6mjj5hc4h4" path="res://scripts/main.gd" id="1_o6xl0"]
 [ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://assets/brackeys-proto-controller/proto_controller/proto_controller.tscn" id="2_tipki"]
 [ext_resource type="PackedScene" uid="uid://c50xveeglo2ae" path="res://assets/models/house.glb" id="4_choun"]
+[ext_resource type="PackedScene" uid="uid://dhaksq5wolwly" path="res://scenes/hud.tscn" id="5_tbgi4"]
 [ext_resource type="Script" uid="uid://2wiayn662mfs" path="res://scripts/pause_menu.gd" id="5_ya4ey"]
-[ext_resource type="Script" uid="uid://df6lh8814kg7s" path="res://scripts/hud.gd" id="6_eb6dy"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tefeu"]
 rough = true
@@ -83,6 +83,7 @@ shape = SubResource("BoxShape3D_1bvp3")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -11.141119)
 
 [node name="PauseMenu" type="CanvasLayer" parent="." unique_id=1681885348]
+visible = false
 script = ExtResource("5_ya4ey")
 
 [node name="Controls" type="Label" parent="PauseMenu" unique_id=267871028]
@@ -126,7 +127,7 @@ color = Color(0.49747372, 0.49747366, 0.49747378, 1)
 
 [node name="Inventory" type="CanvasLayer" parent="PauseMenu" unique_id=277370228]
 
-[node name="DisplayText" type="Label" parent="PauseMenu/Inventory" unique_id=1620793781]
+[node name="InventoryText" type="Label" parent="PauseMenu/Inventory" unique_id=1620793781]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -139,35 +140,4 @@ offset_bottom = 11.5
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="HUD" type="CanvasLayer" parent="." unique_id=583198182]
-script = ExtResource("6_eb6dy")
-
-[node name="PlayTime" type="Label" parent="HUD" unique_id=1126246572]
-offset_right = 94.0
-offset_bottom = 23.0
-text = "Play Time:"
-
-[node name="TimePlayed" type="Label" parent="HUD" unique_id=819631954]
-custom_minimum_size = Vector2(10, 0)
-offset_left = 87.0
-offset_right = 167.0
-offset_bottom = 23.0
-
-[node name="FPS" type="Label" parent="HUD" unique_id=1849834923]
-offset_top = 30.0
-offset_right = 40.0
-offset_bottom = 53.0
-text = "FPS:"
-
-[node name="CurrentFPS" type="Label" parent="HUD" unique_id=1606692876]
-offset_left = 40.0
-offset_top = 30.0
-offset_right = 80.0
-offset_bottom = 53.0
-
-[node name="Info" type="Label" parent="HUD" unique_id=1388882953]
-offset_left = 2.0
-offset_top = 52.0
-offset_right = 231.0
-offset_bottom = 75.0
-text = "Tip: Press Q for information"
+[node name="HUD" parent="." unique_id=1854515904 instance=ExtResource("5_tbgi4")]
