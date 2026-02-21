@@ -1,0 +1,120 @@
+[gd_scene format=3 uid="uid://c3hlevqadr32h"]
+
+[ext_resource type="Script" uid="uid://2wiayn662mfs" path="res://scripts/pause_menu.gd" id="1_n87rw"]
+
+[node name="PauseMenu" type="CanvasLayer" unique_id=1665670921]
+script = ExtResource("1_n87rw")
+
+[node name="Inventory" type="CanvasLayer" parent="." unique_id=2070056638]
+
+[node name="InventoryText" type="Label" parent="Inventory" unique_id=677287569]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -11.5
+offset_right = 20.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SettingsMenu" type="Node2D" parent="." unique_id=296971025]
+position = Vector2(400, 146)
+
+[node name="Background" type="ColorRect" parent="SettingsMenu" unique_id=26450065]
+z_index = -1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_right = 300.0
+offset_bottom = 350.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.49747372, 0.49747366, 0.49747378, 1)
+
+[node name="ControlsButton" type="Button" parent="SettingsMenu" unique_id=2106673513]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 75.0
+offset_top = 130.0
+offset_right = 225.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Show Controls"
+
+[node name="ResumeButton" type="Button" parent="SettingsMenu" unique_id=829966314]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 75.0
+offset_top = 210.0
+offset_right = 225.0
+offset_bottom = 260.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Resume Game"
+
+[node name="ExitGameButton" type="Button" parent="SettingsMenu" unique_id=109971379]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 75.0
+offset_top = 290.0
+offset_right = 225.0
+offset_bottom = 340.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Exit Game"
+
+[node name="ControlsSubmenu" type="Node2D" parent="SettingsMenu" unique_id=841604762]
+
+[node name="Controls" type="Label" parent="SettingsMenu/ControlsSubmenu" unique_id=178651441]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 18.0
+offset_top = 4.0
+offset_right = 284.0
+offset_bottom = 287.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Controls:
+ESC to close this menu
+WASD to move around
+Hold SHIFT to sprint
+E to interact with the world
+Left Mouse Button to use item
+F to put away item
+I to open inventory
+1,2,3 keys to switch equipped item
+
+Can you find the axe?"
+
+[node name="BackButton" type="Button" parent="SettingsMenu/ControlsSubmenu" unique_id=1874992811]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 75.0
+offset_top = 290.0
+offset_right = 225.0
+offset_bottom = 340.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Back
+"
