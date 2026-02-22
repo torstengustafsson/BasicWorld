@@ -3,10 +3,14 @@ extends CanvasLayer
 var settings_menu_open: bool = false
 var inventory_open: bool = false
 
+@onready var save_load_state: SaveLoadState = SaveLoadState.new()
+
 @onready var inventory_menu = $InventoryMenu
 @onready var settings_menu = $SettingsMenu
 @onready var settings_submenu = $SettingsMenu/SettingsSubmenu
 @onready var controls_submenu = $SettingsMenu/ControlsSubmenu
+@onready var settings_savegame_button = $SettingsMenu/SettingsSubmenu/SaveGameButton
+@onready var settings_loadgame_button = $SettingsMenu/SettingsSubmenu/LoadGameButton
 @onready var settings_controls_button = $SettingsMenu/SettingsSubmenu/ControlsButton
 @onready var settings_resumegame_button = $SettingsMenu/SettingsSubmenu/ResumeButton
 @onready var settings_exitgame_button = $SettingsMenu/SettingsSubmenu/ExitGameButton
@@ -18,10 +22,14 @@ func _ready() -> void:
 	hide()
 	inventory_menu.hide()
 
+	settings_savegame_button.connect("pressed", _save_game.bind())
+	settings_loadgame_button.connect("pressed", _load_game.bind())
 	settings_controls_button.connect("pressed", _open_controls_menu.bind())
 	settings_resumegame_button.connect("pressed", _resume_game.bind())
 	settings_exitgame_button.connect("pressed", _exit_game.bind())
 	controls_back_button.connect("pressed", _open_settings_menu.bind())
+
+	add_child(save_load_state)
 
 
 func _process(_delta: float) -> void:
@@ -64,6 +72,12 @@ func _open_inventory() -> void:
 func _open_controls_menu() -> void:
 	controls_submenu.show()
 	settings_submenu.hide()
+
+func _save_game():
+	save_load_state.save_game()
+
+func _load_game():
+	save_load_state.load_game()
 
 func _exit_game():
 	get_tree().quit()

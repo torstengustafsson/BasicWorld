@@ -28,29 +28,30 @@ func _ready() -> void:
 
 	var start_pos_x = size_x / 2 - size_x + margin
 	var start_pos_z = size_z / 2 - size_z + margin
-	var size_x_margin = size_x - 2 * margin
-	var size_z_margin = size_z - 2 * margin
+	var end_pos_x = size_x / 2 - margin
+	var end_pos_z = size_z / 2 - margin
 
-	trees_script.create_trees(start_pos_x, start_pos_z, size_x_margin, size_z_margin, step_trees)
+	trees_script.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees)
 	add_child(trees_script)
 
-	bushes_script.create_berrybushes(start_pos_x, start_pos_z, size_x_margin, size_z_margin, step_berrybushes)
+	bushes_script.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
 	add_child(bushes_script)
 
-	var num_npcs = 50
-	npcs_script.create_npcs(start_pos_x, start_pos_z, size_x_margin, size_z_margin, num_npcs)
+	var num_npcs = 25
+	npcs_script.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
 	add_child(npcs_script)
 
-	var axe_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))
-	world_items.spawn_item(axe_position, ItemProperties.AXE_ITEM)
+	#var axe_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))
+	var axe_position = Vector3(0.0, 2.0, -4.0)
+	world_items.spawn_item(axe_position, ItemProperties.Item.AXE)
 
 	for berry in 5:
-		var berry_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))
-		world_items.spawn_item(berry_position, ItemProperties.BERRY_ITEM)
+		var berry_position = Vector3(randf_range(start_pos_x, end_pos_z), 5.0, randf_range(start_pos_z, end_pos_z))
+		world_items.spawn_item(berry_position, ItemProperties.Item.BERRY)
 
 	for wood in 5:
-		var wood_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))
-		world_items.spawn_item(wood_position, ItemProperties.WOOD_ITEM)
+		var wood_position = Vector3(randf_range(start_pos_x, end_pos_x), 5.0, randf_range(start_pos_z, end_pos_z))
+		world_items.spawn_item(wood_position, ItemProperties.Item.WOOD)
 
 	add_child(world_items)
 

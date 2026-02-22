@@ -6,9 +6,14 @@ const axe_scene = preload("res://scenes/items/axe.tscn")
 const berry_scene = preload("res://scenes/items/berry.tscn")
 const wood_scene = preload("res://scenes/items/wood.tscn")
 
-static var AXE_ITEM: ItemProperties =  ItemProperties.new("Axe", "Axes", axe_scene)
-static var BERRY_ITEM: ItemProperties =  ItemProperties.new("Berry", "Berries", berry_scene)
-static var WOOD_ITEM: ItemProperties =  ItemProperties.new("Wood", "Wood", wood_scene)
+enum Item { NO_ITEM, AXE, BERRY, WOOD }
+
+static var ITEMS: Dictionary[Item, ItemProperties] = {
+	Item.NO_ITEM: ItemProperties.new("No item", "No item", null),
+	Item.AXE: ItemProperties.new("Axe", "Axes", axe_scene),
+	Item.BERRY: ItemProperties.new("Berry", "Berries", berry_scene),
+	Item.WOOD: ItemProperties.new("Wood", "Wood", wood_scene),
+}
 
 var name_singular: String
 var name_plural: String	

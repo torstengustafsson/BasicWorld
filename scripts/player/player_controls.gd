@@ -50,16 +50,16 @@ func handle_interaction():
 
 	var berries_picked = bushes_script.interact(result.collider)
 	if berries_picked > 0:
-		player_inventory.add_item(ItemProperties.BERRY_ITEM)
+		player_inventory.add_item(ItemProperties.Item.BERRY)
 		return
 
 	var item_picked = world_items.interact(result.collider)
-	if item_picked:
+	if item_picked != ItemProperties.Item.NO_ITEM:
 		player_inventory.add_item(item_picked)
 
 	if player_inventory.item_in_hand:
-		var took_item: bool = npcs_script.interact_equipped_item(result.collider, player_inventory.equipped_item)
-		if took_item:
+		var npc_took_item: bool = npcs_script.interact_equipped_item(result.collider, player_inventory.equipped_item)
+		if npc_took_item:
 			player_inventory.delete_equipped_item()
 	else:
 		npcs_script.interact(result.collider)
@@ -75,6 +75,6 @@ func handle_use_item():
 	if not result:
 		return
 
-	if player_inventory.equipped_item.properties.name_singular == "Axe":
+	if player_inventory.equipped_item.item_id == ItemProperties.Item.AXE:
 		trees_script.handle_chop(result.collider)
 		npcs_script.handle_chop(result.collider)

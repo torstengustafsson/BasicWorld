@@ -39,29 +39,33 @@ class BerryBush:
 		object.name = BERRYBUSH_NAME
 		instance.add_child(object)
 
-var berrybushes: Dictionary[Vector2, BerryBush] = {}
+var berrybushes: Array[BerryBush] = []
 
-func create_berrybushes(start_pos_x, start_pos_z, size_x, size_z, step):
-	for x in size_x / step:
-		for z in size_z / step:
+func _init():
+	add_to_group("Persist")
+
+func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step):
+	for x in (end_pos_x - start_pos_x) / step:
+		for z in (end_pos_z - start_pos_z) / step:
 			var rand_value_x = -step / 2 + randf_range(0.0, step) 
 			var rand_value_z = -step / 2 + randf_range(0.0, step) 
 			var position = Vector3(start_pos_x + x * step + rand_value_x, 0.0, start_pos_z + z * step + rand_value_z)
 
 			# Skip if out-of-bounds
-			if position.x < start_pos_x || position.z < start_pos_z || position.x > start_pos_x + size_x || position.z > start_pos_z + size_z:
+			if position.x < start_pos_x || position.z < start_pos_z || position.x > end_pos_x || position.z > end_pos_z:
 				continue
 
 			var scale = randf_range(1.0, 1.25)
-			var berrybush = BerryBush.new(position, scale)
+			add_bush(position, scale)
 
-			berrybushes[Vector2(x, z)] = berrybush
-
-			add_child(berrybush.instance)
+func add_bush(position: Vector3, scale: float) -> BerryBush:
+	var berrybush = BerryBush.new(position, scale)
+	berrybushes.append(berrybush)
+	add_child(berrybush.instance)
+	return berrybush
 
 func _process(delta):
-	for berrybush_index in berrybushes:
-		var berrybush = berrybushes[berrybush_index]
+	for berrybush in berrybushes:
 		if berrybush.is_filled == true:
 			continue
 		if berrybush.berries_fill_secs >= BERRYBUSH_FULL_SECS:
@@ -71,9 +75,34 @@ func _process(delta):
 
 # Returns amount of berries gained
 func interact(collider) -> int:
-	for berrybush_index in berrybushes:
-		var berrybush = berrybushes[berrybush_index]
+	for berrybush in berrybushes:
 		if berrybush.instance == collider && berrybush.is_filled:
 			berrybush.reset()
 			return 1
 	return 0
+
+func save() -> Dictionary:
+	var result: Dictionary = {}
+	var bush_data: Array = []
+	for berrybush in berrybushes:
+		var data: Dictionary = {}
+		data["pos_x"] = snapped(berrybush.instance.position.x, 0.01)
+		data["pos_y"] = snapped(berrybush.instance.position.y, 0.01)
+		data["pos_z"] = snapped(berrybush.instance.position.z, 0.01)
+		data["scale"] = snapped(berrybush.instance.scale.x, 0.01) # Uniform scale
+		data["is_filled"] = berrybush.is_filled
+		bush_data.append(data)
+	result[SaveLoadState.StateType.Bushes] = bush_data
+	return result
+
+func load(data: Dictionary):
+	for berrybush in berrybushes:
+		berrybush.instance.queue_free()
+	berrybushes.clear()
+
+	for berrybush in data[str(SaveLoadState.StateType.Bushes)]:
+		var position = Vector3(berrybush["pos_x"], berrybush["pos_y"], berrybush["pos_z"])
+		var scale = berrybush["scale"]
+		var bush = add_bush(position, scale)
+		if berrybush["is_filled"]:
+			bush.fill()

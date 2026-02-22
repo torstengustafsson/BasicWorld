@@ -3,15 +3,13 @@ extends Node
 class_name WorldItem
 
 var object: RigidBody3D
-var properties: ItemProperties
+var item_id: ItemProperties.Item
 
-func _init(_name_singular: String, _name_plural: String, _resource: PackedScene):
-	properties = ItemProperties.new(_name_singular, _name_plural, _resource)
-	if _resource:
-		object = _resource.instantiate()
+func _init(item: ItemProperties.Item):
+	item_id = item
+	var resource = ItemProperties.ITEMS[item].resource
+	if resource:
+		object = resource.instantiate()
 
-static func create_item(item: ItemProperties) -> WorldItem:
-	return WorldItem.new(item.name_singular, item.name_plural, item.resource)
-
-func eq(other: WorldItem) -> bool:
-	return properties.eq(other.properties)
+static func create_item(item: ItemProperties.Item) -> WorldItem:
+	return WorldItem.new(item)
