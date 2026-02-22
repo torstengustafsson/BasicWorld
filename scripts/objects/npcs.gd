@@ -120,7 +120,7 @@ func interact_equipped_item(collider, player_equipped_item: WorldItem) -> bool:
 	return false
 
 
-func handle_chop(collider, direction: Vector3):
+func handle_chop(collider):
 	for i in npcs.size():
 		var npc: NPC = npcs[i]
 		if npc.object == collider:

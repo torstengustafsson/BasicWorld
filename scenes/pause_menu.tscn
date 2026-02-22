@@ -1,22 +1,22 @@
 [gd_scene format=3 uid="uid://c3hlevqadr32h"]
 
-[ext_resource type="Script" uid="uid://2wiayn662mfs" path="res://scripts/pause_menu.gd" id="1_n87rw"]
+[ext_resource type="Script" uid="uid://2wiayn662mfs" path="res://scripts/menus/pause_menu.gd" id="1_n87rw"]
 
 [node name="PauseMenu" type="CanvasLayer" unique_id=1665670921]
 script = ExtResource("1_n87rw")
 
-[node name="Inventory" type="CanvasLayer" parent="." unique_id=2070056638]
+[node name="InventoryMenu" type="Node2D" parent="." unique_id=1677343541]
 
-[node name="InventoryText" type="Label" parent="Inventory" unique_id=677287569]
+[node name="InventoryText" type="Label" parent="InventoryMenu" unique_id=677287569]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -11.5
-offset_right = 20.0
-offset_bottom = 11.5
+offset_left = 556.0
+offset_top = 312.5
+offset_right = 596.0
+offset_bottom = 335.5
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -36,35 +36,65 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.49747372, 0.49747366, 0.49747378, 1)
 
-[node name="ControlsButton" type="Button" parent="SettingsMenu" unique_id=2106673513]
+[node name="SettingsSubmenu" type="Node2D" parent="SettingsMenu" unique_id=1375731787]
+
+[node name="SaveGameButton" type="Button" parent="SettingsMenu/SettingsSubmenu" unique_id=1659919905]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = 75.0
-offset_top = 130.0
+offset_top = 10.0
 offset_right = 225.0
-offset_bottom = 180.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Save Game"
+
+[node name="LoadGameButton" type="Button" parent="SettingsMenu/SettingsSubmenu" unique_id=1535093433]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 75.0
+offset_top = 80.0
+offset_right = 225.0
+offset_bottom = 130.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Load Game"
+
+[node name="ControlsButton" type="Button" parent="SettingsMenu/SettingsSubmenu" unique_id=2106673513]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 75.0
+offset_top = 150.0
+offset_right = 225.0
+offset_bottom = 200.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "Show Controls"
 
-[node name="ResumeButton" type="Button" parent="SettingsMenu" unique_id=829966314]
+[node name="ResumeButton" type="Button" parent="SettingsMenu/SettingsSubmenu" unique_id=829966314]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = 75.0
-offset_top = 210.0
+offset_top = 220.0
 offset_right = 225.0
-offset_bottom = 260.0
+offset_bottom = 270.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "Resume Game"
 
-[node name="ExitGameButton" type="Button" parent="SettingsMenu" unique_id=109971379]
+[node name="ExitGameButton" type="Button" parent="SettingsMenu/SettingsSubmenu" unique_id=109971379]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5

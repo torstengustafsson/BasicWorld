@@ -3,19 +3,20 @@ extends CanvasLayer
 var settings_menu_open: bool = false
 var inventory_open: bool = false
 
-@onready var inventory = $Inventory
+@onready var inventory_menu = $InventoryMenu
 @onready var settings_menu = $SettingsMenu
-@onready var settings_controls_button = $SettingsMenu/ControlsButton
-@onready var settings_resumegame_button = $SettingsMenu/ResumeButton
-@onready var settings_exitgame_button = $SettingsMenu/ExitGameButton
+@onready var settings_submenu = $SettingsMenu/SettingsSubmenu
 @onready var controls_submenu = $SettingsMenu/ControlsSubmenu
+@onready var settings_controls_button = $SettingsMenu/SettingsSubmenu/ControlsButton
+@onready var settings_resumegame_button = $SettingsMenu/SettingsSubmenu/ResumeButton
+@onready var settings_exitgame_button = $SettingsMenu/SettingsSubmenu/ExitGameButton
 @onready var controls_back_button = $SettingsMenu/ControlsSubmenu/BackButton
 
 func _ready() -> void:
 	# This node and its subnodes is the only ones that is not paused on pause
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	hide()
-	inventory.hide()
+	inventory_menu.hide()
 
 	settings_controls_button.connect("pressed", _open_controls_menu.bind())
 	settings_resumegame_button.connect("pressed", _resume_game.bind())
@@ -39,7 +40,7 @@ func _process(_delta: float) -> void:
 # Close all menus and unpause the game
 func _resume_game() -> void:
 	hide()
-	inventory.hide()
+	inventory_menu.hide()
 	settings_menu_open = false
 	inventory_open = false
 	get_tree().paused = false
@@ -47,26 +48,22 @@ func _resume_game() -> void:
 func _open_settings_menu() -> void:
 	show()
 	settings_menu.show()
-	settings_controls_button.show()
-	settings_resumegame_button.show()
-	settings_exitgame_button.show()
+	settings_submenu.show()
 	controls_submenu.hide()
-	inventory.hide()
+	inventory_menu.hide()
 	settings_menu_open = true
 	get_tree().paused = true
 
 func _open_inventory() -> void:
 	show()
 	settings_menu.hide()
-	inventory.show()
+	inventory_menu.show()
 	inventory_open = true
 	get_tree().paused = true
 
 func _open_controls_menu() -> void:
 	controls_submenu.show()
-	settings_controls_button.hide()
-	settings_resumegame_button.hide()
-	settings_exitgame_button.hide()
+	settings_submenu.hide()
 
 func _exit_game():
 	get_tree().quit()

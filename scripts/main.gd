@@ -1,16 +1,15 @@
 extends Node3D
 
-@onready var pause_menu = $PauseMenu
 @onready var ground = $Ground/PlaneMesh
 @onready var player = $Player
 
-var world_items = preload("res://scripts/world_items.gd").new()
-var trees_script = preload("res://scripts/trees.gd").new(world_items)
-var bushes_script = preload("res://scripts/bushes.gd").new()
-var npcs_script = preload("res://scripts/npcs.gd").new()
-@onready var player_controls = preload("res://scripts/player_controls.gd").new(
+var world_items = preload("res://scripts/items/world_items.gd").new()
+var trees_script = preload("res://scripts/objects/trees.gd").new(world_items)
+var bushes_script = preload("res://scripts/objects/bushes.gd").new()
+var npcs_script = preload("res://scripts/objects/npcs.gd").new()
+@onready var player_controls = preload("res://scripts/player/player_controls.gd").new(
 	get_world_3d().direct_space_state,
-	$PauseMenu/Inventory/InventoryText,
+	$PauseMenu/InventoryMenu/InventoryText,
 	player.get_node("Head/Camera3D"),
 	world_items,
 	bushes_script,

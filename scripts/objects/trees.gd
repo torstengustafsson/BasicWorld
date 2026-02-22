@@ -42,7 +42,7 @@ func create_trees(start_pos_x, start_pos_z, size_x, size_z, step):
 
 			add_child(tree.instance)
 
-func handle_chop(collider, direction: Vector3):
+func handle_chop(collider):
 	for tree_index in trees:
 		var tree = trees[tree_index]
 		if tree.instance == collider:
@@ -54,7 +54,6 @@ func handle_chop(collider, direction: Vector3):
 				return
 			shaking_tree = tree.instance
 			shake_timer = 0.0
-			shake_direction = direction
 			return
 
 func _process(delta):

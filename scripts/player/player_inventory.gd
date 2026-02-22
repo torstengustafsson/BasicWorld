@@ -1,21 +1,12 @@
-extends Node
+extends Inventory
 
 class_name PlayerInventory
 
-var world_items: WorldItems
-
-class ItemContainer:
-	var item: ItemProperties
-	var amount: int
-
-
-# Dictionary of item properties and amount
-var inventory: Dictionary[String, ItemContainer]
-var hotkey_assignments: Dictionary[int, ItemProperties]
-var hotkey_counter: int = 0
-
 var inventoryText: Label
 var player_camera: Node3D
+
+var hotkey_assignments: Dictionary[int, ItemProperties]
+var hotkey_counter: int = 0
 
 const EQUIPPED_ITEM_DEFAULT_POSITION: Vector3 = Vector3(-0.5, -0.4, -0.6)
 const EQUIPPED_ITEM_DEFAULT_ROTATION: Vector3 = Vector3(0.0, 1.4 * PI, 0.2 * PI)
@@ -24,16 +15,16 @@ var EQUIPPED_ITEM_ROTATION: Vector3 = EQUIPPED_ITEM_DEFAULT_ROTATION
 const ITEM_SWING_ANIMATION_SECS: float = 0.3
 var item_swinging_timer: float = INF # INF means not currently swinging
 
-
 const ITEM_NOT_EQUIPPED: String = "Not Equipped"
 var equipped_item: WorldItem = WorldItem.new(ITEM_NOT_EQUIPPED, ITEM_NOT_EQUIPPED, null)
 var item_in_hand: bool = false
 
-func _init(_inventoryText: Label, _player_camera: Node3D, _world_items: WorldItems):
+
+func _init(_inventoryText: Label, _player_camera: Node3D):
 	inventoryText = _inventoryText
 	player_camera = _player_camera
-	world_items = _world_items
 	update_inventory_text()
+
 
 func item_in_hotkeys(item: ItemProperties):
 	for hotkey_index in hotkey_assignments:
@@ -42,10 +33,9 @@ func item_in_hotkeys(item: ItemProperties):
 			return true
 	return false
 
+
 func add_item(item: ItemProperties):
-	inventory.get_or_add(item.name_singular, ItemContainer.new())
-	inventory[item.name_singular].item = item
-	inventory[item.name_singular].amount += 1
+	super._add_item(item)
 	if not item_in_hotkeys(item):
 		hotkey_assignments[hotkey_counter] = item
 		hotkey_counter += 1
@@ -94,15 +84,15 @@ func equip_item_index(index: int):
 		equip_item(hotkey_assignments[index])
 
 
-func use_equipped_item():
+# Return true if equipped item is already in hand
+func use_equipped_item() -> bool:
 	if item_in_hand:
 		item_swinging_timer = 0.0
-		return
-	else:
-		if equipped_item.properties.name_singular != ITEM_NOT_EQUIPPED:
-			item_in_hand = true
-			equipped_item.object.show()
-
+		return true
+	elif equipped_item.properties.name_singular != ITEM_NOT_EQUIPPED:
+		item_in_hand = true
+		equipped_item.object.show()
+	return false
 
 func put_away_equipped_item():
 	item_in_hand = false
@@ -111,15 +101,13 @@ func put_away_equipped_item():
 
 
 func delete_equipped_item():
-	inventory[equipped_item.properties.name_singular].amount -= 1
-	if inventory[equipped_item.properties.name_singular].amount == 0:
+	var last_removed = super._remove_item(equipped_item.properties)
+	if last_removed:
 		item_in_hand = false
-		inventory.erase(equipped_item.properties.name_singular)
 		player_camera.remove_child(equipped_item.object)
 		equipped_item.object.queue_free()
 		equipped_item = WorldItem.new(ITEM_NOT_EQUIPPED, ITEM_NOT_EQUIPPED, null)
 	update_inventory_text()
-
 
 # TODO: Figure out if it is possible to inherit camera position and rotation instead
 func _process(delta):
