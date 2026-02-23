@@ -39,6 +39,7 @@ func create_mobile_controls():
 		_create_button(Vector2(650, screen.y - 100), "Equip 1", "hotkey_1")
 		_create_button(Vector2(725, screen.y - 100), "Equip 2", "hotkey_2")
 		_create_button(Vector2(800, screen.y - 100), "Equip 3", "hotkey_3")
+		_create_button(Vector2(875, screen.y - 100), "Freefly", "freefly")
 
 		# TODO: Need to handle pause game. Currently hangs forever
 		# _create_button(Vector2(130, screen.y - 100), "inventory")
