@@ -57,7 +57,7 @@ func _ready() -> void:
 	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
 	add_child(bush_generator)
 
-	settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
+	var settlement_data = settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
 	add_child(settlements_generator)
 
 	var num_npcs = 25
@@ -77,6 +77,15 @@ func _ready() -> void:
 		world_item_generator.spawn_item(wood_position, ItemProperties.Item.WOOD)
 
 	add_child(world_item_generator)
+
+	var mat = ShaderMaterial.new()
+	mat.shader = load("res://shaders/ground.gdshader")
+	mat.set_shader_parameter("world_size", Vector2(size_x, size_z))
+	mat.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25))
+	mat.set_shader_parameter("road_albedo_texture", Color(0.53, 0.48, 0.16, 1.0))
+	mat.set_shader_parameter("settlement_count", settlement_data.size())
+	mat.set_shader_parameter("settlement_data", settlement_data)
+	ground.material_override = mat
 
 func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> InteractResult:
 	var berries_picked = bush_generator.interact(collider)
