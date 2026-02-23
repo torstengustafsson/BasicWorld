@@ -26,7 +26,7 @@ func _ready() -> void:
 	var margin = 5.0
 	var step_trees = 5
 	var step_berrybushes = 15
-	var step_houses = 40
+	var step_houses = 75
 
 	var start_pos_x = size_x / 2 - size_x + margin
 	var start_pos_z = size_z / 2 - size_z + margin
@@ -39,7 +39,7 @@ func _ready() -> void:
 	bushes_script.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
 	add_child(bushes_script)
 
-	houses_script.create_houses(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
+	houses_script.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
 	add_child(houses_script)
 
 	var num_npcs = 25

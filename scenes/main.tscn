@@ -10,13 +10,13 @@ rough = true
 absorbent = true
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_7dm0k"]
-size = Vector2(100, 100)
+size = Vector2(200, 200)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0xm2m"]
 albedo_color = Color(0.25882354, 0.5176471, 0.2509804, 1)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_0xm2m"]
-size = Vector3(100, 0.1, 100)
+size = Vector3(200, 0.1, 200)
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0xm2m"]
 sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
