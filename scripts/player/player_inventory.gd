@@ -137,7 +137,7 @@ func save() -> Dictionary:
 func load(data: Dictionary):
 	var item_data = data[str(SaveLoadState.StateType.PlayerInventory)]
 	super._load(item_data["items"])
-	equip_item(item_data["equipped_item"])
 	item_in_hand = item_data["item_in_hand"]
+	equip_item(item_data["equipped_item"])
 	hotkey_assignments = item_data["hotkeys"]
 	hotkey_counter = hotkey_assignments.size()

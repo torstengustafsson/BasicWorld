@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://cqn6mjj5hc4h4" path="res://scripts/main.gd" id="1_o6xl0"]
 [ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://assets/brackeys-proto-controller/proto_controller/proto_controller.tscn" id="2_tipki"]
-[ext_resource type="PackedScene" uid="uid://c50xveeglo2ae" path="res://assets/models/house.glb" id="4_choun"]
 [ext_resource type="PackedScene" uid="uid://c3hlevqadr32h" path="res://scenes/pause_menu.tscn" id="4_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://dhaksq5wolwly" path="res://scenes/hud.tscn" id="5_tbgi4"]
 
@@ -40,9 +39,6 @@ fog_depth_curve = 3.03144
 fog_depth_begin = 500.0
 fog_depth_end = 3386.6
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_1bvp3"]
-size = Vector3(3, 5, 4)
-
 [node name="BasicWorld" type="Node3D" unique_id=1337950811]
 script = ExtResource("1_o6xl0")
 
@@ -72,15 +68,6 @@ environment = SubResource("Environment_h2yge")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=189870739]
 transform = Transform3D(0.75831103, 0.29884702, -0.5793573, 0.48453504, -0.8529355, 0.19423431, -0.43610802, -0.4280089, -0.79159224, 2.22284, 2.17665, 1.08004)
 shadow_enabled = true
-
-[node name="HouseBody" type="StaticBody3D" parent="." unique_id=949341017]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="HouseBody" unique_id=1266808278]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -11.141119)
-shape = SubResource("BoxShape3D_1bvp3")
-
-[node name="house" parent="HouseBody" unique_id=1927163650 instance=ExtResource("4_choun")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -11.141119)
 
 [node name="PauseMenu" parent="." unique_id=1665670921 instance=ExtResource("4_tbgi4")]
 

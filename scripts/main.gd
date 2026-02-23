@@ -4,8 +4,9 @@ extends Node3D
 @onready var player = $Player
 
 var world_items = preload("res://scripts/items/world_items.gd").new()
-var trees_script = preload("res://scripts/objects/trees.gd").new(world_items)
-var bushes_script = preload("res://scripts/objects/bushes.gd").new()
+var trees_script = preload("res://scripts/objects/create_trees.gd").new(world_items)
+var bushes_script = preload("res://scripts/objects/create_bushes.gd").new()
+var houses_script = preload("res://scripts/objects/create_houses.gd").new()
 var npcs_script = preload("res://scripts/objects/npcs.gd").new()
 @onready var player_controls = preload("res://scripts/player/player_controls.gd").new(
 	get_world_3d().direct_space_state,
@@ -25,6 +26,7 @@ func _ready() -> void:
 	var margin = 5.0
 	var step_trees = 5
 	var step_berrybushes = 15
+	var step_houses = 40
 
 	var start_pos_x = size_x / 2 - size_x + margin
 	var start_pos_z = size_z / 2 - size_z + margin
@@ -36,6 +38,9 @@ func _ready() -> void:
 
 	bushes_script.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
 	add_child(bushes_script)
+
+	houses_script.create_houses(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
+	add_child(houses_script)
 
 	var num_npcs = 25
 	npcs_script.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)

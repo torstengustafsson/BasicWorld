@@ -11,11 +11,9 @@ class ItemData:
 var inventory: Dictionary[ItemProperties.Item, ItemData]
 
 func _add_item(item: ItemProperties.Item, amount: int = 1):
-	print("add item " + str(item))
 	if not inventory.has(item):
 		inventory[item] = ItemData.new()
 	inventory[item].amount += amount
-	print(inventory.keys())
 
 # Returns true if last item was removed
 func _remove_item(item: ItemProperties.Item, amount: int = 1) -> bool:
@@ -39,10 +37,8 @@ func _save() -> Array[Dictionary]:
 
 
 func _load(data: Array): # Cant be typed due to gdscript. Should be: Array[Dictionary]
-	print("inventory before load: " + str(inventory.size()))
 	inventory.clear()
 	for item in data:
 		var item_id: ItemProperties.Item = item["id"]
 		inventory.get_or_add(item_id, ItemData.new())
 		inventory[item["id"]].amount = item["amount"]
-	print("inventory after load: " + str(inventory.size()))
