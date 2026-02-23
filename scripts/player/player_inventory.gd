@@ -33,8 +33,8 @@ func item_in_hotkeys(item: ItemProperties.Item):
 	return false
 
 
-func add_item(item: ItemProperties.Item):
-	super._add_item(item)
+func add_item(item: ItemProperties.Item, amount: int = 1):
+	super._add_item(item, amount)
 	if not item_in_hotkeys(item):
 		hotkey_assignments[str(hotkey_counter)] = item
 		hotkey_counter += 1
@@ -48,7 +48,7 @@ func update_inventory_text():
 	for item in inventory:
 		var amount = inventory[item].amount
 		text += ItemProperties.ITEMS[item].name_plural
-		text += ": " 
+		text += ": "
 		text += str(amount)
 		text += "\n"
 	text += "EQUIPPED ITEM: "

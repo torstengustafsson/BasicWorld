@@ -10,7 +10,7 @@ class ItemData:
 # Dictionary of item properties and amount
 var inventory: Dictionary[ItemProperties.Item, ItemData]
 
-func _add_item(item: ItemProperties.Item, amount: int = 1):
+func _add_item(item: ItemProperties.Item, amount: int):
 	if not inventory.has(item):
 		inventory[item] = ItemData.new()
 	inventory[item].amount += amount

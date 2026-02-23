@@ -1,21 +1,22 @@
 extends Node
 
+class_name PlayerControls
+
 var space_state: PhysicsDirectSpaceState3D
 var player_camera: Camera3D
-var player_inventory: Inventory # TODO: PlayerInventory
-var world_items: WorldItems
-var bushes_script: Bushes
-var trees_script: Trees
-var npcs_script: NPCS
+var player_inventory: PlayerInventory
+var game_world: GameWorld
 
-func _init(_space_state, _inventory_text, _player_camera, _world_items, _bushes_script, _trees_script, _npcs_script):
+func _init(
+	_space_state: PhysicsDirectSpaceState3D,
+	_inventory_text: Label,
+	_player_camera: Camera3D,
+	_game_world: GameWorld,
+):
 	space_state = _space_state
 	player_camera = _player_camera
-	player_inventory = preload("res://scripts/player/player_inventory.gd").new(_inventory_text, player_camera)
-	world_items = _world_items
-	bushes_script = _bushes_script
-	trees_script = _trees_script
-	npcs_script = _npcs_script
+	player_inventory = PlayerInventory.new(_inventory_text, player_camera)
+	game_world = _game_world
 	add_child(player_inventory)
 
 
@@ -48,21 +49,13 @@ func handle_interaction():
 	if not result:
 		return
 
-	var berries_picked = bushes_script.interact(result.collider)
-	if berries_picked > 0:
-		player_inventory.add_item(ItemProperties.Item.BERRY)
-		return
-
-	var item_picked = world_items.interact(result.collider)
-	if item_picked != ItemProperties.Item.NO_ITEM:
-		player_inventory.add_item(item_picked)
-
-	if player_inventory.item_in_hand:
-		var npc_took_item: bool = npcs_script.interact_equipped_item(result.collider, player_inventory.equipped_item)
-		if npc_took_item:
+	var interact_result: GameWorld.InteractResult = game_world.interact(result.collider, player_inventory.equipped_item.item_id)
+	match interact_result.result:
+		GameWorld.InteractResults.GainItem:
+			player_inventory.add_item(interact_result.item)
+		GameWorld.InteractResults.DeleteEquippedItem:
 			player_inventory.delete_equipped_item()
-	else:
-		npcs_script.interact(result.collider)
+
 
 func handle_use_item():
 	const RAY_LENGTH = 1.8
@@ -75,6 +68,4 @@ func handle_use_item():
 	if not result:
 		return
 
-	if player_inventory.equipped_item.item_id == ItemProperties.Item.AXE:
-		trees_script.handle_chop(result.collider)
-		npcs_script.handle_chop(result.collider)
+	game_world.handle_use_item(result.collider, player_inventory.equipped_item.item_id)
