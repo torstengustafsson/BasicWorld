@@ -47,8 +47,8 @@ func _init():
 func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step):
 	for x in (end_pos_x - start_pos_x) / step:
 		for z in (end_pos_z - start_pos_z) / step:
-			var rand_value_x = -step / 2 + randf_range(0.0, step) 
-			var rand_value_z = -step / 2 + randf_range(0.0, step) 
+			var rand_value_x = -step / 2 + randf_range(0.0, step)
+			var rand_value_z = -step / 2 + randf_range(0.0, step)
 			var position = Vector3(start_pos_x + x * step + rand_value_x, 0.0, start_pos_z + z * step + rand_value_z)
 
 			# Skip if out-of-bounds
@@ -72,6 +72,10 @@ func _process(delta):
 			berrybush.fill()
 			continue
 		berrybush.berries_fill_secs += delta
+
+func remove_at(index: int):
+	berrybushes[index].instance.queue_free()
+	berrybushes.remove_at(index)
 
 # Returns amount of berries gained
 func interact(collider) -> int:

@@ -19,6 +19,7 @@ var trees_generator: TreeGenerator
 var npcs_generator: NpcGenerator
 var settlements_generator: SettlementGenerator
 
+const ROAD_WIDTH = 1.5
 
 var trees
 var berrybushes
@@ -57,10 +58,11 @@ func _ready() -> void:
 	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
 	add_child(bush_generator)
 
-	var settlement_data = settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
+	var settlement_data: Array[Vector3] = settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
 	add_child(settlements_generator)
 
-	# TODO: Remove bushes and trees inside settlement radius
+	remove_objects_from_settlement_roads(trees_generator.trees, trees_generator.remove_at, settlement_data)
+	remove_objects_from_settlement_roads(bush_generator.berrybushes, bush_generator.remove_at, settlement_data)
 
 	var num_npcs = 25
 	npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
@@ -87,8 +89,39 @@ func _ready() -> void:
 	mat.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
 	mat.set_shader_parameter("settlement_count", settlement_data.size())
 	mat.set_shader_parameter("settlement_data", settlement_data)
-	print(settlement_data)
+	mat.set_shader_parameter("road_width", ROAD_WIDTH)
 	ground.material_override = mat
+
+func remove_objects_from_settlement_roads(objects, callback: Callable, settlement_data: Array[Vector3]):
+	var to_be_removed: Array[int] = []
+	for index in objects.size():
+		var object: Node3D = objects[index].instance
+		var object_pos = Vector2(object.position.x, object.position.z)
+		var found = false
+		# Remove around settlements
+		for settlement in settlement_data:
+			if (object_pos - Vector2(settlement.x, settlement.y)).length() < settlement.z + 2.0:
+				to_be_removed.append(index)
+				found = true
+		# Remove along roads
+		if settlement_data.size() > 1 and not found:
+			for settlement_index in settlement_data.size() - 1:
+				var current_settlement = settlement_data[settlement_index]
+				var next_settlement = settlement_data[settlement_index + 1]
+				var a = Vector2(current_settlement.x, current_settlement.y)
+				var b = Vector2(next_settlement.x, next_settlement.y)
+				var ab: Vector2 = b - a;
+				var ap: Vector2 = object_pos - a;
+				var t: float = clamp(ap.dot(ab) / ab.dot(ab), 0.0, 1.0);
+				var closest: Vector2 = a + t * ab;
+				var road_dist: float = (object_pos - closest).length()
+				if road_dist < ROAD_WIDTH:
+					to_be_removed.append(index)
+
+	to_be_removed.sort()
+	to_be_removed.reverse()
+	for index in to_be_removed:
+		callback.call(index)
 
 func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> InteractResult:
 	var berries_picked = bush_generator.interact(collider)

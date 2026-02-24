@@ -14,7 +14,6 @@ float noise1d(float x) {
 }
 
 // Used for roads
-uniform float road_width = 1.5;
 float point_to_segment_dist(vec2 p, vec2 a, vec2 b) {
     vec2 ab = b - a;
     vec2 ap = p - a;
@@ -27,6 +26,7 @@ float point_to_segment_dist(vec2 p, vec2 a, vec2 b) {
 uniform vec2 world_size;
 uniform vec3 settlement_data[16]; // [pos_x, pos,z, radius]
 uniform int settlement_count = 0;
+uniform float road_width = 0.0;
 uniform vec4 grass_albedo_texture;
 uniform vec4 road_albedo_texture;
 

@@ -54,15 +54,18 @@ func add_tree(position: Vector3, scale: float):
 	trees.append(tree)
 	add_child(tree.instance)
 
+func remove_at(index: int):
+	trees[index].instance.queue_free()
+	trees.remove_at(index)
+
 
 func handle_chop(collider) -> ChopResult:
-	for tree_index in trees.size():
+	for tree_index in trees.size() - 1:
 		var tree = trees[tree_index]
 		if tree.instance == collider:
 			tree.health -= 1
 			if tree.health <= 0:
-				tree.instance.queue_free()
-				trees.remove_at(tree_index)
+				remove_at(tree_index)
 				return ChopResult.new(ChopResults.ChoppedDown, tree.instance.position + Vector3(0.0, 1.0, 0.0))
 			shaking_tree = tree.instance
 			shake_timer = 0.0
