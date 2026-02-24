@@ -60,6 +60,8 @@ func _ready() -> void:
 	var settlement_data = settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
 	add_child(settlements_generator)
 
+	# TODO: Remove bushes and trees inside settlement radius
+
 	var num_npcs = 25
 	npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
 	add_child(npcs_generator)
@@ -82,9 +84,10 @@ func _ready() -> void:
 	mat.shader = load("res://shaders/ground.gdshader")
 	mat.set_shader_parameter("world_size", Vector2(size_x, size_z))
 	mat.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25))
-	mat.set_shader_parameter("road_albedo_texture", Color(0.53, 0.48, 0.16, 1.0))
+	mat.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
 	mat.set_shader_parameter("settlement_count", settlement_data.size())
 	mat.set_shader_parameter("settlement_data", settlement_data)
+	print(settlement_data)
 	ground.material_override = mat
 
 func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> InteractResult:
