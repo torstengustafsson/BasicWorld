@@ -1,5 +1,15 @@
-Save game
-Animated NPCs
-Settlement
+Animations for different stances (walk, run, stand, greet)
+
 Object spawn avoid collision
-Main menu with start game and exit game buttons, settings menu where you can go back
+
+Settlements improvements:
+- Streets
+- NPCs living there
+- Procedural houses
+
+Improved Settlement connections:
+- Connect new settlements only to closest ones around.
+- All settlements should have at least one road to each other settlement.
+- Use heuristic to determine if new road should be made.
+- Roads follow terrain. Closest path to destination uses objects crossed as weight for heuristic function. Making straight path not always the best.
+
