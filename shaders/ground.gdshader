@@ -26,6 +26,8 @@ float point_to_segment_dist(vec2 p, vec2 a, vec2 b) {
 uniform vec2 world_size;
 uniform vec3 settlement_data[16]; // [pos_x, pos,z, radius]
 uniform int settlement_count = 0;
+uniform vec4 road_edges[1024]; // Two vec2:s of (from, to) points
+uniform int road_edge_count = 0;
 uniform float road_width = 0.0;
 uniform vec4 grass_albedo_texture;
 uniform vec4 road_albedo_texture;
@@ -45,12 +47,10 @@ void fragment() {
         in_road = max(in_road, step(dist, radius));
     }
 
-    // Create roads between settlements
-    if (settlement_count > 1) {
-        for (int i = 1; i < settlement_count; i++) {
-            float road_dist = point_to_segment_dist(world_uv, settlement_data[i].xy, settlement_data[i-1].xy);
-            in_road = max(in_road, step(road_dist, road_width));
-        }
+    // Create roads between road edges
+    for (int i = 0; i < road_edge_count; i++) {
+        float road_dist = point_to_segment_dist(world_uv, road_edges[i].xy, road_edges[i].zw);
+        in_road = max(in_road, step(road_dist, road_width));
     }
 
     ALBEDO = mix(grass_albedo_texture.rgb, road_albedo_texture.rgb, in_road);

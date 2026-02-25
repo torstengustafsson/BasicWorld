@@ -12,36 +12,40 @@ class InteractResult:
 		result = _result
 		item = _item
 
+var ground_material = ShaderMaterial.new()
 var ground: MeshInstance3D
-var world_item_generator: WorldItemGenerator
-var bush_generator: BushGenerator
-var trees_generator: TreeGenerator
-var npcs_generator: NpcGenerator
-var settlements_generator: SettlementGenerator
+var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
+var trees_generator: TreeGenerator = TreeGenerator.new()
+var bush_generator: BushGenerator = BushGenerator.new()
+var settlements_generator: SettlementGenerator = SettlementGenerator.new()
+var npcs_generator: NpcGenerator = NpcGenerator.new()
+var road_generator: RoadGenerator = RoadGenerator.new(WORLD_GRID, ROAD_WIDTH, ground_material)
 
 const ROAD_WIDTH = 1.5
+const WORLD_SIZE = 200.0
+
+# World grid contains evenly spaced points in the terrain
+# It is used for pathfinding and similar stuff
+const WORLD_GRID_STEP = 5
+var WORLD_GRID: Array[Vector2] = create_world_grid()
+
+func create_world_grid() -> Array[Vector2]:
+	var result: Array[Vector2] = []
+	for x in WORLD_SIZE / WORLD_GRID_STEP:
+		for z in WORLD_SIZE / WORLD_GRID_STEP:
+			result.append(Vector2(x, z))
+	return result
 
 var trees
 var berrybushes
 
-func _init(
-	_ground: MeshInstance3D,
-	_world_item_generator: WorldItemGenerator,
-	_bush_generator: BushGenerator,
-	_tree_generator: TreeGenerator,
-	_npcs_generator: NpcGenerator,
-	_settlements_generator: SettlementGenerator
-) -> void:
+func _init(_ground: MeshInstance3D) -> void:
 	ground = _ground
-	world_item_generator = _world_item_generator
-	bush_generator = _bush_generator
-	trees_generator = _tree_generator
-	npcs_generator = _npcs_generator
-	settlements_generator = _settlements_generator
 
 func _ready() -> void:
-	var size_x = ground.get_aabb().size.x
-	var size_z = ground.get_aabb().size.z
+	ground.mesh.size = Vector2(WORLD_SIZE, WORLD_SIZE)
+	var size_x = WORLD_SIZE
+	var size_z = WORLD_SIZE
 	var margin = 5.0
 	var start_pos_x = size_x / 2 - size_x + margin
 	var start_pos_z = size_z / 2 - size_z + margin
@@ -60,9 +64,6 @@ func _ready() -> void:
 
 	var settlement_data: Array[SettlementGenerator.SettlementData] = settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
 	add_child(settlements_generator)
-
-	remove_objects_from_settlement_roads(trees_generator.trees, trees_generator.remove_at, settlement_data)
-	remove_objects_from_settlement_roads(bush_generator.berrybushes, bush_generator.remove_at, settlement_data)
 
 	create_npcs_in_settlements(settlement_data)
 
@@ -84,49 +85,39 @@ func _ready() -> void:
 
 	add_child(world_item_generator)
 
-	var mat = ShaderMaterial.new()
-	mat.shader = load("res://shaders/ground.gdshader")
-	mat.set_shader_parameter("world_size", Vector2(size_x, size_z))
-	mat.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25))
-	mat.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
-	mat.set_shader_parameter("settlement_count", settlement_data.size())
+	var road_edges: Array[RoadGenerator.Edge] = road_generator.generate_roads(settlement_data)
+
+	add_child(road_generator)
+
+	ground_material.shader = load("res://shaders/ground.gdshader")
+	ground_material.set_shader_parameter("world_size", Vector2(size_x, size_z))
+	ground_material.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25))
+	ground_material.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
+	ground_material.set_shader_parameter("settlement_count", settlement_data.size())
 	var shader_settlement_data: Array[Vector3] = []
 	for settlement in settlement_data:
 		shader_settlement_data.append(Vector3(settlement.position.x, settlement.position.z, settlement.radius))
-	mat.set_shader_parameter("settlement_data", shader_settlement_data)
-	mat.set_shader_parameter("road_width", ROAD_WIDTH)
-	ground.material_override = mat
+	ground_material.set_shader_parameter("settlement_data", shader_settlement_data)
+	ground_material.set_shader_parameter("road_width", ROAD_WIDTH)
+	ground_material.set_shader_parameter("road_edge_count", road_edges.size())
+	var shader_road_edges_data: Array[Vector4] = []
+	for edge in road_edges:
+		shader_road_edges_data.append(Vector4(edge.from.x, edge.from.y, edge.to.x, edge.to.y))
+	ground_material.set_shader_parameter("road_edges", shader_road_edges_data)
+	ground.material_override = ground_material
 
-func remove_objects_from_settlement_roads(objects, callback: Callable, settlement_data: Array[SettlementGenerator.SettlementData]):
-	var to_be_removed: Array[int] = []
-	for index in objects.size():
-		var object: Node3D = objects[index].instance
-		var object_pos = Vector2(object.position.x, object.position.z)
-		var found = false
-		# Remove around settlements
-		for settlement in settlement_data:
-			if (object_pos - Vector2(settlement.position.x, settlement.position.z)).length() < settlement.radius + 1.0:
-				to_be_removed.append(index)
-				found = true
-		# Remove along roads
-		if settlement_data.size() > 1 and not found:
-			for settlement_index in settlement_data.size() - 1:
-				var current_settlement = settlement_data[settlement_index]
-				var next_settlement = settlement_data[settlement_index + 1]
-				var a = Vector2(current_settlement.position.x, current_settlement.position.z)
-				var b = Vector2(next_settlement.position.x, next_settlement.position.z)
-				var ab: Vector2 = b - a;
-				var ap: Vector2 = object_pos - a;
-				var t: float = clamp(ap.dot(ab) / ab.dot(ab), 0.0, 1.0);
-				var closest: Vector2 = a + t * ab;
-				var road_dist: float = (object_pos - closest).length()
-				if road_dist < ROAD_WIDTH:
-					to_be_removed.append(index)
+	settlements_generator.remove_objects_from_settlements(trees_generator.trees, trees_generator.remove_at)
+	settlements_generator.remove_objects_from_settlements(bush_generator.berrybushes, bush_generator.remove_at)
+	road_generator.remove_objects_from_roads(trees_generator.trees, trees_generator.remove_at)
+	road_generator.remove_objects_from_roads(bush_generator.berrybushes, bush_generator.remove_at)
 
-	to_be_removed.sort()
-	to_be_removed.reverse()
-	for index in to_be_removed:
-		callback.call(index)
+	print("Number of object in scene = " + str(count_all_children(self)))
+
+func count_all_children(node: Node) -> int:
+	var count = node.get_child_count()
+	for child in node.get_children():
+		count += count_all_children(child)
+	return count
 
 func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.SettlementData]):
 	for settlement in settlement_data:
@@ -138,7 +129,6 @@ func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.Settl
 		var end_pos_z = settlement.position.z + settlement.radius * square_in_circle_multiplier
 		npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
 		npcs_generator.create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
-		add_child(npcs_generator)
 
 func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> InteractResult:
 	var berries_picked = bush_generator.interact(collider)

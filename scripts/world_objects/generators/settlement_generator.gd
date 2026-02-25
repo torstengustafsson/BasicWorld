@@ -12,7 +12,8 @@ class SettlementData:
 		num_houses = _num_houses
 
 
-var houses: Array[House] = []
+var houses: Array[WorldObject] = []
+var settlements: Array[SettlementData]
 
 func _init():
 	add_to_group("Persist")
@@ -32,6 +33,8 @@ func create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step) ->
 
 			var settlement_data = add_settlement(position)
 			result.append(settlement_data)
+
+	settlements.append_array(result)
 	return result
 
 # Returns radius of settlement
@@ -50,14 +53,36 @@ func add_settlement(position: Vector3) -> SettlementData:
 		var rotated = Basis(Vector3.UP,  angle) * Vector3(1, 0, 0) * distance_from_town_center
 		add_house(position + rotated, Vector3(0.0, angle + PI, 0.0))
 
+	var chest_rotation = randf_range(0.0, 2 * PI)
+	add_chest(position, Vector3(0.0, chest_rotation, 0.0))
+
 	var settlement_radius = largest_radius + 5.0
 	return SettlementData.new(position, settlement_radius, num_houses)
 
-func add_house(position: Vector3, rotation: Vector3) -> House:
-	var house = House.new(position, rotation)
+func add_house(position: Vector3, rotation: Vector3) -> WorldObject:
+	var house = WorldObject.add_house(position, rotation)
 	houses.append(house)
 	add_child(house.instance)
 	return house
+
+func add_chest(position: Vector3, rotation: Vector3) -> WorldObject:
+	var chest = WorldObject.add_chest(position, rotation)
+	houses.append(chest)
+	add_child(chest.instance)
+	return chest
+
+func remove_objects_from_settlements(objects, callback: Callable):
+	var to_be_removed: Array[int] = []
+	for index in objects.size():
+		var object: Node3D = objects[index].instance
+		var object_pos = Vector2(object.position.x, object.position.z)
+		for settlement in settlements:
+			if (object_pos - Vector2(settlement.position.x, settlement.position.z)).length() < settlement.radius + 1.0:
+				to_be_removed.append(index)
+	to_be_removed.sort()
+	to_be_removed.reverse()
+	for index in to_be_removed:
+		callback.call(index)
 
 
 func save() -> Dictionary:
