@@ -13,7 +13,7 @@ class InteractResult:
 		item = _item
 
 var ground_material = ShaderMaterial.new()
-var ground: MeshInstance3D
+var ground: StaticBody3D
 var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
 var trees_generator: TreeGenerator = TreeGenerator.new()
 var bush_generator: BushGenerator = BushGenerator.new()
@@ -22,7 +22,7 @@ var npcs_generator: NpcGenerator = NpcGenerator.new()
 var road_generator: RoadGenerator = RoadGenerator.new(WORLD_GRID, ROAD_WIDTH, ground_material)
 
 const ROAD_WIDTH = 1.5
-const WORLD_SIZE = 200.0
+const WORLD_SIZE = 300.0
 
 # World grid contains evenly spaced points in the terrain
 # It is used for pathfinding and similar stuff
@@ -39,11 +39,12 @@ func create_world_grid() -> Array[Vector2]:
 var trees
 var berrybushes
 
-func _init(_ground: MeshInstance3D) -> void:
+func _init(_ground: StaticBody3D) -> void:
 	ground = _ground
 
 func _ready() -> void:
-	ground.mesh.size = Vector2(WORLD_SIZE, WORLD_SIZE)
+	ground.get_node("PlaneMesh").mesh.size = Vector2(WORLD_SIZE, WORLD_SIZE)
+	ground.get_node("GroundCollider").shape.size = Vector3(WORLD_SIZE, 0.1, WORLD_SIZE)
 	var size_x = WORLD_SIZE
 	var size_z = WORLD_SIZE
 	var margin = 5.0
@@ -54,7 +55,7 @@ func _ready() -> void:
 
 	var step_trees = 5
 	var step_berrybushes = 15
-	var step_houses = 75
+	var step_settlements = 80
 
 	trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees)
 	add_child(trees_generator)
@@ -62,7 +63,7 @@ func _ready() -> void:
 	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
 	add_child(bush_generator)
 
-	var settlement_data: Array[SettlementGenerator.SettlementData] = settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
+	var settlement_data: Array[SettlementGenerator.SettlementData] = settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_settlements)
 	add_child(settlements_generator)
 
 	create_npcs_in_settlements(settlement_data)
@@ -104,7 +105,7 @@ func _ready() -> void:
 	for edge in road_edges:
 		shader_road_edges_data.append(Vector4(edge.from.x, edge.from.y, edge.to.x, edge.to.y))
 	ground_material.set_shader_parameter("road_edges", shader_road_edges_data)
-	ground.material_override = ground_material
+	ground.get_node("PlaneMesh").material_override = ground_material
 
 	settlements_generator.remove_objects_from_settlements(trees_generator.trees, trees_generator.remove_at)
 	settlements_generator.remove_objects_from_settlements(bush_generator.berrybushes, bush_generator.remove_at)

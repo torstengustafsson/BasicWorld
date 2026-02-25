@@ -28,17 +28,31 @@ func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) 
 
 	var result: Array[Edge] = []
 
-	for settlement_index in settlement_data.size() - 1:
-		var from = settlement_data[settlement_index].position
-		var to = settlement_data[settlement_index + 1].position
-		result.append_array(generate_road(from, to))
+	for settlement in settlement_data:
+		var num_available_roads: int = max(1, min(min(3, settlement_data.size() - 1), ceil(settlement.num_houses / 2.0)))
+		var roads: Array[Edge] = []
+		for other_index in settlement_data.size():
+			var other_settlement = settlement_data[other_index]
+			if other_settlement == settlement:
+				continue
+			var a = Vector2(settlement.position.x, settlement.position.z)
+			var b = Vector2(other_settlement.position.x, other_settlement.position.z)
+			var distance = (a - b).length()
+			var weight = distance - other_settlement.num_houses * 20.0
+			var new_road = Edge.new(a, b, weight)
+			roads.append(new_road)
+		roads.sort_custom(func(a, b):
+			return a.weight < b.weight
+		)
+		for i in num_available_roads:
+			result.append_array(generate_road(roads[i].from, roads[i].to))
 
 	road_edges.append_array(result)
 	return result
 
-func generate_road(from: Vector3, to: Vector3) -> Array[Edge]:
+func generate_road(from: Vector2, to: Vector2) -> Array[Edge]:
 	var weight: float = 0.0
-	return [Edge.new(Vector2(from.x, from.z), Vector2(to.x, to.z), weight)]
+	return [Edge.new(from, to, weight)]
 
 func remove_objects_from_roads(objects, callback: Callable):
 	var to_be_removed: Array[int] = []

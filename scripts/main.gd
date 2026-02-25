@@ -1,6 +1,6 @@
 extends Node3D
 
-@onready var ground = $Ground/PlaneMesh
+@onready var ground = $Ground
 @onready var player = $Player
 
 
