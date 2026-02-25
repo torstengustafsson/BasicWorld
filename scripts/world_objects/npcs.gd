@@ -16,6 +16,13 @@ func create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount):
 		var rand_scale = randf_range(1.0, 1.2)
 		add_npc(position, rotation, rand_scale)
 
+func create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount):
+	for i in amount:
+		var position = Vector3(randf_range(start_pos_x, end_pos_x), 0.0, randf_range(start_pos_z, end_pos_z))
+		var rotation = Vector3(0.0, randf() * 2 * PI, 0.0)
+		var rand_scale = randf_range(0.5, 0.6)
+		add_npc(position, rotation, rand_scale)
+
 
 func add_npc(position: Vector3, rotation: Vector3, scale: float) -> NPC:
 		var npc: NPC = NPC.new(position, rotation, scale)

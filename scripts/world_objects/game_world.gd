@@ -58,25 +58,27 @@ func _ready() -> void:
 	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
 	add_child(bush_generator)
 
-	var settlement_data: Array[Vector3] = settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
+	var settlement_data: Array[SettlementGenerator.SettlementData] = settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_houses)
 	add_child(settlements_generator)
 
 	remove_objects_from_settlement_roads(trees_generator.trees, trees_generator.remove_at, settlement_data)
 	remove_objects_from_settlement_roads(bush_generator.berrybushes, bush_generator.remove_at, settlement_data)
 
+	create_npcs_in_settlements(settlement_data)
+
+	# Create some random NPCs out in the forest as well
 	var num_npcs = 25
 	npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
 	add_child(npcs_generator)
 
-	#var axe_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))
 	var axe_position = Vector3(0.0, 2.0, -4.0)
 	world_item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
 
-	for berry in 5:
+	for berry in 20:
 		var berry_position = Vector3(randf_range(start_pos_x, end_pos_z), 5.0, randf_range(start_pos_z, end_pos_z))
 		world_item_generator.spawn_item(berry_position, ItemProperties.Item.BERRY)
 
-	for wood in 5:
+	for wood in 20:
 		var wood_position = Vector3(randf_range(start_pos_x, end_pos_x), 5.0, randf_range(start_pos_z, end_pos_z))
 		world_item_generator.spawn_item(wood_position, ItemProperties.Item.WOOD)
 
@@ -88,11 +90,14 @@ func _ready() -> void:
 	mat.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25))
 	mat.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
 	mat.set_shader_parameter("settlement_count", settlement_data.size())
-	mat.set_shader_parameter("settlement_data", settlement_data)
+	var shader_settlement_data: Array[Vector3] = []
+	for settlement in settlement_data:
+		shader_settlement_data.append(Vector3(settlement.position.x, settlement.position.z, settlement.radius))
+	mat.set_shader_parameter("settlement_data", shader_settlement_data)
 	mat.set_shader_parameter("road_width", ROAD_WIDTH)
 	ground.material_override = mat
 
-func remove_objects_from_settlement_roads(objects, callback: Callable, settlement_data: Array[Vector3]):
+func remove_objects_from_settlement_roads(objects, callback: Callable, settlement_data: Array[SettlementGenerator.SettlementData]):
 	var to_be_removed: Array[int] = []
 	for index in objects.size():
 		var object: Node3D = objects[index].instance
@@ -100,7 +105,7 @@ func remove_objects_from_settlement_roads(objects, callback: Callable, settlemen
 		var found = false
 		# Remove around settlements
 		for settlement in settlement_data:
-			if (object_pos - Vector2(settlement.x, settlement.y)).length() < settlement.z + 2.0:
+			if (object_pos - Vector2(settlement.position.x, settlement.position.z)).length() < settlement.radius + 1.0:
 				to_be_removed.append(index)
 				found = true
 		# Remove along roads
@@ -108,8 +113,8 @@ func remove_objects_from_settlement_roads(objects, callback: Callable, settlemen
 			for settlement_index in settlement_data.size() - 1:
 				var current_settlement = settlement_data[settlement_index]
 				var next_settlement = settlement_data[settlement_index + 1]
-				var a = Vector2(current_settlement.x, current_settlement.y)
-				var b = Vector2(next_settlement.x, next_settlement.y)
+				var a = Vector2(current_settlement.position.x, current_settlement.position.z)
+				var b = Vector2(next_settlement.position.x, next_settlement.position.z)
 				var ab: Vector2 = b - a;
 				var ap: Vector2 = object_pos - a;
 				var t: float = clamp(ap.dot(ab) / ab.dot(ab), 0.0, 1.0);
@@ -122,6 +127,18 @@ func remove_objects_from_settlement_roads(objects, callback: Callable, settlemen
 	to_be_removed.reverse()
 	for index in to_be_removed:
 		callback.call(index)
+
+func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.SettlementData]):
+	for settlement in settlement_data:
+		var num_npcs = randf_range(settlement.num_houses, settlement.num_houses * 2)
+		var square_in_circle_multiplier = 0.7 # sin(45degrees)
+		var start_pos_x = settlement.position.x - settlement.radius * square_in_circle_multiplier
+		var start_pos_z = settlement.position.z - settlement.radius * square_in_circle_multiplier
+		var end_pos_x = settlement.position.x + settlement.radius * square_in_circle_multiplier
+		var end_pos_z = settlement.position.z + settlement.radius * square_in_circle_multiplier
+		npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
+		npcs_generator.create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
+		add_child(npcs_generator)
 
 func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> InteractResult:
 	var berries_picked = bush_generator.interact(collider)

@@ -13,10 +13,13 @@ static var sounds_responses: Array[Resource] = [
 	load("res://assets/sounds/aoe2-en-taunt-02-no.mp3"),
 ]
 
+static var child_sounds: Array[Resource] = [
+	load("res://assets/sounds/aoe2-11-herb-laugh_8YtTxD5.mp3"),
+]
+
 static var sounds: Array[Resource] = [
 	load("res://assets/sounds/aoe2-en-taunt-03-food-please.mp3"),
 	load("res://assets/sounds/aoe2-en-taunt-04-wood-please.mp3"),
-	load("res://assets/sounds/aoe2-11-herb-laugh_8YtTxD5.mp3"),
 	load("res://assets/sounds/aoe2-en-taunt-06-stone-please.mp3"),
 	load("res://assets/sounds/aoe2-en-taunt-08-all-hail_a8ltBrY.mp3"),
 	load("res://assets/sounds/aoe2-en-taunt-22-quit-touchin-me.mp3"),
@@ -41,7 +44,7 @@ func _init(pos: Vector3, rot: Vector3, scale: float):
 	object.rotation = rot
 	object.scale = Vector3(scale, scale, scale)
 	model = object.get_node("animated_human").get_node("Armature").get_node("Skeleton3D").get_node("Human")
-	
+
 	# Need to make copy of material to avoid changing on all NPCs
 	model_material = model.get_active_material(0).duplicate()
 	model.set_surface_override_material(0, model_material)
@@ -51,6 +54,9 @@ func _init(pos: Vector3, rot: Vector3, scale: float):
 	var animationplayer: AnimationPlayer = object.get_node("animated_human").get_node("AnimationPlayer")
 	animationplayer.get_animation("Armature|Armature|ArmatureAction").loop_mode = Animation.LOOP_LINEAR
 	animationplayer.play("Armature|Armature|ArmatureAction")
+
+	if scale <= 0.6:
+		default_sound = child_sounds[randi() % child_sounds.size()]
 
 	audio_player.stream = default_sound
 	audio_player.finished.connect(_on_sound_finished)
