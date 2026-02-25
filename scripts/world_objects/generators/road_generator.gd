@@ -7,7 +7,7 @@ class Edge:
 	var to: Vector2
 	var weight: float
 
-	func _init(_from: Vector2, _to: Vector2, _weight = 0) -> void:
+	func _init(_from: Vector2, _to: Vector2, _weight: float = 0.0) -> void:
 		from = _from
 		to = _to
 		weight = _weight
@@ -37,7 +37,8 @@ func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) 
 	return result
 
 func generate_road(from: Vector3, to: Vector3) -> Array[Edge]:
-	return [Edge.new(Vector2(from.x, from.z), Vector2(to.x, to.z))]
+	var weight: float = 0.0
+	return [Edge.new(Vector2(from.x, from.z), Vector2(to.x, to.z), weight)]
 
 func remove_objects_from_roads(objects, callback: Callable):
 	var to_be_removed: Array[int] = []
