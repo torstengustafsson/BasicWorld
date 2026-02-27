@@ -12,6 +12,10 @@ class InteractResult:
 		result = _result
 		item = _item
 
+const ROAD_WIDTH = 1.5
+const WORLD_SIZE = 300.0
+
+var world_grid: WorldGrid
 var ground_material = ShaderMaterial.new()
 var ground: StaticBody3D
 var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
@@ -19,25 +23,7 @@ var trees_generator: TreeGenerator = TreeGenerator.new()
 var bush_generator: BushGenerator = BushGenerator.new()
 var settlements_generator: SettlementGenerator = SettlementGenerator.new()
 var npcs_generator: NpcGenerator = NpcGenerator.new()
-var road_generator: RoadGenerator = RoadGenerator.new(WORLD_GRID, ROAD_WIDTH, ground_material)
-
-const ROAD_WIDTH = 1.5
-const WORLD_SIZE = 300.0
-
-# World grid contains evenly spaced points in the terrain
-# It is used for pathfinding and similar stuff
-const WORLD_GRID_STEP = 5
-var WORLD_GRID: Array[Vector2] = create_world_grid()
-
-func create_world_grid() -> Array[Vector2]:
-	var result: Array[Vector2] = []
-	for x in WORLD_SIZE / WORLD_GRID_STEP:
-		for z in WORLD_SIZE / WORLD_GRID_STEP:
-			result.append(Vector2(x, z))
-	return result
-
-var trees
-var berrybushes
+var road_generator: RoadGenerator
 
 func _init(_ground: StaticBody3D) -> void:
 	ground = _ground
@@ -57,10 +43,10 @@ func _ready() -> void:
 	var step_berrybushes = 15
 	var step_settlements = 80
 
-	trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees)
+	var trees: Array[WorldObject] = trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees)
 	add_child(trees_generator)
 
-	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
+	var bushes: Array[WorldObject] = bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
 	add_child(bush_generator)
 
 	var settlement_data: Array[SettlementGenerator.SettlementData] = settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_settlements)
@@ -86,9 +72,15 @@ func _ready() -> void:
 
 	add_child(world_item_generator)
 
-	var road_edges: Array[RoadGenerator.Edge] = road_generator.generate_roads(settlement_data)
+	var all_objects = trees + bushes
+	world_grid = WorldGrid.new(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z), ROAD_WIDTH)
+	world_grid.calculate_weights(all_objects)
+	add_child(world_grid)
 
+	road_generator = RoadGenerator.new(world_grid, ROAD_WIDTH, ground_material)
+	var road_edges: Array[RoadGenerator.Edge] = road_generator.generate_roads(settlement_data, all_objects)
 	add_child(road_generator)
+
 
 	ground_material.shader = load("res://shaders/ground.gdshader")
 	ground_material.set_shader_parameter("world_size", Vector2(size_x, size_z))

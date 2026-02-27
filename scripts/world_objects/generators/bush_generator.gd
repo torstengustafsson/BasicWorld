@@ -4,17 +4,18 @@ class_name BushGenerator
 
 const BERRYBUSH_FULL_SECS = 30
 
-class BerryBush:
+class BerryBush extends WorldObject:
 	static var berrybush_scene = preload("res://scenes/berrybush.tscn")
 	static var berrybush_empty = preload("res://assets/models/berrybush-empty.glb")
 	static var berrybush_full = preload("res://assets/models/berrybush-full.glb")
 	const BERRYBUSH_NAME = "berrybush"
 
-	var instance: Node3D
 	var berries_fill_secs: float
 	var is_filled: bool = false
 
 	func _init(pos: Vector3, scale: float):
+		var rot = Vector3(0.0, 0.0, 0.0)
+		super._init(pos, rot, scale, berrybush_scene)
 		instance = berrybush_scene.instantiate()
 		berries_fill_secs = randf_range(0.0, BERRYBUSH_FULL_SECS)
 		instance.position = pos
@@ -39,12 +40,12 @@ class BerryBush:
 		object.name = BERRYBUSH_NAME
 		instance.add_child(object)
 
-var berrybushes: Array[BerryBush] = []
+var berrybushes: Array[WorldObject] = []
 
 func _init():
 	add_to_group("Persist")
 
-func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step):
+func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step) -> Array[WorldObject]:
 	for x in (end_pos_x - start_pos_x) / step:
 		for z in (end_pos_z - start_pos_z) / step:
 			var rand_value_x = -step / 2 + randf_range(0.0, step)
@@ -57,6 +58,7 @@ func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step):
 
 			var scale = randf_range(1.0, 1.25)
 			add_bush(position, scale)
+	return berrybushes
 
 func add_bush(position: Vector3, scale: float) -> BerryBush:
 	var berrybush = BerryBush.new(position, scale)

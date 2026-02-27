@@ -14,15 +14,15 @@ class Edge:
 
 # Treated as constants. Are vars due to gdscript.
 var ROAD_WIDTH: float
-var WORLD_GRID: Array[Vector2]
+var WORLD_GRID: WorldGrid
 
 var road_edges: Array[Edge] = []
 
-func _init(world_grid: Array[Vector2], road_width: float, _mat: ShaderMaterial) -> void:
+func _init(world_grid: WorldGrid, road_width: float, _mat: ShaderMaterial) -> void:
 	ROAD_WIDTH = road_width
 	WORLD_GRID = world_grid
 
-func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) -> Array[Edge]:
+func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData], objects: Array[WorldObject]) -> Array[Edge]:
 	if settlement_data.size() <= 1:
 		return []
 
@@ -45,16 +45,22 @@ func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) 
 			return a.weight < b.weight
 		)
 		for i in num_available_roads:
-			result.append_array(generate_road(roads[i].from, roads[i].to))
+			# TODO: Check if there is already a good road that can be used.
+			# If there is, skip new one. Requires world grid graph.
+			result.append_array(generate_road(roads[i].from, roads[i].to, objects))
 
 	road_edges.append_array(result)
 	return result
 
-func generate_road(from: Vector2, to: Vector2) -> Array[Edge]:
-	var weight: float = 0.0
+func generate_road(from: Vector2, to: Vector2, objects: Array[WorldObject]) -> Array[Edge]:
+	var num_obstacles: float = WORLD_GRID.get_num_objects_in_edge(from, to, objects, ROAD_WIDTH)
+	var distance = (from - to).length()
+	var weight = num_obstacles * 10.0 + distance
 	return [Edge.new(from, to, weight)]
 
-func remove_objects_from_roads(objects, callback: Callable):
+# NOTE: Does not use get_objects_in_road due to performance reasons
+# (it is more efficient to loop objects first and then roads)
+func remove_objects_from_roads(objects: Array[WorldObject], callback: Callable):
 	var to_be_removed: Array[int] = []
 	for index in objects.size():
 		var object: Node3D = objects[index].instance
@@ -67,7 +73,7 @@ func remove_objects_from_roads(objects, callback: Callable):
 			var t: float = clamp(ap.dot(ab) / ab.dot(ab), 0.0, 1.0);
 			var closest: Vector2 = a + t * ab;
 			var road_dist: float = (object_pos - closest).length()
-			if road_dist < ROAD_WIDTH:
+			if road_dist < ROAD_WIDTH + 0.1:
 				to_be_removed.append(index)
 	to_be_removed.sort()
 	to_be_removed.reverse()

@@ -12,18 +12,7 @@ class ChopResult:
 		result =_result
 		position = _position
 
-class ForestTree:
-	var tree_scene = preload("res://scenes/tree.tscn")
-	var instance: Node3D
-	var collider: CollisionShape3D
-	var health = 3
-
-	func _init(pos: Vector3, scale: float):
-		instance = tree_scene.instantiate()
-		instance.position = pos
-		instance.scale = Vector3(scale, scale, scale)
-
-var trees: Array[ForestTree] = []
+var trees: Array[WorldObject] = []
 var shaking_tree: Node3D = null
 const TREE_SHAKE_SECS = 0.3
 var shake_timer = INF # INF means not shaking
@@ -32,7 +21,7 @@ var shake_direction: Vector3 = Vector3(0.0, 0.0, 0.0)
 func _init():
 	add_to_group("Persist")
 
-func create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step):
+func create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step) -> Array[WorldObject]:
 	for x in (end_pos_x - start_pos_x) / step:
 		for z in (end_pos_z - start_pos_z) / step:
 			var rand_value_x = -step / 2 + randf_range(0.0, step)
@@ -44,13 +33,11 @@ func create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step):
 				continue
 
 			var rand_scale = randf_range(1.0, 2.0)
-			var tree = ForestTree.new(position, rand_scale)
-			trees.append(tree)
-
-			add_child(tree.instance)
+			add_tree(position, rand_scale)
+	return trees
 
 func add_tree(position: Vector3, scale: float):
-	var tree = ForestTree.new(position, scale)
+	var tree = WorldObject.add_tree(position, scale)
 	trees.append(tree)
 	add_child(tree.instance)
 
