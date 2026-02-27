@@ -106,8 +106,8 @@ func get_world_position(settlement: SettlementGenerator.SettlementData) -> Vecto
 	return grid_point_edges[settlement.grid_position].point
 
 
-func _process(_delta):
-	render_grid()
+# func _process(_delta):
+# 	render_grid()
 
 func render_grid():
 	for grid_point in grid_point_edges:

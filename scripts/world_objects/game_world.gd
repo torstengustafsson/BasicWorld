@@ -44,8 +44,6 @@ func _ready() -> void:
 	var step_trees = 5
 	var step_berrybushes = 15
 
-	var setup_time = Time.get_ticks_msec() - start_time
-
 	# CREATE STATIC OBJECTS AND ITEMS
 
 	var trees: Array[WorldObject] = trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees)
@@ -54,6 +52,7 @@ func _ready() -> void:
 	var bushes: Array[WorldObject] = bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
 	add_child(bush_generator)
 
+	#var axe_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))
 	var axe_position = Vector3(0.0, 2.0, -4.0)
 	world_item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
 
@@ -67,7 +66,9 @@ func _ready() -> void:
 
 	add_child(world_item_generator)
 
-	var create_objects_time = Time.get_ticks_msec() - setup_time
+	var create_objects_time = Time.get_ticks_msec()
+	var create_objects_elapsed = create_objects_time - start_time
+	print("Time to generate forests = " + str(create_objects_elapsed / 1000.0) + " seconds")
 
 	# CREATE WORLD GRID
 
@@ -76,12 +77,18 @@ func _ready() -> void:
 	world_grid.calculate_weights(all_objects)
 	add_child(world_grid)
 
-	var create_world_grid_time = Time.get_ticks_msec() - create_objects_time
+	var create_world_grid_time = Time.get_ticks_msec()
+	var create_world_grid_elapsed = create_world_grid_time - create_objects_time
+	print("Time to generate world grid = " + str(create_world_grid_elapsed / 1000.0) + " seconds")
 
-	# CREATE SETTLEMENTS AND ROADS
+	# CREATE SETTLEMENTS
 
 	var settlement_data = settlements_generator.create_settlements(world_grid)
 	add_child(settlements_generator)
+
+	var create_settlements_time = Time.get_ticks_msec()
+	var create_settlements_elapsed = create_settlements_time - create_world_grid_time
+	print("Time to generate settlements = " + str(create_settlements_elapsed / 1000.0) + " seconds")
 
 	create_npcs_in_settlements(settlement_data)
 
@@ -90,11 +97,15 @@ func _ready() -> void:
 	npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
 	add_child(npcs_generator)
 
+	# CREATE ROADS
+
 	road_generator = RoadGenerator.new(world_grid, ROAD_WIDTH)
-	var road_edges: Array[RoadGenerator.RoadEdge] = road_generator.generate_roads(settlement_data, all_objects)
+	var road_edges: Array = road_generator.generate_roads(settlement_data) # Type: Array[RoadGenerator.RoadEdge]
 	add_child(road_generator)
 
-	var create_settlements_and_roads_time = Time.get_ticks_msec() - create_world_grid_time
+	var create_roads_time = Time.get_ticks_msec()
+	var create_roads_elapsed = create_roads_time - create_settlements_time
+	print("Time to generate roads = " + str(create_roads_elapsed / 1000.0) + " seconds")
 
 	# SETUP SHADER PARAMETERS
 
@@ -122,9 +133,6 @@ func _ready() -> void:
 
 	var elapsed = Time.get_ticks_msec() - start_time
 
-	print("Time to generate forests = " + str(create_objects_time / 1000.0) + " seconds")
-	print("Time to generate world grid = " + str(create_world_grid_time / 1000.0) + " seconds")
-	print("Time to generate settlements and roads = " + str(create_settlements_and_roads_time / 1000.0) + " seconds")
 	print("")
 	print("Total time to generate world = " + str(elapsed / 1000.0) + " seconds")
 	print("Number of objects in scene = " + str(count_all_children(self)))

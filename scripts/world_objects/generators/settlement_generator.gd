@@ -30,7 +30,6 @@ func create_settlements(world_grid: WorldGrid) -> Array[SettlementData]:
 	for grid_point_x in range(WORLD_EDGE_MARGIN + 1, world_grid.grid_size - WORLD_EDGE_MARGIN, SETTLEMENT_GRID_STEP):
 		var rand_value_x = randi_range(-SETTLEMENT_GRID_SPREAD, SETTLEMENT_GRID_SPREAD)
 		for grid_point_z in range(WORLD_EDGE_MARGIN + 1, world_grid.grid_size - WORLD_EDGE_MARGIN, SETTLEMENT_GRID_STEP):
-			print(str(grid_point_x) + ", " + str(grid_point_z))
 			var rand_value_z = randi_range(-SETTLEMENT_GRID_SPREAD, SETTLEMENT_GRID_SPREAD)
 			var grid_point = Vector2i(grid_point_x + rand_value_x, grid_point_z + rand_value_z)
 			var grid_position = world_grid.grid_point_edges.get(grid_point, null)
@@ -38,9 +37,6 @@ func create_settlements(world_grid: WorldGrid) -> Array[SettlementData]:
 				continue
 			var settlement_data = add_settlement(grid_point, grid_position.point)
 			result.append(settlement_data)
-
-	print("world_grid.grid_size = " + str(world_grid.grid_size))
-
 	settlements.append_array(result)
 	return result
 
