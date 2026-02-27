@@ -13,7 +13,7 @@ class InteractResult:
 		item = _item
 
 const ROAD_WIDTH = 1.5
-const WORLD_SIZE = 300.0
+const WORLD_SIZE = 320.0
 
 var world_grid: WorldGrid
 var ground_material = ShaderMaterial.new()
@@ -43,7 +43,6 @@ func _ready() -> void:
 
 	var step_trees = 5
 	var step_berrybushes = 15
-	var step_settlements = 80
 
 	var setup_time = Time.get_ticks_msec() - start_time
 

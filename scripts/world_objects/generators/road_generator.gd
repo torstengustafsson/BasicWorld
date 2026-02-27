@@ -24,9 +24,7 @@ func _init(_world_grid: WorldGrid, _road_width: float) -> void:
 func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData], objects: Array[WorldObject]) -> Array[RoadEdge]:
 	if settlement_data.size() <= 1:
 		return []
-
 	var result: Array[RoadEdge] = []
-
 	for settlement in settlement_data:
 		var num_available_roads: int = max(1, min(min(3, settlement_data.size() - 1), ceil(settlement.num_houses / 2.0)))
 		var roads: Array[RoadEdge] = []
@@ -40,9 +38,7 @@ func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData], 
 			var weight = distance - other_settlement.num_houses * 20.0
 			var new_road = RoadEdge.new(Vector3(a.x, 0.0, a.y), Vector3(b.x, 0.0, b.y), weight)
 			roads.append(new_road)
-		roads.sort_custom(func(a, b):
-			return a.weight < b.weight
-		)
+		roads.sort_custom(func(a, b): return a.weight < b.weight)
 		for i in num_available_roads:
 			# TODO: Check if there is already a good road that can be used.
 			# If there is, skip new one. Requires world grid graph.

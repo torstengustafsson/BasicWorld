@@ -1,3 +1,4 @@
+# Extend Node3D to be able to draw debug meshes
 class_name  WorldGrid extends Node3D
 
 class GridPointEdge:
@@ -25,16 +26,15 @@ var POINTS_AROUND: Array[Vector2i] = [
 	Vector2i(1, 1),
 ]
 
-var WORLD_SIZE: float
-const WORLD_GRID_STEP: int = 16
+var WORLD_SIZE: int
+const WORLD_GRID_STEP: int = 10
 var ROAD_WIDTH: float
 var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
 
 var world_start_pos: Vector2
 var world_end_pos: Vector2
 
-var grid_size_x: int = 0
-var grid_size_z: int = 0
+var grid_size: int = 0
 
 var max_weight: float = -1.0
 
@@ -42,6 +42,7 @@ func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, road_width: float
 	world_start_pos = _world_start_pos
 	world_end_pos = _world_end_pos
 	WORLD_SIZE = abs(world_start_pos.x - world_end_pos.x)
+	grid_size = WORLD_SIZE / WORLD_GRID_STEP
 	if WORLD_SIZE != abs(world_start_pos.y - world_end_pos.y):
 		print("Not Square world! Exiting.")
 		get_tree().quit()
@@ -50,10 +51,9 @@ func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, road_width: float
 
 func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 	grid_point_edges.clear()
-	for x: int in WORLD_SIZE / WORLD_GRID_STEP:
-		grid_size_x += 1
-		for z: int in WORLD_SIZE / WORLD_GRID_STEP:
-			grid_size_z += 1
+
+	for x: int in grid_size:
+		for z: int in grid_size:
 			var pos_x = world_start_pos.x + x * WORLD_GRID_STEP
 			var pos_z = world_start_pos.y + z * WORLD_GRID_STEP
 			var rand_value_x = (-WORLD_GRID_STEP / 4.0 + randf_range(0.0, WORLD_GRID_STEP / 2.0))
