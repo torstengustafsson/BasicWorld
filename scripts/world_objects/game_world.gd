@@ -41,15 +41,17 @@ func _ready() -> void:
 	var end_pos_x = size_x / 2 - margin
 	var end_pos_z = size_z / 2 - margin
 
-	var step_trees = 5
-	var step_berrybushes = 15
+	var step_trees = 3
+	var step_berrybushes = 10
 
 	# CREATE STATIC OBJECTS AND ITEMS
 
-	var trees: Array[WorldObject] = trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees)
+	var seed = randi()
+
+	var trees: Array[WorldObject] = trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees, seed)
 	add_child(trees_generator)
 
-	var bushes: Array[WorldObject] = bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
+	var bushes: Array[WorldObject] = bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes, seed)
 	add_child(bush_generator)
 
 	#var axe_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))

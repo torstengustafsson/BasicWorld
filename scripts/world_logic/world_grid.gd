@@ -80,7 +80,7 @@ func calculate_weights(objects: Array[WorldObject]):
 			var to = neighbor.point
 			var num_obstacles = get_num_objects_in_edge(from, to, objects, ROAD_WIDTH)
 			var distance = (from - to).length()
-			var weight = num_obstacles * 10.0 + distance
+			var weight = num_obstacles * 25.0 + distance
 			if max_weight < weight:
 				max_weight = weight
 			edge.weight = weight
