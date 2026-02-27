@@ -9,9 +9,9 @@ class GridPointEdge:
 		weight = _weight
 
 class PointWithEdges:
-	var point: Vector2
+	var point: Vector3
 	var edges: Array[GridPointEdge] = []
-	func _init(_point: Vector2):
+	func _init(_point: Vector3):
 		point = _point
 
 var POINTS_AROUND: Array[Vector2i] = [
@@ -26,13 +26,17 @@ var POINTS_AROUND: Array[Vector2i] = [
 ]
 
 var WORLD_SIZE: float
-const WORLD_GRID_STEP: int = 10
+const WORLD_GRID_STEP: int = 16
 var ROAD_WIDTH: float
-var points: Array[Vector2]
-var edges: Dictionary[Vector2i, PointWithEdges] = {}
+var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
 
 var world_start_pos: Vector2
 var world_end_pos: Vector2
+
+var grid_size_x: int = 0
+var grid_size_z: int = 0
+
+var max_weight: float = -1.0
 
 func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, road_width: float) -> void:
 	world_start_pos = _world_start_pos
@@ -45,14 +49,16 @@ func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, road_width: float
 	create_points_and_edges()
 
 func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
-	edges.clear()
+	grid_point_edges.clear()
 	for x: int in WORLD_SIZE / WORLD_GRID_STEP:
+		grid_size_x += 1
 		for z: int in WORLD_SIZE / WORLD_GRID_STEP:
+			grid_size_z += 1
 			var pos_x = world_start_pos.x + x * WORLD_GRID_STEP
 			var pos_z = world_start_pos.y + z * WORLD_GRID_STEP
 			var rand_value_x = (-WORLD_GRID_STEP / 4.0 + randf_range(0.0, WORLD_GRID_STEP / 2.0))
 			var rand_value_z = (-WORLD_GRID_STEP / 4.0 + randf_range(0.0, WORLD_GRID_STEP / 2.0))
-			var point = Vector2(pos_x + rand_value_x, pos_z + rand_value_z)
+			var point = Vector3(pos_x + rand_value_x, 0.0, pos_z + rand_value_z)
 			var current_point = PointWithEdges.new(point)
 			for point_around: Vector2i in POINTS_AROUND:
 				var neighbor: Vector2i = Vector2i(x + point_around.x, z + point_around.y)
@@ -60,14 +66,14 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 				if neighbor.x < world_start_pos.x or neighbor.x > world_end_pos.x or neighbor.y < world_start_pos.y or neighbor.y > world_end_pos.y:
 					continue
 				current_point.edges.append(GridPointEdge.new(neighbor, weight))
-			edges[Vector2i(x, z)] = current_point
-	return edges
+			grid_point_edges[Vector2i(x, z)] = current_point
+	return grid_point_edges
 
 func calculate_weights(objects: Array[WorldObject]):
-	for grid_point in edges:
-		var point_with_edges = edges[grid_point]
+	for grid_point in grid_point_edges:
+		var point_with_edges = grid_point_edges[grid_point]
 		for edge in point_with_edges.edges:
-			var neighbor = edges.get(edge.grid_point, null)
+			var neighbor = grid_point_edges.get(edge.grid_point, null)
 			if not neighbor:
 				continue
 			var from = point_with_edges.point
@@ -75,14 +81,16 @@ func calculate_weights(objects: Array[WorldObject]):
 			var num_obstacles = get_num_objects_in_edge(from, to, objects, ROAD_WIDTH)
 			var distance = (from - to).length()
 			var weight = num_obstacles * 10.0 + distance
+			if max_weight < weight:
+				max_weight = weight
 			edge.weight = weight
 
 
-func get_num_objects_in_edge(from: Vector2, to: Vector2, objects: Array[WorldObject], width_to_check: float) -> int:
+func get_num_objects_in_edge(from: Vector3, to: Vector3, objects: Array[WorldObject], width_to_check: float) -> int:
 	var result: int = 0
-	var a = from
-	var b = to
-	var ab: Vector2 = b - a;
+	var a = Vector2(from.x, from.z)
+	var b = Vector2(to.x, to.z)
+	var ab: Vector2 = b - a
 	for index in objects.size():
 		var object: Node3D = objects[index].instance
 		var object_pos = Vector2(object.position.x, object.position.z)
@@ -94,18 +102,21 @@ func get_num_objects_in_edge(from: Vector2, to: Vector2, objects: Array[WorldObj
 			result += 1
 	return result
 
+func get_world_position(settlement: SettlementGenerator.SettlementData) -> Vector3:
+	return grid_point_edges[settlement.grid_position].point
 
-# func _process(_delta):
-# 	render_grid()
+
+func _process(_delta):
+	render_grid()
 
 func render_grid():
-	for grid_point in edges:
-		var point_with_edges = edges[grid_point]
-		DebugDraw3D.draw_sphere(Vector3(point_with_edges.point.x, 0.5, point_with_edges.point.y))
+	for grid_point in grid_point_edges:
+		var point_with_edges = grid_point_edges[grid_point]
+		DebugDraw3D.draw_sphere(Vector3(point_with_edges.point.x, 0.5, point_with_edges.point.z))
 		for edge in point_with_edges.edges:
-			var neighbor = edges.get(edge.grid_point, null)
+			var neighbor = grid_point_edges.get(edge.grid_point, null)
 			if not neighbor:
 				continue
-			var red = edge.weight / 500.0
+			var red = edge.weight / max_weight
 			var color = Color(red, 0.0, 0.0, 1.0)
-			DebugDraw3D.draw_line(Vector3(point_with_edges.point.x, 0.5, point_with_edges.point.y), Vector3(neighbor.point.x, 0.5, neighbor.point.y), color)
+			DebugDraw3D.draw_line(Vector3(point_with_edges.point.x, 0.5, point_with_edges.point.z), Vector3(neighbor.point.x, 0.5, neighbor.point.z), color)

@@ -29,6 +29,8 @@ func _init(_ground: StaticBody3D) -> void:
 	ground = _ground
 
 func _ready() -> void:
+	var start_time = Time.get_ticks_msec()
+
 	ground.get_node("PlaneMesh").mesh.size = Vector2(WORLD_SIZE, WORLD_SIZE)
 	ground.get_node("GroundCollider").shape.size = Vector3(WORLD_SIZE, 0.1, WORLD_SIZE)
 	var size_x = WORLD_SIZE
@@ -43,13 +45,43 @@ func _ready() -> void:
 	var step_berrybushes = 15
 	var step_settlements = 80
 
+	var setup_time = Time.get_ticks_msec() - start_time
+
+	# CREATE STATIC OBJECTS AND ITEMS
+
 	var trees: Array[WorldObject] = trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees)
 	add_child(trees_generator)
 
 	var bushes: Array[WorldObject] = bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes)
 	add_child(bush_generator)
 
-	var settlement_data: Array[SettlementGenerator.SettlementData] = settlements_generator.create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_settlements)
+	var axe_position = Vector3(0.0, 2.0, -4.0)
+	world_item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
+
+	for berry in 40:
+		var berry_position = Vector3(randf_range(start_pos_x, end_pos_z), 5.0, randf_range(start_pos_z, end_pos_z))
+		world_item_generator.spawn_item(berry_position, ItemProperties.Item.BERRY)
+
+	for wood in 40:
+		var wood_position = Vector3(randf_range(start_pos_x, end_pos_x), 5.0, randf_range(start_pos_z, end_pos_z))
+		world_item_generator.spawn_item(wood_position, ItemProperties.Item.WOOD)
+
+	add_child(world_item_generator)
+
+	var create_objects_time = Time.get_ticks_msec() - setup_time
+
+	# CREATE WORLD GRID
+
+	var all_objects = trees + bushes
+	world_grid = WorldGrid.new(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z), ROAD_WIDTH)
+	world_grid.calculate_weights(all_objects)
+	add_child(world_grid)
+
+	var create_world_grid_time = Time.get_ticks_msec() - create_objects_time
+
+	# CREATE SETTLEMENTS AND ROADS
+
+	var settlement_data = settlements_generator.create_settlements(world_grid)
 	add_child(settlements_generator)
 
 	create_npcs_in_settlements(settlement_data)
@@ -59,28 +91,13 @@ func _ready() -> void:
 	npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
 	add_child(npcs_generator)
 
-	var axe_position = Vector3(0.0, 2.0, -4.0)
-	world_item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
-
-	for berry in 20:
-		var berry_position = Vector3(randf_range(start_pos_x, end_pos_z), 5.0, randf_range(start_pos_z, end_pos_z))
-		world_item_generator.spawn_item(berry_position, ItemProperties.Item.BERRY)
-
-	for wood in 20:
-		var wood_position = Vector3(randf_range(start_pos_x, end_pos_x), 5.0, randf_range(start_pos_z, end_pos_z))
-		world_item_generator.spawn_item(wood_position, ItemProperties.Item.WOOD)
-
-	add_child(world_item_generator)
-
-	var all_objects = trees + bushes
-	world_grid = WorldGrid.new(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z), ROAD_WIDTH)
-	world_grid.calculate_weights(all_objects)
-	add_child(world_grid)
-
-	road_generator = RoadGenerator.new(world_grid, ROAD_WIDTH, ground_material)
-	var road_edges: Array[RoadGenerator.Edge] = road_generator.generate_roads(settlement_data, all_objects)
+	road_generator = RoadGenerator.new(world_grid, ROAD_WIDTH)
+	var road_edges: Array[RoadGenerator.RoadEdge] = road_generator.generate_roads(settlement_data, all_objects)
 	add_child(road_generator)
 
+	var create_settlements_and_roads_time = Time.get_ticks_msec() - create_world_grid_time
+
+	# SETUP SHADER PARAMETERS
 
 	ground_material.shader = load("res://shaders/ground.gdshader")
 	ground_material.set_shader_parameter("world_size", Vector2(size_x, size_z))
@@ -95,7 +112,7 @@ func _ready() -> void:
 	ground_material.set_shader_parameter("road_edge_count", road_edges.size())
 	var shader_road_edges_data: Array[Vector4] = []
 	for edge in road_edges:
-		shader_road_edges_data.append(Vector4(edge.from.x, edge.from.y, edge.to.x, edge.to.y))
+		shader_road_edges_data.append(Vector4(edge.from.x, edge.from.z, edge.to.x, edge.to.z))
 	ground_material.set_shader_parameter("road_edges", shader_road_edges_data)
 	ground.get_node("PlaneMesh").material_override = ground_material
 
@@ -104,7 +121,14 @@ func _ready() -> void:
 	road_generator.remove_objects_from_roads(trees_generator.trees, trees_generator.remove_at)
 	road_generator.remove_objects_from_roads(bush_generator.berrybushes, bush_generator.remove_at)
 
-	print("Number of object in scene = " + str(count_all_children(self)))
+	var elapsed = Time.get_ticks_msec() - start_time
+
+	print("Time to generate forests = " + str(create_objects_time / 1000.0) + " seconds")
+	print("Time to generate world grid = " + str(create_world_grid_time / 1000.0) + " seconds")
+	print("Time to generate settlements and roads = " + str(create_settlements_and_roads_time / 1000.0) + " seconds")
+	print("")
+	print("Total time to generate world = " + str(elapsed / 1000.0) + " seconds")
+	print("Number of objects in scene = " + str(count_all_children(self)))
 
 func count_all_children(node: Node) -> int:
 	var count = node.get_child_count()

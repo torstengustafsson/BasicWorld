@@ -3,14 +3,20 @@ extends Node
 class_name SettlementGenerator
 
 class SettlementData:
+	var grid_position: Vector2i
 	var position: Vector3
 	var radius: float
 	var num_houses: int
-	func _init(_position, _radius, _num_houses) -> void:
+	func _init(_grid_position, _position, _radius, _num_houses) -> void:
+		grid_position = _grid_position
 		position = _position
 		radius = _radius
 		num_houses = _num_houses
 
+# spread must be less than half of grid step to avoid overlap
+const SETTLEMENT_GRID_STEP = 6
+const SETTLEMENT_GRID_SPREAD = 2
+const WORLD_EDGE_MARGIN = 1 + SETTLEMENT_GRID_SPREAD
 
 var houses: Array[WorldObject] = []
 var settlements: Array[SettlementData]
@@ -18,27 +24,25 @@ var settlements: Array[SettlementData]
 func _init():
 	add_to_group("Persist")
 
-# Returns x- and y-coordinates of each settlement position as well as its radius as a Vector3
-func create_settlements(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step) -> Array[SettlementData]:
+func create_settlements(world_grid: WorldGrid) -> Array[SettlementData]:
 	var result: Array[SettlementData] = []
-	for x in (end_pos_x - start_pos_x) / step:
-		for z in (end_pos_z - start_pos_z) / step:
-			var rand_value_x = -step / 3 + randf_range(0.0, step / 3 * 2)
-			var rand_value_z = -step / 3 + randf_range(0.0, step / 3 * 2)
-			var position = Vector3(start_pos_x + x * step + rand_value_x, 0.0, start_pos_z + z * step + rand_value_z)
 
-			# Skip if out-of-bounds
-			if position.x < start_pos_x + 16.0 || position.z < start_pos_z + 16.0 || position.x > end_pos_x - 16.0 || position.z > end_pos_z - 16.0:
+	for grid_point_x in range(WORLD_EDGE_MARGIN, world_grid.grid_size_x - WORLD_EDGE_MARGIN, SETTLEMENT_GRID_STEP):
+		var rand_value_x = randi_range(-SETTLEMENT_GRID_SPREAD, SETTLEMENT_GRID_SPREAD)
+		for grid_point_z in range(WORLD_EDGE_MARGIN, world_grid.grid_size_z - WORLD_EDGE_MARGIN, SETTLEMENT_GRID_STEP):
+			var rand_value_z = randi_range(-SETTLEMENT_GRID_SPREAD, SETTLEMENT_GRID_SPREAD)
+			var grid_point = Vector2i(grid_point_x + rand_value_x, grid_point_z + rand_value_z)
+			var grid_position = world_grid.grid_point_edges.get(grid_point, null)
+			if not grid_position:
 				continue
-
-			var settlement_data = add_settlement(position)
+			var settlement_data = add_settlement(grid_point, grid_position.point)
 			result.append(settlement_data)
 
 	settlements.append_array(result)
 	return result
 
 # Returns radius of settlement
-func add_settlement(position: Vector3) -> SettlementData:
+func add_settlement(grid_position: Vector2i, position: Vector3) -> SettlementData:
 	const MAX_NUM_HOUSES = 5
 	var num_houses = randi_range(2, MAX_NUM_HOUSES)
 	var start_rotation: float = randf() * 2 * PI
@@ -57,7 +61,7 @@ func add_settlement(position: Vector3) -> SettlementData:
 	add_chest(position, Vector3(0.0, chest_rotation, 0.0))
 
 	var settlement_radius = largest_radius + 5.0
-	return SettlementData.new(position, settlement_radius, num_houses)
+	return SettlementData.new(grid_position, position, settlement_radius, num_houses)
 
 func add_house(position: Vector3, rotation: Vector3) -> WorldObject:
 	var house = WorldObject.add_house(position, rotation)

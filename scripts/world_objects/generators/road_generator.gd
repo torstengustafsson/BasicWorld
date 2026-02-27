@@ -2,35 +2,34 @@ extends Node
 
 class_name RoadGenerator
 
-class Edge:
-	var from: Vector2
-	var to: Vector2
+class RoadEdge:
+	var from: Vector3
+	var to: Vector3
 	var weight: float
-
-	func _init(_from: Vector2, _to: Vector2, _weight: float = 0.0) -> void:
+	func _init(_from: Vector3, _to: Vector3, _weight: float = 0.0) -> void:
 		from = _from
 		to = _to
 		weight = _weight
 
 # Treated as constants. Are vars due to gdscript.
 var ROAD_WIDTH: float
-var WORLD_GRID: WorldGrid
+var world_grid: WorldGrid
 
-var road_edges: Array[Edge] = []
+var road_edges: Array[RoadEdge] = []
 
-func _init(world_grid: WorldGrid, road_width: float, _mat: ShaderMaterial) -> void:
-	ROAD_WIDTH = road_width
-	WORLD_GRID = world_grid
+func _init(_world_grid: WorldGrid, _road_width: float) -> void:
+	ROAD_WIDTH = _road_width
+	world_grid = _world_grid
 
-func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData], objects: Array[WorldObject]) -> Array[Edge]:
+func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData], objects: Array[WorldObject]) -> Array[RoadEdge]:
 	if settlement_data.size() <= 1:
 		return []
 
-	var result: Array[Edge] = []
+	var result: Array[RoadEdge] = []
 
 	for settlement in settlement_data:
 		var num_available_roads: int = max(1, min(min(3, settlement_data.size() - 1), ceil(settlement.num_houses / 2.0)))
-		var roads: Array[Edge] = []
+		var roads: Array[RoadEdge] = []
 		for other_index in settlement_data.size():
 			var other_settlement = settlement_data[other_index]
 			if other_settlement == settlement:
@@ -39,7 +38,7 @@ func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData], 
 			var b = Vector2(other_settlement.position.x, other_settlement.position.z)
 			var distance = (a - b).length()
 			var weight = distance - other_settlement.num_houses * 20.0
-			var new_road = Edge.new(a, b, weight)
+			var new_road = RoadEdge.new(Vector3(a.x, 0.0, a.y), Vector3(b.x, 0.0, b.y), weight)
 			roads.append(new_road)
 		roads.sort_custom(func(a, b):
 			return a.weight < b.weight
@@ -52,11 +51,11 @@ func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData], 
 	road_edges.append_array(result)
 	return result
 
-func generate_road(from: Vector2, to: Vector2, objects: Array[WorldObject]) -> Array[Edge]:
-	var num_obstacles: float = WORLD_GRID.get_num_objects_in_edge(from, to, objects, ROAD_WIDTH)
+func generate_road(from: Vector3, to: Vector3, objects: Array[WorldObject]) -> Array[RoadEdge]:
+	var num_obstacles: float = world_grid.get_num_objects_in_edge(from, to, objects, ROAD_WIDTH)
 	var distance = (from - to).length()
 	var weight = num_obstacles * 10.0 + distance
-	return [Edge.new(from, to, weight)]
+	return [RoadEdge.new(from, to, weight)]
 
 # NOTE: Does not use get_objects_in_road due to performance reasons
 # (it is more efficient to loop objects first and then roads)
@@ -66,8 +65,8 @@ func remove_objects_from_roads(objects: Array[WorldObject], callback: Callable):
 		var object: Node3D = objects[index].instance
 		var object_pos = Vector2(object.position.x, object.position.z)
 		for edge in road_edges:
-			var a = edge.from
-			var b = edge.to
+			var a = Vector2(edge.from.x, edge.from.z)
+			var b = Vector2(edge.to.x, edge.to.z)
 			var ab: Vector2 = b - a;
 			var ap: Vector2 = object_pos - a;
 			var t: float = clamp(ap.dot(ab) / ab.dot(ab), 0.0, 1.0);
