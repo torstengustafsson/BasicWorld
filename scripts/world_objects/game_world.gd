@@ -46,12 +46,18 @@ func _ready() -> void:
 
 	# CREATE STATIC OBJECTS AND ITEMS
 
-	var seed = randi()
 
-	var trees: Array[WorldObject] = trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees, seed)
+	var noise = FastNoiseLite.new()
+	noise.frequency = 0.01
+	noise.fractal_octaves = 3
+	noise.fractal_lacunarity = 2.0
+	noise.fractal_gain = 0.4
+	noise.seed = randi()
+
+	var trees: Array[WorldObject] = trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees, noise)
 	add_child(trees_generator)
 
-	var bushes: Array[WorldObject] = bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes, seed)
+	var bushes: Array[WorldObject] = bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes, noise)
 	add_child(bush_generator)
 
 	#var axe_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))

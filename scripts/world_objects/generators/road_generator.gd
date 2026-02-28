@@ -73,8 +73,8 @@ func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i) -> 
 			var new_cost = cost_so_far[current] + next.weight
 			if (not cost_so_far.has(next.grid_point)) or new_cost < cost_so_far[next.grid_point]:
 				cost_so_far[next.grid_point] = new_cost
-				var priority = heuristic(next.grid_point, grid_destination)
-				pq.push(next.grid_point, priority)
+				#var priority = heuristic(next.grid_point, grid_destination)
+				pq.push(next.grid_point, new_cost)
 				came_from[next.grid_point] = current
 
 	var current = grid_destination

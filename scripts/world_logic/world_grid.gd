@@ -63,7 +63,7 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 			for point_around: Vector2i in POINTS_AROUND:
 				var neighbor: Vector2i = Vector2i(x + point_around.x, z + point_around.y)
 				var weight = 0.0
-				if neighbor.x < world_start_pos.x or neighbor.x > world_end_pos.x or neighbor.y < world_start_pos.y or neighbor.y > world_end_pos.y:
+				if neighbor.x < 0 or neighbor.x >= grid_size or neighbor.y < 0 or neighbor.y >= grid_size:
 					continue
 				current_point.edges.append(GridPointEdge.new(neighbor, weight))
 			grid_point_edges[Vector2i(x, z)] = current_point
@@ -80,7 +80,7 @@ func calculate_weights(objects: Array[WorldObject]):
 			var to = neighbor.point
 			var num_obstacles = get_num_objects_in_edge(from, to, objects, ROAD_WIDTH)
 			var distance = (from - to).length()
-			var weight = num_obstacles * 25.0 + distance
+			var weight = num_obstacles * 10.0 + distance
 			if max_weight < weight:
 				max_weight = weight
 			edge.weight = weight

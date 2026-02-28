@@ -21,21 +21,13 @@ var shake_direction: Vector3 = Vector3(0.0, 0.0, 0.0)
 func _init():
 	add_to_group("Persist")
 
-func create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, seed) -> Array[WorldObject]:
-	# Trees and bushes uses same seed
-	var noise_trees = FastNoiseLite.new()
-	noise_trees.frequency = 0.1
-	noise_trees.fractal_octaves = 3
-	noise_trees.fractal_lacunarity = 2.0
-	noise_trees.fractal_gain = 0.4
-	noise_trees.seed = seed
-
+func create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, noise) -> Array[WorldObject]:
 	for x in (end_pos_x - start_pos_x) / step:
 		for z in (end_pos_z - start_pos_z) / step:
-			var noise_val = (noise_trees.get_noise_2d(x, z) + 1) / 2.0 * 100.0 # Random noise between 0.0-100.0
 			var rand_value_x = -step / 2 + randf_range(0.0, step)
 			var rand_value_z = -step / 2 + randf_range(0.0, step)
 			var position = Vector3(start_pos_x + x * step + rand_value_x, 0.0, start_pos_z + z * step + rand_value_z)
+			var noise_val = (noise.get_noise_2d(position.x, position.z) + 1) / 2.0 * 100.0 # Random noise between 0.0-100.0
 
 			# Skip if out-of-bounds
 			if position.x < start_pos_x || position.z < start_pos_z || position.x > end_pos_x || position.z > end_pos_z:
