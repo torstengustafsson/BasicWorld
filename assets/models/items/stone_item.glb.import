@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bohyohnpi3iy4"
-path="res://.godot/imported/wood.glb-413844357ef44c9a5b11a7a56d960159.scn"
+uid="uid://bthrr2kynigaq"
+path="res://.godot/imported/stone_item.glb-4e08a9d48e472de4028819d92eadf9b3.scn"
 
 [deps]
 
-source_file="res://assets/models/wood.glb"
-dest_files=["res://.godot/imported/wood.glb-413844357ef44c9a5b11a7a56d960159.scn"]
+source_file="res://assets/models/items/stone_item.glb"
+dest_files=["res://.godot/imported/stone_item.glb-4e08a9d48e472de4028819d92eadf9b3.scn"]
 
 [params]
 

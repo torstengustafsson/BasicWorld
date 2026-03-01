@@ -21,6 +21,7 @@ var ground: StaticBody3D
 var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
 var trees_generator: TreeGenerator = TreeGenerator.new()
 var bush_generator: BushGenerator = BushGenerator.new()
+var rock_generator: RockGenerator = RockGenerator.new()
 var settlements_generator: SettlementGenerator = SettlementGenerator.new()
 var npcs_generator: NpcGenerator = NpcGenerator.new()
 var road_generator: RoadGenerator
@@ -43,25 +44,28 @@ func _ready() -> void:
 
 	var step_trees = 3
 	var step_berrybushes = 10
+	var step_rocks = 10
 
 	# CREATE STATIC OBJECTS AND ITEMS
 
-
-	var forest_noise = FastNoiseLite.new()
-	forest_noise.frequency = 0.01
-	var outlier_noise = FastNoiseLite.new()
-	outlier_noise.frequency = 0.5
+	var forest_noise = NoiseFunctions.create_forest_noise()
+	var rocks_noise = NoiseFunctions.create_rocks_noise()
 
 
-	var trees: Array[WorldObject] = trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees, forest_noise, outlier_noise)
+	var trees: Array[WorldObject] = trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees, forest_noise)
 	add_child(trees_generator)
 
-	var bushes: Array[WorldObject] = bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes, forest_noise, outlier_noise)
+	var bushes: Array[WorldObject] = bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes, forest_noise)
 	add_child(bush_generator)
 
-	#var axe_position = Vector3(randf_range(start_pos_x, start_pos_x + size_x_margin), 5.0, randf_range(start_pos_z, start_pos_z + size_z_margin))
-	var axe_position = Vector3(0.0, 2.0, -4.0)
+	var rocks: Array[WorldObject] = rock_generator.create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_rocks, rocks_noise)
+	add_child(rock_generator)
+
+	var axe_position = Vector3(-1.0, 2.0, -4.0)
 	world_item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
+
+	var pickaxe_position = Vector3(1.0, 2.0, -4.0)
+	world_item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
 
 	for berry in 40:
 		var berry_position = Vector3(randf_range(start_pos_x, end_pos_z), 5.0, randf_range(start_pos_z, end_pos_z))
@@ -71,15 +75,19 @@ func _ready() -> void:
 		var wood_position = Vector3(randf_range(start_pos_x, end_pos_x), 5.0, randf_range(start_pos_z, end_pos_z))
 		world_item_generator.spawn_item(wood_position, ItemProperties.Item.WOOD)
 
+	for stone in 40:
+		var stone_position = Vector3(randf_range(start_pos_x, end_pos_x), 5.0, randf_range(start_pos_z, end_pos_z))
+		world_item_generator.spawn_item(stone_position, ItemProperties.Item.STONE)
+
 	add_child(world_item_generator)
 
 	var create_objects_time = Time.get_ticks_msec()
 	var create_objects_elapsed = create_objects_time - start_time
-	print("Time to generate forests = " + str(create_objects_elapsed / 1000.0) + " seconds")
+	print("Time to generate static objects = " + str(create_objects_elapsed / 1000.0) + " seconds")
 
 	# CREATE WORLD GRID
 
-	var all_objects = trees + bushes
+	var all_objects = trees + bushes + rocks
 	world_grid = WorldGrid.new(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z), ROAD_WIDTH)
 	world_grid.calculate_weights(all_objects)
 	add_child(world_grid)
@@ -135,8 +143,10 @@ func _ready() -> void:
 
 	settlements_generator.remove_objects_from_settlements(trees_generator.trees, trees_generator.remove_at)
 	settlements_generator.remove_objects_from_settlements(bush_generator.berrybushes, bush_generator.remove_at)
+	settlements_generator.remove_objects_from_settlements(rock_generator.rocks, rock_generator.remove_at)
 	road_generator.remove_objects_from_roads(trees_generator.trees, trees_generator.remove_at)
 	road_generator.remove_objects_from_roads(bush_generator.berrybushes, bush_generator.remove_at)
+	road_generator.remove_objects_from_roads(rock_generator.rocks, rock_generator.remove_at)
 
 	var elapsed = Time.get_ticks_msec() - start_time
 
@@ -181,8 +191,12 @@ func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM)
 func handle_use_item(collider, item: ItemProperties.Item) -> void:
 	if item == ItemProperties.Item.AXE:
 		var tree_chopped_down: TreeGenerator.ChopResult = trees_generator.handle_chop(collider)
-
 		if tree_chopped_down.result == TreeGenerator.ChopResults.ChoppedDown:
 			world_item_generator.spawn_item(tree_chopped_down.position, ItemProperties.Item.WOOD)
-
 		npcs_generator.handle_chop(collider)
+
+	if item == ItemProperties.Item.PICKAXE:
+		var rock_chopped_down: RockGenerator.ChopResult = rock_generator.handle_chop(collider)
+		if rock_chopped_down.result == RockGenerator.ChopResults.ChoppedDown:
+			for i in rock_chopped_down.amount_gained:
+				world_item_generator.spawn_item(rock_chopped_down.position, ItemProperties.Item.STONE)

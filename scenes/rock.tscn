@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://bdo2hx5os6ej0"]
+
+[ext_resource type="PackedScene" uid="uid://chg61jf35exp0" path="res://assets/models/rock.glb" id="1_1di36"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_5aqih"]
+radius = 1.0
+
+[node name="Rock" type="StaticBody3D" unique_id=408939922]
+
+[node name="Collider" type="CollisionShape3D" parent="." unique_id=501803415]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.049892306, 0)
+shape = SubResource("SphereShape3D_5aqih")
+
+[node name="rock" parent="." unique_id=1770341590 instance=ExtResource("1_1di36")]

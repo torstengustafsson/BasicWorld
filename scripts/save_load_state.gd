@@ -2,7 +2,7 @@ extends Node
 
 class_name SaveLoadState
 
-enum StateType { Trees, Bushes, WorldItems, NPCS, PlayerInventory }
+enum StateType { Trees, Bushes, Rocks, WorldItems, NPCS, PlayerInventory }
 
 func save_game():
 	var save_file = FileAccess.open("user://basicworld.save", FileAccess.WRITE)
@@ -23,7 +23,7 @@ func save_game():
 func load_game():
 	if not FileAccess.file_exists("user://basicworld.save"):
 		return # Error! We don't have a save to load.
-	
+
 	var save_file = FileAccess.open("user://basicworld.save", FileAccess.READ)
 	while save_file.get_position() < save_file.get_length():
 		var json_string = save_file.get_line()

@@ -15,7 +15,7 @@ class BerryBush extends WorldObject:
 
 	func _init(pos: Vector3, scale: float):
 		var rot = Vector3(0.0, 0.0, 0.0)
-		super._init(pos, rot, scale, berrybush_scene)
+		super._init(pos, rot, Vector3(scale, scale, scale), berrybush_scene)
 		instance = berrybush_scene.instantiate()
 		berries_fill_secs = randf_range(0.0, BERRYBUSH_FULL_SECS)
 		instance.position = pos
@@ -45,20 +45,18 @@ var berrybushes: Array[WorldObject] = []
 func _init():
 	add_to_group("Persist")
 
-func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise, outlier_noise) -> Array[WorldObject]:
+func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise) -> Array[WorldObject]:
 	for x in (end_pos_x - start_pos_x) / step:
 		for z in (end_pos_z - start_pos_z) / step:
 			var rand_value_x = -step / 2 + randf_range(0.0, step)
 			var rand_value_z = -step / 2 + randf_range(0.0, step)
 			var position = Vector3(start_pos_x + x * step + rand_value_x, 0.0, start_pos_z + z * step + rand_value_z)
-			var noise_val = (forest_noise.get_noise_2d(position.x, position.z) + 1) / 2.0 * 100.0 # Random noise between 0.0-100.0
-			var outlier_noise_val = (outlier_noise.get_noise_2d(position.x, position.z) + 1) / 2.0 * 100.0 # Random noise between 0.0-100.0
 
 			# Skip if out-of-bounds
 			if position.x < start_pos_x || position.z < start_pos_z || position.x > end_pos_x || position.z > end_pos_z:
 				continue
 
-			if 40.0 < noise_val and 25.0 < outlier_noise_val:
+			if forest_noise.above_threshold(position):
 				continue
 
 			var scale = randf_range(1.0, 1.25)

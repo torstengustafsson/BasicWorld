@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bff2vko3bg53u"]
 
-[ext_resource type="PackedScene" uid="uid://bohyohnpi3iy4" path="res://assets/models/wood.glb" id="1_cgo26"]
+[ext_resource type="PackedScene" uid="uid://bkhkfo8urtwbn" path="res://assets/models/items/wood_item.glb" id="1_cgo26"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_cgo26"]
 rough = true
@@ -15,12 +15,12 @@ height = 1.6
 height = 1.6
 radius = 0.2
 
-[node name="Axe" type="RigidBody3D" unique_id=218984902]
+[node name="Wood" type="RigidBody3D" unique_id=218984902]
 mass = 2.0
 physics_material_override = SubResource("PhysicsMaterial_cgo26")
 angular_damp = 5.0
 
-[node name="wood" parent="." unique_id=1247074354 instance=ExtResource("1_cgo26")]
+[node name="wood_item" parent="." unique_id=307314895 instance=ExtResource("1_cgo26")]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=355019755]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.003, 0)

@@ -60,6 +60,7 @@ func _init(pos: Vector3, rot: Vector3, scale: float):
 
 	audio_player.stream = default_sound
 	audio_player.finished.connect(_on_sound_finished)
+	audio_player.volume_db = 20.0
 
 	if default_sound.resource_path == "res://assets/sounds/aoe2-en-taunt-03-food-please.mp3":
 		wants = WantsOptions.FOOD

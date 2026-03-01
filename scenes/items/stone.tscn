@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://6ttcd1ixykhe"]
+[gd_scene format=3 uid="uid://cenv3cvt60do6"]
 
-[ext_resource type="PackedScene" uid="uid://cg1b71bvpew7p" path="res://assets/models/items/berry_item.glb" id="1_m4rnx"]
+[ext_resource type="PackedScene" uid="uid://bthrr2kynigaq" path="res://assets/models/items/stone_item.glb" id="1_khi28"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_m4rnx"]
 rough = true
@@ -11,12 +11,12 @@ radius = 0.2
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_m4rnx"]
 
-[node name="Berry" type="RigidBody3D" unique_id=218984902]
+[node name="Rock" type="RigidBody3D" unique_id=218984902]
 mass = 2.0
 physics_material_override = SubResource("PhysicsMaterial_m4rnx")
 angular_damp = 5.0
 
-[node name="berry_item" parent="." unique_id=211958734 instance=ExtResource("1_m4rnx")]
+[node name="stone_item" parent="." unique_id=1114681404 instance=ExtResource("1_khi28")]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=688241786]
 shape = SubResource("SphereShape3D_k5ken")

@@ -15,7 +15,10 @@ class RoadEdge:
 var ROAD_WIDTH: float
 var world_grid: WorldGrid
 
+const MAX_SETTEMENT_DISTANCE_FOR_ROAD: float = 200.0
+
 var road_edges: Array[RoadEdge] = []
+var connected_settlements: Dictionary = {}  # Tracks which settlement pairs are already connected
 
 func _init(_world_grid: WorldGrid, _road_width: float) -> void:
 	ROAD_WIDTH = _road_width
@@ -31,10 +34,27 @@ func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) 
 
 		for other_index in closest_settlements.size():
 			var other_settlement = closest_settlements[other_index]
+			if road_exists_between_settlements(settlement, other_settlement):
+				continue
 			var new_roads = generate_road_segments(settlement.grid_position, other_settlement.grid_position)
 			result.append_array(new_roads)
 
 	road_edges.append_array(result)
+	return result
+
+# Adds connection if not exist, assumes road will be created after calling
+func road_exists_between_settlements(settlement: SettlementGenerator.SettlementData, other_settlement: SettlementGenerator.SettlementData) -> bool:
+	# Creates a normalized key for a settlement pair to avoid duplicate connections
+	var get_settlement_connection_key = func(pos_a: Vector2i, pos_b: Vector2i) -> String:
+		# Sort positions to ensure A→B and B→A produce the same key
+		if pos_a < pos_b:
+			return str(pos_a) + "|" + str(pos_b)
+		else:
+			return str(pos_b) + "|" + str(pos_a)
+
+	var connection_key = get_settlement_connection_key.call(settlement.grid_position, other_settlement.grid_position)
+	var result = connection_key in connected_settlements
+	connected_settlements[connection_key] = true
 	return result
 
 # Return weighted closest settlements, where large settlements are more attrative, and are prioritized a bit further away
@@ -48,15 +68,14 @@ func get_closest_settlements(settlement: SettlementGenerator.SettlementData, set
 		var b = Vector2(other_settlement.position.x, other_settlement.position.z)
 		var distance = (a - b).length()
 		var weight = distance - other_settlement.num_houses * 20.0
+		if weight > MAX_SETTEMENT_DISTANCE_FOR_ROAD:
+			continue
 		pq.push(other_settlement, weight)
 	var result = []
 	for i in amount:
 		result.append(pq.pop())
 	return result
 
-
-func heuristic(a: Vector2i, b: Vector2i):
-	return (a - b).length()
 
 # Uses A* to find shortest weighted path to destination
 func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i) -> Array:
@@ -73,7 +92,6 @@ func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i) -> 
 			var new_cost = cost_so_far[current] + next.weight
 			if (not cost_so_far.has(next.grid_point)) or new_cost < cost_so_far[next.grid_point]:
 				cost_so_far[next.grid_point] = new_cost
-				#var priority = heuristic(next.grid_point, grid_destination)
 				pq.push(next.grid_point, new_cost)
 				came_from[next.grid_point] = current
 

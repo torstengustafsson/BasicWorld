@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://rrkfihnlubn8"
-path="res://.godot/imported/berry.glb-32ddccb55930b708607d637cc1f35443.scn"
+uid="uid://cb6dwo18bbxpc"
+path="res://.godot/imported/pickaxe_item.glb-44b65a4a61f0bc6f3b3fe4fa1e6f2d5e.scn"
 
 [deps]
 
-source_file="res://assets/models/items/berry.glb"
-dest_files=["res://.godot/imported/berry.glb-32ddccb55930b708607d637cc1f35443.scn"]
+source_file="res://assets/models/items/pickaxe_item.glb"
+dest_files=["res://.godot/imported/pickaxe_item.glb-44b65a4a61f0bc6f3b3fe4fa1e6f2d5e.scn"]
 
 [params]
 
