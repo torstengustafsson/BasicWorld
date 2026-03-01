@@ -34,7 +34,7 @@ static func add_tree(pos: Vector3, scale: float) -> WorldObject:
 	return tree
 
 static func add_rock(pos: Vector3, scale: Vector3) -> WorldObject:
-	var rot = Vector3(0.0, 0.0, 0.0)
+	var rot = Vector3(0.0, randf_range(0.0, 2 * PI), 0.0)
 	var rock = BreakableObject.new(pos, rot, scale, rock_scene)
 	rock.max_health = round(scale.x + scale.y + scale.z)
 	rock.health = rock.max_health

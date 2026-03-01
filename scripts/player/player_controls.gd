@@ -9,13 +9,13 @@ var game_world: GameWorld
 
 func _init(
 	_space_state: PhysicsDirectSpaceState3D,
-	_inventory_text: Label,
+	inventory: Node2D,
 	_player_camera: Camera3D,
 	_game_world: GameWorld,
 ):
 	space_state = _space_state
 	player_camera = _player_camera
-	player_inventory = PlayerInventory.new(_inventory_text, player_camera)
+	player_inventory = PlayerInventory.new(inventory, player_camera)
 	game_world = _game_world
 	add_child(player_inventory)
 

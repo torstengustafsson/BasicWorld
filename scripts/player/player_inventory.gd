@@ -1,8 +1,11 @@
-extends Inventory
+extends Node
 
 class_name PlayerInventory
 
-var inventoryText: Label
+var inventory: Inventory = Inventory.new()
+var hotkey_inventory: HotkeyedInventory = HotkeyedInventory.new()
+
+var inventory_menu: Node2D
 var player_camera: Node3D
 
 var hotkey_assignments: Dictionary # Cant be typed due to gdscript. Should be: Dictionary[int, ItemProperties.Item]
@@ -18,11 +21,13 @@ var item_swinging_timer: float = INF # INF means not currently swinging
 var equipped_item: WorldItem = WorldItem.new(ItemProperties.Item.NO_ITEM)
 var item_in_hand: bool = false
 
-func _init(_inventoryText: Label, _player_camera: Node3D):
+func _init(_inventory_menu: Node2D, _player_camera: Node3D):
 	add_to_group("Persist")
-	inventoryText = _inventoryText
+	inventory_menu = _inventory_menu
+	inventory_menu.add_child(inventory)
+	inventory_menu.add_child(hotkey_inventory)
 	player_camera = _player_camera
-	update_inventory_text()
+	update_inventory_menu()
 
 
 func item_in_hotkeys(item: ItemProperties.Item):
@@ -34,27 +39,28 @@ func item_in_hotkeys(item: ItemProperties.Item):
 
 
 func add_item(item: ItemProperties.Item, amount: int = 1):
-	super._add_item(item, amount)
+	inventory._add_item(item, amount)
 	if not item_in_hotkeys(item):
 		hotkey_assignments[str(hotkey_counter)] = item
 		hotkey_counter += 1
 	if equipped_item.item_id == ItemProperties.Item.NO_ITEM:
 		equip_item(item)
-	update_inventory_text()
+	update_inventory_menu()
 
 
-func update_inventory_text():
-	var text: String = "YOUR ITEMS\n"
-	for item in inventory:
-		var amount = inventory[item].amount
-		text += ItemProperties.ITEMS[item].name_plural
-		text += ": "
-		text += str(amount)
-		text += "\n"
-	text += "EQUIPPED ITEM: "
-	text += ItemProperties.ITEMS[equipped_item.item_id].name_singular
-	text += "\n"
-	inventoryText.text = text
+func update_inventory_menu():
+	# var text: String = "YOUR ITEMS\n"
+	# for item in inventory.items:
+	# 	var amount = inventory.items[item].amount
+	# 	text += ItemProperties.ITEMS[item].name_plural
+	# 	text += ": "
+	# 	text += str(amount)
+	# 	text += "\n"
+	# text += "EQUIPPED ITEM: "
+	# text += ItemProperties.ITEMS[equipped_item.item_id].name_singular
+	# text += "\n"
+	# inventoryText.text = text
+	pass
 
 
 func equip_item(item: ItemProperties.Item):
@@ -75,12 +81,12 @@ func equip_item(item: ItemProperties.Item):
 		else:
 			equipped_item.object.hide()
 		player_camera.add_child(equipped_item.object)
-	update_inventory_text()
+	update_inventory_menu()
 
 
 func equip_item_index(index: int):
 	var index_str = str(index)
-	if hotkey_assignments.size() > index and inventory.has(hotkey_assignments[index_str]):
+	if hotkey_assignments.size() > index and inventory.items.has(hotkey_assignments[index_str]):
 		equip_item(hotkey_assignments[index_str])
 
 
@@ -101,13 +107,13 @@ func put_away_equipped_item():
 
 
 func delete_equipped_item():
-	var last_removed = super._remove_item(equipped_item.item_id)
+	var last_removed = inventory._remove_item(equipped_item.item_id)
 	if last_removed:
 		item_in_hand = false
 		player_camera.remove_child(equipped_item.object)
 		equipped_item.object.queue_free()
 		equipped_item = WorldItem.new(ItemProperties.Item.NO_ITEM)
-	update_inventory_text()
+	update_inventory_menu()
 
 
 # TODO: Figure out if it is possible to inherit camera position and rotation instead
@@ -124,7 +130,7 @@ func _process(delta):
 		equipped_item.object.rotation = EQUIPPED_ITEM_ROTATION
 
 func save() -> Dictionary:
-	var items = super._save()
+	var items = inventory._save()
 	var result: Dictionary = {}
 	var items_dict: Dictionary = {}
 	items_dict["items"] = items
@@ -136,7 +142,7 @@ func save() -> Dictionary:
 
 func load(data: Dictionary):
 	var item_data = data[str(SaveLoadState.StateType.PlayerInventory)]
-	super._load(item_data["items"])
+	inventory._load(item_data["items"])
 	item_in_hand = item_data["item_in_hand"]
 	equip_item(item_data["equipped_item"])
 	hotkey_assignments = item_data["hotkeys"]
