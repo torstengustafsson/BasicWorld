@@ -15,7 +15,7 @@ class RoadEdge:
 var ROAD_WIDTH: float
 var world_grid: WorldGrid
 
-const MAX_SETTEMENT_DISTANCE_FOR_ROAD: float = 200.0
+const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 300.0
 
 var road_edges: Array[RoadEdge] = []
 var connected_settlements: Dictionary = {}  # Tracks which settlement pairs are already connected
@@ -34,28 +34,33 @@ func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) 
 
 		for other_index in closest_settlements.size():
 			var other_settlement = closest_settlements[other_index]
-			if road_exists_between_settlements(settlement, other_settlement):
+			if connection_exists_between_settlements(settlement, other_settlement):
 				continue
-			var new_roads = generate_road_segments(settlement.grid_position, other_settlement.grid_position)
+			var max_distance = MAX_SETTLEMENT_DISTANCE_FOR_ROAD + settlement.num_houses * MAX_SETTLEMENT_DISTANCE_FOR_ROAD * 0.1
+			var new_roads = generate_road_segments(settlement.grid_position, other_settlement.grid_position, max_distance)
+			if new_roads.size() > 0:
+				add_connection_between_settlements(settlement, other_settlement)
 			result.append_array(new_roads)
 
 	road_edges.append_array(result)
 	return result
 
-# Adds connection if not exist, assumes road will be created after calling
-func road_exists_between_settlements(settlement: SettlementGenerator.SettlementData, other_settlement: SettlementGenerator.SettlementData) -> bool:
-	# Creates a normalized key for a settlement pair to avoid duplicate connections
-	var get_settlement_connection_key = func(pos_a: Vector2i, pos_b: Vector2i) -> String:
+
+func get_settlement_connection_key(pos_a: Vector2i, pos_b: Vector2i) -> String:
 		# Sort positions to ensure A→B and B→A produce the same key
 		if pos_a < pos_b:
 			return str(pos_a) + "|" + str(pos_b)
 		else:
 			return str(pos_b) + "|" + str(pos_a)
 
-	var connection_key = get_settlement_connection_key.call(settlement.grid_position, other_settlement.grid_position)
-	var result = connection_key in connected_settlements
+func connection_exists_between_settlements(settlement: SettlementGenerator.SettlementData, other_settlement: SettlementGenerator.SettlementData) -> bool:
+	var connection_key = get_settlement_connection_key(settlement.grid_position, other_settlement.grid_position)
+	return connection_key in connected_settlements
+
+func add_connection_between_settlements(settlement: SettlementGenerator.SettlementData, other_settlement: SettlementGenerator.SettlementData):
+	var connection_key = get_settlement_connection_key(settlement.grid_position, other_settlement.grid_position)
 	connected_settlements[connection_key] = true
-	return result
+
 
 # Return weighted closest settlements, where large settlements are more attrative, and are prioritized a bit further away
 func get_closest_settlements(settlement: SettlementGenerator.SettlementData, settlements: Array[SettlementGenerator.SettlementData], amount: int):
@@ -68,8 +73,6 @@ func get_closest_settlements(settlement: SettlementGenerator.SettlementData, set
 		var b = Vector2(other_settlement.position.x, other_settlement.position.z)
 		var distance = (a - b).length()
 		var weight = distance - other_settlement.num_houses * 20.0
-		if weight > MAX_SETTEMENT_DISTANCE_FOR_ROAD:
-			continue
 		pq.push(other_settlement, weight)
 	var result = []
 	for i in amount:
@@ -78,7 +81,7 @@ func get_closest_settlements(settlement: SettlementGenerator.SettlementData, set
 
 
 # Uses A* to find shortest weighted path to destination
-func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i) -> Array:
+func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i, max_distance: float) -> Array:
 	var result = []
 	var pq: PriorityQueue = PriorityQueue.new()
 	pq.push(grid_from, 0.0)
@@ -95,13 +98,21 @@ func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i) -> 
 				pq.push(next.grid_point, new_cost)
 				came_from[next.grid_point] = current
 
+	if not cost_so_far.has(grid_destination):
+		# No path found
+		return []
+
+	if cost_so_far[grid_destination] > max_distance:
+		# Shortest path is too long
+		return []
+
 	var current = grid_destination
-	var i = 0
+	var max_iterations = 0
 	while current != grid_from:
-		if i > 100:
+		if max_iterations > 100:
 			print("No road found between " + str(grid_from) + " and " + str(grid_destination))
 			break
-		i += 1
+		max_iterations += 1
 		var previous = came_from[current]
 		var a = world_grid.grid_point_edges[previous].point
 		var b = world_grid.grid_point_edges[current].point

@@ -1,75 +1,91 @@
-extends GridContainer
+extends Node2D
 
 class_name Inventory
 
+@onready var grid_container = $GridContainer
+
+var slot_scene = preload("res://scenes/inventory/inventory_slot.tscn")
+
 var inventory_size: Vector2i = Vector2i(8, 5)
 
-var inventory_items: Array[InventoryItem] = []
 var total_items_amount: Dictionary[ItemProperties.Item, int] = {}
 
-func _init() -> void:
-	columns = inventory_size.x
-	position = Vector2(350, 125)
-	size = Vector2(450, 275)
-	add_theme_constant_override("h_separation", 10)
-	add_theme_constant_override("v_separation", 10)
-
+func _ready() -> void:
+	grid_container.columns = inventory_size.x
 	for i in range(inventory_size.x * inventory_size.y):
-		inventory_items.append(InventoryItem.new(ItemProperties.Item.NO_ITEM))
-		add_child(inventory_items[i])
+		var slot = slot_scene.instantiate()
+		grid_container.add_child(slot)
 
-func _add_item(item: ItemProperties.Item, amount: int):
-	total_items_amount[item] = total_items_amount.get(item, 0) + amount
-	for i in range(inventory_items.size()):
-		var inventory_item: InventoryItem = inventory_items[i]
-		if inventory_item.item == item and inventory_item.amount < inventory_item.max_stack_size:
-			var leftover = inventory_item.add_amount(amount)
+func clear_inventory():
+	for i in range(grid_container.get_children().size()):
+		var slot: InventorySlot = grid_container.get_children()[i]
+		slot.item = ItemProperties.Item.NO_ITEM
+		slot.amount = 0
+	total_items_amount.clear()
+
+func _add_item(item: ItemProperties.Item, amount_to_add: int):
+	total_items_amount[item] = total_items_amount.get(item, 0) + amount_to_add
+
+	# Start by adding to existing stacks
+	for i in range(grid_container.get_children().size()):
+		var slot: InventorySlot = grid_container.get_children()[i]
+		if slot.item == item and slot.amount < slot.max_stack_size:
+			var leftover = slot.add_amount(amount_to_add)
 			if leftover <= 0:
 				return
-			amount = leftover
+			amount_to_add = leftover
+
+	# If there are still items left to add, add them to empty slots
+	for slot in range(grid_container.get_children().size()):
+		var inventory_item: InventorySlot = grid_container.get_children()[slot]
 		if inventory_item.item == ItemProperties.Item.NO_ITEM:
 			inventory_item.item = item
-			var leftover = inventory_item.add_amount(amount)
+			inventory_item.set_item(item)
+			var leftover = inventory_item.add_amount(amount_to_add)
 			if leftover <= 0:
 				return
-			amount = leftover
+			amount_to_add = leftover
 
 # Returns true if last item was removed
-func _remove_item(item: ItemProperties.Item, amount: int = 1) -> bool:
-	total_items_amount[item] = max(total_items_amount.get(item, 0) - amount, 0)
-	for i in range(inventory_items.size() - 1, -1, -1):
-		var inventory_item: InventoryItem = inventory_items[i]
-		if inventory_item.item == item:
-			inventory_item.amount -= amount
-			if inventory_item.amount <= 0:
-				inventory_items[i] = InventoryItem.new(ItemProperties.Item.NO_ITEM)
-	return total_items_amount[item] <= 0
+func _remove_item(item: ItemProperties.Item, amount_to_remove: int = 1) -> bool:
+	total_items_amount[item] = max(total_items_amount.get(item, 0) - amount_to_remove, 0)
+	for i in range(grid_container.get_children().size() - 1, -1, -1):
+		var slot: InventorySlot = grid_container.get_children()[i]
+		if slot.item == item:
+			var leftover = slot.remove_amount(amount_to_remove)
+			if leftover <= 0:
+				break
+			amount_to_remove = leftover
+	return total_items_amount[item] == 0
 
 func update_grid():
 	for i in inventory_size.x:
 		for j in inventory_size.y:
 			var index = i * inventory_size.y + j
-			if index < inventory_items.size():
-				var item = inventory_items[index]
+			if index < grid_container.get_children().size():
+				var item = grid_container.get_children()[index]
 				if item.item != ItemProperties.Item.NO_ITEM:
 					# Update the UI for this item, e.g. show the item icon and amount
 					pass
 
 func _save() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
-	for item in inventory_items:
-		var item_container = item
+	for i in range(grid_container.get_children().size()):
+		var slot: InventorySlot = grid_container.get_children()[i]
 		var data: Dictionary = {}
-		data["id"] = item_container.item
-		data["amount"] = item_container.amount
+		data["id"] = slot.item
+		data["amount"] = slot.amount
+		data["max_stack_size"] = slot.max_stack_size
 		result.append(data)
 	return result
 
 
 func _load(data: Array): # Cant be typed due to gdscript. Should be: Array[Dictionary]
-	inventory_items.clear()
+	clear_inventory()
 	for item in data:
 		var item_id: ItemProperties.Item = item["id"]
-		var new_item: InventoryItem = InventoryItem.new(item_id)
-		new_item.amount = item["amount"]
-		inventory_items.append(new_item)
+		var slot: InventorySlot = slot_scene.instantiate()
+		slot.item = item_id
+		slot.amount = item["amount"]
+		slot.max_stack_size = item["max_stack_size"]
+		grid_container.add_child(slot)

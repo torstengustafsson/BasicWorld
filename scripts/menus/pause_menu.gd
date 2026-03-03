@@ -47,6 +47,7 @@ func _process(_delta: float) -> void:
 
 # Close all menus and unpause the game
 func _resume_game() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	hide()
 	inventory_menu.hide()
 	settings_menu_open = false
@@ -54,6 +55,7 @@ func _resume_game() -> void:
 	get_tree().paused = false
 
 func _open_settings_menu() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	show()
 	settings_menu.show()
 	settings_submenu.show()
@@ -63,6 +65,7 @@ func _open_settings_menu() -> void:
 	get_tree().paused = true
 
 func _open_inventory() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	show()
 	settings_menu.hide()
 	inventory_menu.show()

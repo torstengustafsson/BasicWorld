@@ -2,10 +2,9 @@ extends Node
 
 class_name PlayerInventory
 
-var inventory: Inventory = Inventory.new()
-var hotkey_inventory: HotkeyedInventory = HotkeyedInventory.new()
 
-var inventory_menu: Node2D
+var inventory: Inventory
+var hotkey_inventory: HotkeyedInventory
 var player_camera: Node3D
 
 var hotkey_assignments: Dictionary # Cant be typed due to gdscript. Should be: Dictionary[int, ItemProperties.Item]
@@ -21,14 +20,10 @@ var item_swinging_timer: float = INF # INF means not currently swinging
 var equipped_item: WorldItem = WorldItem.new(ItemProperties.Item.NO_ITEM)
 var item_in_hand: bool = false
 
-func _init(_inventory_menu: Node2D, _player_camera: Node3D):
+func _init(_inventory: Inventory, _player_camera: Node3D):
 	add_to_group("Persist")
-	inventory_menu = _inventory_menu
-	inventory_menu.add_child(inventory)
-	inventory_menu.add_child(hotkey_inventory)
+	inventory = _inventory
 	player_camera = _player_camera
-	update_inventory_menu()
-
 
 func item_in_hotkeys(item: ItemProperties.Item):
 	for hotkey_index in hotkey_assignments:
@@ -40,80 +35,65 @@ func item_in_hotkeys(item: ItemProperties.Item):
 
 func add_item(item: ItemProperties.Item, amount: int = 1):
 	inventory._add_item(item, amount)
-	if not item_in_hotkeys(item):
-		hotkey_assignments[str(hotkey_counter)] = item
-		hotkey_counter += 1
-	if equipped_item.item_id == ItemProperties.Item.NO_ITEM:
-		equip_item(item)
-	update_inventory_menu()
+	# if not item_in_hotkeys(item):
+	# 	hotkey_assignments[str(hotkey_counter)] = item
+	# 	hotkey_counter += 1
+	# if equipped_item.item_id == ItemProperties.Item.NO_ITEM:
+	# 	equip_item(item)
+	# update_inventory_menu()
 
 
-func update_inventory_menu():
-	# var text: String = "YOUR ITEMS\n"
-	# for item in inventory.items:
-	# 	var amount = inventory.items[item].amount
-	# 	text += ItemProperties.ITEMS[item].name_plural
-	# 	text += ": "
-	# 	text += str(amount)
-	# 	text += "\n"
-	# text += "EQUIPPED ITEM: "
-	# text += ItemProperties.ITEMS[equipped_item.item_id].name_singular
-	# text += "\n"
-	# inventoryText.text = text
-	pass
+# func equip_item(item: ItemProperties.Item):
+# 	if equipped_item.object != null:
+# 		equipped_item.object.queue_free()
+# 		player_camera.remove_child(equipped_item.object)
+
+# 	equipped_item.item_id = item
+# 	# TODO: Should only swap out the model instead of whole object
+# 	if item != ItemProperties.Item.NO_ITEM:
+# 		equipped_item.object = ItemProperties.ITEMS[item].resource.instantiate()
+# 		equipped_item.object.gravity_scale = 0.0
+# 		equipped_item.object.collision_layer = 0
+# 		equipped_item.object.collision_mask = 0
+
+# 		if item_in_hand:
+# 			equipped_item.object.show()
+# 		else:
+# 			equipped_item.object.hide()
+# 		player_camera.add_child(equipped_item.object)
+# 	update_inventory_menu()
 
 
-func equip_item(item: ItemProperties.Item):
-	if equipped_item.object != null:
-		equipped_item.object.queue_free()
-		player_camera.remove_child(equipped_item.object)
-
-	equipped_item.item_id = item
-	# TODO: Should only swap out the model instead of whole object
-	if item != ItemProperties.Item.NO_ITEM:
-		equipped_item.object = ItemProperties.ITEMS[item].resource.instantiate()
-		equipped_item.object.gravity_scale = 0.0
-		equipped_item.object.collision_layer = 0
-		equipped_item.object.collision_mask = 0
-
-		if item_in_hand:
-			equipped_item.object.show()
-		else:
-			equipped_item.object.hide()
-		player_camera.add_child(equipped_item.object)
-	update_inventory_menu()
-
-
-func equip_item_index(index: int):
-	var index_str = str(index)
-	if hotkey_assignments.size() > index and inventory.items.has(hotkey_assignments[index_str]):
-		equip_item(hotkey_assignments[index_str])
+# func equip_item_index(index: int):
+# 	var index_str = str(index)
+# 	if hotkey_assignments.size() > index and inventory_menu.items.has(hotkey_assignments[index_str]):
+# 		equip_item(hotkey_assignments[index_str])
 
 
 # Return true if equipped item is already in hand
-func use_equipped_item() -> bool:
-	if item_in_hand:
-		item_swinging_timer = 0.0
-		return true
-	elif equipped_item.item_id != ItemProperties.Item.NO_ITEM:
-		item_in_hand = true
-		equipped_item.object.show()
-	return false
+# func use_equipped_item() -> bool:
+# 	if item_in_hand:
+# 		item_swinging_timer = 0.0
+# 		return true
+# 	elif equipped_item.item_id != ItemProperties.Item.NO_ITEM:
+# 		item_in_hand = true
+# 		equipped_item.object.show()
+# 	return false
 
-func put_away_equipped_item():
-	item_in_hand = false
-	if equipped_item.item_id != ItemProperties.Item.NO_ITEM:
-		equipped_item.object.hide()
+# func put_away_equipped_item():
+# 	item_in_hand = false
+# 	if equipped_item.item_id != ItemProperties.Item.NO_ITEM:
+# 		equipped_item.object.hide()
 
 
-func delete_equipped_item():
-	var last_removed = inventory._remove_item(equipped_item.item_id)
-	if last_removed:
-		item_in_hand = false
-		player_camera.remove_child(equipped_item.object)
-		equipped_item.object.queue_free()
-		equipped_item = WorldItem.new(ItemProperties.Item.NO_ITEM)
-	update_inventory_menu()
+# func delete_equipped_item():
+# 	var last_removed = inventory_menu._remove_item(equipped_item.item_id)
+# 	if last_removed:
+# 		item_in_hand = false
+# 		player_camera.remove_child(equipped_item.object)
+# 		equipped_item.object.queue_free()
+# 		equipped_item = WorldItem.new(ItemProperties.Item.NO_ITEM)
+# 	update_inventory_menu()
 
 
 # TODO: Figure out if it is possible to inherit camera position and rotation instead
@@ -130,20 +110,22 @@ func _process(delta):
 		equipped_item.object.rotation = EQUIPPED_ITEM_ROTATION
 
 func save() -> Dictionary:
-	var items = inventory._save()
-	var result: Dictionary = {}
-	var items_dict: Dictionary = {}
-	items_dict["items"] = items
-	items_dict["equipped_item"] = equipped_item.item_id
-	items_dict["item_in_hand"] = item_in_hand
-	items_dict["hotkeys"] = hotkey_assignments
-	result[SaveLoadState.StateType.PlayerInventory] =  items_dict
-	return result
+	return {}
+# 	var items = inventory_menu._save()
+# 	var result: Dictionary = {}
+# 	var items_dict: Dictionary = {}
+# 	items_dict["items"] = items
+# 	items_dict["equipped_item"] = equipped_item.item_id
+# 	items_dict["item_in_hand"] = item_in_hand
+# 	items_dict["hotkeys"] = hotkey_assignments
+# 	result[SaveLoadState.StateType.PlayerInventory] =  items_dict
+# 	return result
 
 func load(data: Dictionary):
-	var item_data = data[str(SaveLoadState.StateType.PlayerInventory)]
-	inventory._load(item_data["items"])
-	item_in_hand = item_data["item_in_hand"]
-	equip_item(item_data["equipped_item"])
-	hotkey_assignments = item_data["hotkeys"]
-	hotkey_counter = hotkey_assignments.size()
+	pass
+# 	var item_data = data[str(SaveLoadState.StateType.PlayerInventory)]
+# 	inventory_menu._load(item_data["items"])
+# 	item_in_hand = item_data["item_in_hand"]
+# 	equip_item(item_data["equipped_item"])
+# 	hotkey_assignments = item_data["hotkeys"]
+# 	hotkey_counter = hotkey_assignments.size()

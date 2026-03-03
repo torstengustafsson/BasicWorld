@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bm61mflsgkswc"]
 
 [ext_resource type="Script" uid="uid://cqn6mjj5hc4h4" path="res://scripts/main.gd" id="1_o6xl0"]
-[ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://assets/brackeys-proto-controller/proto_controller/proto_controller.tscn" id="2_tipki"]
+[ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://addons/brackeys-proto-controller/proto_controller/proto_controller.tscn" id="2_tipki"]
 [ext_resource type="PackedScene" uid="uid://c3hlevqadr32h" path="res://scenes/pause_menu.tscn" id="4_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://dhaksq5wolwly" path="res://scenes/hud.tscn" id="5_tbgi4"]
 

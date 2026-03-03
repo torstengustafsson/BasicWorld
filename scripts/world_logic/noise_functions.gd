@@ -19,10 +19,10 @@ func above_threshold(position: Vector3) -> bool:
 
 static func create_forest_noise() -> NoiseFunctions:
 	var high_density_noise = FastNoiseLite.new()
-	high_density_noise.frequency = 0.01
+	high_density_noise.frequency = 0.006
 	var noise_container_1 = NoiseContainer.new()
 	noise_container_1.noise = high_density_noise
-	noise_container_1.threshold = 0.4
+	noise_container_1.threshold = 0.5
 
 	var low_density_noise = FastNoiseLite.new()
 	low_density_noise.frequency = 0.5

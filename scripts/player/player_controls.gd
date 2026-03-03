@@ -23,18 +23,18 @@ func _init(
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact"):
 		handle_interaction()
-	if event.is_action_pressed("use_item"):
-		var item_already_in_hand = player_inventory.use_equipped_item()
-		if item_already_in_hand:
-			handle_use_item()
-	if event.is_action_pressed("put_away_item"):
-			player_inventory.put_away_equipped_item()
-	if event.is_action_pressed("hotkey_1"):
-			player_inventory.equip_item_index(0)
-	if event.is_action_pressed("hotkey_2"):
-			player_inventory.equip_item_index(1)
-	if event.is_action_pressed("hotkey_3"):
-			player_inventory.equip_item_index(2)
+	# if event.is_action_pressed("use_item"):
+	# 	var item_already_in_hand = player_inventory.use_equipped_item()
+	# 	if item_already_in_hand:
+	# 		handle_use_item()
+	# if event.is_action_pressed("put_away_item"):
+	# 		player_inventory.put_away_equipped_item()
+	# if event.is_action_pressed("hotkey_1"):
+	# 		player_inventory.equip_item_index(0)
+	# if event.is_action_pressed("hotkey_2"):
+	# 		player_inventory.equip_item_index(1)
+	# if event.is_action_pressed("hotkey_3"):
+	# 		player_inventory.equip_item_index(2)
 
 
 func handle_interaction():
