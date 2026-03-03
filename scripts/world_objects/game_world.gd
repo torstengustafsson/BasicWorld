@@ -68,8 +68,7 @@ func _ready() -> void:
 	world_item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
 
 	for berry in 40:
-		#var berry_position = Vector3(randf_range(start_pos_x, end_pos_z), 5.0, randf_range(start_pos_z, end_pos_z))
-		var berry_position = Vector3(randf_range(-5.0, 5.0), 5.0, randf_range(-5.0, 5.0))
+		var berry_position = Vector3(randf_range(start_pos_x, end_pos_x), 5.0, randf_range(start_pos_z, end_pos_z))
 		world_item_generator.spawn_item(berry_position, ItemProperties.Item.BERRY)
 
 	for wood in 40:

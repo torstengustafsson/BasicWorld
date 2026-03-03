@@ -20,7 +20,7 @@ func set_item(new_item: ItemProperties.Item):
 		max_stack_size = 1
 	else:
 		if ItemProperties.ITEMS[new_item].icon == null:
-			print("No icon!")
+			print("Error: No icon for item " + ItemProperties.ITEMS[new_item].name_singular)
 			return
 
 		icon.texture = ItemProperties.ITEMS[new_item].icon
@@ -43,5 +43,16 @@ func remove_amount(amount_to_remove: int) -> int:
 	amount_label.text = str(amount)
 	if amount == 0:
 		item = ItemProperties.Item.NO_ITEM
+		icon.texture = null
 		amount_label.text = ""
 	return max(-leftover, 0)
+
+func set_equipped():
+	var style = StyleBoxTexture.new()
+	style.texture = preload("res://assets/icons/items/slot_equipped.png")
+	add_theme_stylebox_override("panel", style)
+
+func set_unequipped():
+	var style = StyleBoxTexture.new()
+	style.texture = preload("res://assets/icons/items/slot.png")
+	add_theme_stylebox_override("panel", style)

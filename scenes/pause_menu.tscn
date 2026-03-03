@@ -135,7 +135,7 @@ E to interact with the world
 Left Mouse Button to use item
 F to put away item
 I to open inventory
-1,2,3 keys to switch equipped item"
+1,2,3.. keys to switch equipped item"
 
 [node name="BackButton" type="Button" parent="SettingsMenu/ControlsSubmenu" unique_id=1874992811]
 anchors_preset = 8

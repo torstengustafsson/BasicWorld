@@ -16,7 +16,7 @@ mass = 2.0
 physics_material_override = SubResource("PhysicsMaterial_m4rnx")
 angular_damp = 5.0
 
-[node name="stone_item" parent="." unique_id=1114681404 instance=ExtResource("1_khi28")]
+[node name="ItemMesh" parent="." unique_id=1114681404 instance=ExtResource("1_khi28")]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=688241786]
 shape = SubResource("SphereShape3D_k5ken")

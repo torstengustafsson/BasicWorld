@@ -10,12 +10,13 @@ var game_world: GameWorld
 func _init(
 	_space_state: PhysicsDirectSpaceState3D,
 	inventory: Node2D,
+	hotkey_menu: HotkeyItems,
 	_player_camera: Camera3D,
 	_game_world: GameWorld,
 ):
 	space_state = _space_state
 	player_camera = _player_camera
-	player_inventory = PlayerInventory.new(inventory, player_camera)
+	player_inventory = PlayerInventory.new(inventory, hotkey_menu, player_camera)
 	game_world = _game_world
 	add_child(player_inventory)
 
@@ -23,18 +24,28 @@ func _init(
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact"):
 		handle_interaction()
-	# if event.is_action_pressed("use_item"):
-	# 	var item_already_in_hand = player_inventory.use_equipped_item()
-	# 	if item_already_in_hand:
-	# 		handle_use_item()
-	# if event.is_action_pressed("put_away_item"):
-	# 		player_inventory.put_away_equipped_item()
-	# if event.is_action_pressed("hotkey_1"):
-	# 		player_inventory.equip_item_index(0)
-	# if event.is_action_pressed("hotkey_2"):
-	# 		player_inventory.equip_item_index(1)
-	# if event.is_action_pressed("hotkey_3"):
-	# 		player_inventory.equip_item_index(2)
+	if event.is_action_pressed("use_item"):
+		var item_already_in_hand = player_inventory.use_equipped_item()
+		if item_already_in_hand:
+			handle_use_item()
+	if event.is_action_pressed("put_away_item"):
+			player_inventory.put_away_equipped_item()
+	if event.is_action_pressed("hotkey_1"):
+			player_inventory.equip_item_index(0)
+	if event.is_action_pressed("hotkey_2"):
+			player_inventory.equip_item_index(1)
+	if event.is_action_pressed("hotkey_3"):
+			player_inventory.equip_item_index(2)
+	if event.is_action_pressed("hotkey_4"):
+			player_inventory.equip_item_index(3)
+	if event.is_action_pressed("hotkey_5"):
+			player_inventory.equip_item_index(4)
+	if event.is_action_pressed("hotkey_6"):
+			player_inventory.equip_item_index(5)
+	if event.is_action_pressed("hotkey_7"):
+			player_inventory.equip_item_index(6)
+	if event.is_action_pressed("hotkey_8"):
+			player_inventory.equip_item_index(7)
 
 
 func handle_interaction():

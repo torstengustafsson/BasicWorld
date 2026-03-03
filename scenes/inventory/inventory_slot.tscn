@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c8xevkwc3c3xs"]
 
 [ext_resource type="Script" uid="uid://b6ijxmptd8n84" path="res://scripts/items/inventory/inventory_slot.gd" id="1_5agom"]
-[ext_resource type="Texture2D" uid="uid://da0lye4j8gxp1" path="res://assets/icons/items/slot_empty.png" id="1_u6pog"]
+[ext_resource type="Texture2D" uid="uid://dxmksjsaxsj2d" path="res://assets/icons/items/slot.png" id="1_u6pog"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_c7w7p"]
 texture = ExtResource("1_u6pog")
