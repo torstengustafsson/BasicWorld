@@ -2,6 +2,7 @@ extends Node
 
 class_name ItemProperties
 
+const no_item_scene = preload("res://scenes/items/no_item.tscn")
 const axe_scene = preload("res://scenes/items/axe.tscn")
 const pickaxe_scene = preload("res://scenes/items/pickaxe.tscn")
 const berry_scene = preload("res://scenes/items/berry.tscn")
@@ -15,6 +16,7 @@ const wood_glb = preload("res://assets/models/items/wood_item.glb")
 const stone_glb = preload("res://assets/models/items/stone_item.glb")
 
 
+const no_item_icon = preload("res://assets/icons/items/slot.png")
 const axe_icon = preload("res://assets/icons/items/axe_icon.png")
 const pickaxe_icon = preload("res://assets/icons/items/pickaxe_icon.png")
 const berry_icon = preload("res://assets/icons/items/berries_icon.png")
@@ -24,7 +26,7 @@ const stone_icon = preload("res://assets/icons/items/stone_icon.png")
 enum Item { NO_ITEM, AXE, PICKAXE, BERRY, WOOD, STONE }
 
 static var ITEMS: Dictionary[Item, ItemProperties] = {
-	Item.NO_ITEM: ItemProperties.new("No item", "No item", 0, null, null, null),
+	Item.NO_ITEM: ItemProperties.new("No item", "No item", 0, no_item_icon, no_item_scene, no_item_scene),
 	Item.AXE: ItemProperties.new("Axe", "Axes", 1, axe_icon, axe_scene, axe_glb),
 	Item.PICKAXE: ItemProperties.new("Pickaxe", "Pickaxes", 1, pickaxe_icon, pickaxe_scene, pickaxe_glb),
 	Item.BERRY: ItemProperties.new("Berry", "Berries", 10, berry_icon, berry_scene, berry_glb),

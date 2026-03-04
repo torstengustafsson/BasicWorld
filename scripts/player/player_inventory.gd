@@ -1,4 +1,4 @@
-extends Node
+extends Node2D
 
 class_name PlayerInventory
 
@@ -10,6 +10,8 @@ var player_camera: Node3D
 
 var equipped_item: EquippedItem = EquippedItem.new()
 var item_in_hand: bool = false
+
+var held_item = null
 
 func _init(_inventory: Inventory, hotkey_menu: HotkeyItems, _player_camera: Node3D):
 	add_to_group("Persist")
@@ -39,11 +41,14 @@ func add_item(item: ItemProperties.Item, amount: int = 1):
 		var inventory_full = inventory.add_item(item, amount)
 		# TODO: Display message that inventory is full
 		print("Inventory full")
+	update_inventory()
+
 
 func remove_item(item: ItemProperties.Item, amount: int = 1):
 	var last_removed_hotkey_item = hotkey_inventory.remove_item(item, amount)
 	if last_removed_hotkey_item:
 		var inventory_full = inventory.remove_item(item, amount)
+	update_inventory()
 
 func equip_item_index(index: int):
 	if index > hotkey_inventory.inventory_size.x * hotkey_inventory.inventory_size.y:
@@ -85,13 +90,30 @@ func delete_equipped_item():
 		hotkey_inventory.set_equipped_item_index(NO_EQUIPPED_ITEM)
 	remove_item(equipped_item.item_id, 1)
 
-	# var last_removed = inventory.remove_item(equipped_item.item_id)
-	# if last_removed:
-	# 	item_in_hand = false
-	# 	player_camera.remove_child(equipped_item.object)
-	# 	equipped_item.set_item(ItemProperties.Item.NO_ITEM)
-	# 	hotkey_inventory.set_equipped_item_index(NO_HOTKEYED_ITEM)
-	# 	hotkeyed_item_index = NO_HOTKEYED_ITEM
+func update_inventory():
+	for slot in inventory.inventory_grid.get_children():
+		slot.gui_input.connect(slot_gui_input.bind(slot))
+	for slot in hotkey_inventory.inventory_grid.get_children():
+		slot.gui_input.connect(slot_gui_input.bind(slot))
+
+# TODO: Handle equipped item
+func slot_gui_input(event: InputEvent, slot: InventorySlot) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MouseButton.MOUSE_BUTTON_LEFT:
+		if held_item == null:
+			slot.set_picked_up()
+			held_item = slot
+			print("Picked up item " + str(ItemProperties.ITEMS[slot.item].name_singular) + " with amount " + str(slot.amount))
+		else:
+			slot.set_item(held_item.item, held_item.amount)
+			slot.set_placed_down()
+			if held_item != slot:
+				held_item.set_empty()
+			held_item = null
+			print("Placed item " + str(ItemProperties.ITEMS[slot.item].name_singular) + " with amount " + str(slot.amount))
+
+func _input(event: InputEvent) -> void:
+	if held_item:
+		held_item.icon.position = get_global_mouse_position()
 
 func save() -> Dictionary:
 	return {}

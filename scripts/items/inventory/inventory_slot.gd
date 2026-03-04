@@ -2,9 +2,15 @@ extends Panel
 
 class_name InventorySlot
 
+
+
 var amount: int
-var max_stack_size: int
 var item: ItemProperties.Item
+func max_stack_size() -> int:
+	if item == ItemProperties.Item.NO_ITEM:
+		return 0
+	return ItemProperties.ITEMS[item].max_stack_size
+
 
 @onready var icon = $TextureRect
 @onready var amount_label = $AmountLabel
@@ -13,27 +19,20 @@ func _ready() -> void:
 	set_item(ItemProperties.Item.NO_ITEM)
 	custom_minimum_size = Vector2(50, 50)
 
-func set_item(new_item: ItemProperties.Item):
-	if new_item == ItemProperties.Item.NO_ITEM:
-		icon.texture = null
-		amount = 0
-		max_stack_size = 1
-	else:
-		if ItemProperties.ITEMS[new_item].icon == null:
-			print("Error: No icon for item " + ItemProperties.ITEMS[new_item].name_singular)
-			return
-
-		icon.texture = ItemProperties.ITEMS[new_item].icon
-		max_stack_size = ItemProperties.ITEMS[new_item].max_stack_size
-		amount = 0
-		amount_label.text = ""
+func set_item(new_item: ItemProperties.Item, _amount: int = 0):
+	icon.texture = ItemProperties.ITEMS[new_item].icon
+	item = new_item
+	amount = _amount
+	amount_label.text = ""
+	if amount > 0 and max_stack_size() > 1:
+		amount_label.text = str(amount)
 
 func add_amount(amount_to_add: int) -> int:
 	if item == ItemProperties.Item.NO_ITEM or amount_to_add <= 0:
 		return 0
-	var leftover = amount_to_add - (max_stack_size - amount)
-	amount = min(amount + amount_to_add, max_stack_size)
-	if max_stack_size > 1:
+	var leftover = amount_to_add - (max_stack_size() - amount)
+	amount = min(amount + amount_to_add, max_stack_size())
+	if max_stack_size() > 1:
 		amount_label.text = str(amount)
 	return leftover
 
@@ -48,6 +47,19 @@ func remove_amount(amount_to_remove: int) -> int:
 		icon.texture = null
 		amount_label.text = ""
 	return max(-leftover, 0)
+
+func set_empty():
+	item = ItemProperties.Item.NO_ITEM
+	amount = 0
+	icon.texture = null
+	amount_label.text = ""
+
+func set_picked_up():
+	icon.modulate = Color(0.5, 0.5, 0.5, 1.0)
+
+func set_placed_down():
+	icon.modulate = Color(1.0, 1.0, 1.0, 1.0)
+
 
 func set_equipped():
 	var style = StyleBoxTexture.new()

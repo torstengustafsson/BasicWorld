@@ -27,7 +27,7 @@ func add_item(item: ItemProperties.Item, amount_to_add: int) -> bool:
 	# Start by adding to existing stacks
 	for i in inventory_grid.get_child_count():
 		var slot: InventorySlot = inventory_grid.get_child(i)
-		if slot.item == item and slot.amount < slot.max_stack_size:
+		if slot.item == item and slot.amount < slot.max_stack_size():
 			var leftover = slot.add_amount(amount_to_add)
 			if leftover <= 0:
 				return false
@@ -76,7 +76,6 @@ func _save() -> Array[Dictionary]:
 		var data: Dictionary = {}
 		data["id"] = slot.item
 		data["amount"] = slot.amount
-		data["max_stack_size"] = slot.max_stack_size
 		result.append(data)
 	return result
 
@@ -88,5 +87,4 @@ func _load(data: Array): # Cant be typed due to gdscript. Should be: Array[Dicti
 		var slot: InventorySlot = slot_scene.instantiate()
 		slot.item = item_id
 		slot.amount = item["amount"]
-		slot.max_stack_size = item["max_stack_size"]
 		inventory_grid.add_child(slot)
