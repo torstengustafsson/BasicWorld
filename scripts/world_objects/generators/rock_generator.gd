@@ -15,8 +15,10 @@ class ChopResult:
 		amount_gained = _amount_gained
 
 var rocks: Array[WorldObject] = []
+var static_objects_qt: Quadtree
 
-func _init():
+func _init(qt: Quadtree):
+	static_objects_qt = qt
 	add_to_group("Persist")
 
 func create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, rocks_noise) -> Array[WorldObject]:
@@ -40,11 +42,13 @@ func create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, rocks_no
 func add_rock(position: Vector3, scale: Vector3):
 	var rock = WorldObject.add_rock(position, scale)
 	rocks.append(rock)
+	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": rock})
 	add_child(rock.instance)
 
 func remove_at(index: int):
 	rocks[index].instance.queue_free()
 	rocks.remove_at(index)
+	static_objects_qt.remove({"position": Vector2(rocks[index].instance.position.x, rocks[index].instance.position.z), "data": rocks[index]})
 
 
 func handle_chop(collider) -> ChopResult:

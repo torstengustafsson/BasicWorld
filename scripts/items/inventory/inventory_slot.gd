@@ -25,6 +25,8 @@ func set_item(new_item: ItemProperties.Item):
 
 		icon.texture = ItemProperties.ITEMS[new_item].icon
 		max_stack_size = ItemProperties.ITEMS[new_item].max_stack_size
+		amount = 0
+		amount_label.text = ""
 
 func add_amount(amount_to_add: int) -> int:
 	if item == ItemProperties.Item.NO_ITEM or amount_to_add <= 0:

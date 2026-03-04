@@ -40,9 +40,11 @@ class BerryBush extends WorldObject:
 		object.name = BERRYBUSH_NAME
 		instance.add_child(object)
 
+var static_objects_qt: Quadtree
 var berrybushes: Array[WorldObject] = []
 
-func _init():
+func _init(qt: Quadtree):
+	static_objects_qt = qt
 	add_to_group("Persist")
 
 func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise) -> Array[WorldObject]:
@@ -66,6 +68,7 @@ func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, fo
 func add_bush(position: Vector3, scale: float) -> BerryBush:
 	var berrybush = BerryBush.new(position, scale)
 	berrybushes.append(berrybush)
+	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": berrybush})
 	add_child(berrybush.instance)
 	return berrybush
 
@@ -81,6 +84,7 @@ func _process(delta):
 func remove_at(index: int):
 	berrybushes[index].instance.queue_free()
 	berrybushes.remove_at(index)
+	static_objects_qt.remove({"position": Vector2(berrybushes[index].instance.position.x, berrybushes[index].instance.position.z), "data": berrybushes[index]})
 
 # Returns amount of berries gained
 func interact(collider) -> int:

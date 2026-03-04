@@ -15,13 +15,14 @@ class InteractResult:
 const ROAD_WIDTH = 1.5
 const WORLD_SIZE = 320.0
 
+var static_objects_qt: Quadtree = Quadtree.new(Rect2(-WORLD_SIZE / 2, -WORLD_SIZE / 2,WORLD_SIZE, WORLD_SIZE))
 var world_grid: WorldGrid
 var ground_material = ShaderMaterial.new()
 var ground: StaticBody3D
 var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
-var trees_generator: TreeGenerator = TreeGenerator.new()
-var bush_generator: BushGenerator = BushGenerator.new()
-var rock_generator: RockGenerator = RockGenerator.new()
+var trees_generator: TreeGenerator = TreeGenerator.new(static_objects_qt)
+var bush_generator: BushGenerator = BushGenerator.new(static_objects_qt)
+var rock_generator: RockGenerator = RockGenerator.new(static_objects_qt)
 var settlements_generator: SettlementGenerator = SettlementGenerator.new()
 var npcs_generator: NpcGenerator = NpcGenerator.new()
 var road_generator: RoadGenerator
@@ -52,13 +53,13 @@ func _ready() -> void:
 	var rocks_noise = NoiseFunctions.create_rocks_noise()
 
 
-	var trees: Array[WorldObject] = trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees, forest_noise)
+	trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees, forest_noise)
 	add_child(trees_generator)
 
-	var bushes: Array[WorldObject] = bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes, forest_noise)
+	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes, forest_noise)
 	add_child(bush_generator)
 
-	var rocks: Array[WorldObject] = rock_generator.create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_rocks, rocks_noise)
+	rock_generator.create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_rocks, rocks_noise)
 	add_child(rock_generator)
 
 	var axe_position = Vector3(-1.0, 2.0, -4.0)
@@ -87,9 +88,8 @@ func _ready() -> void:
 
 	# CREATE WORLD GRID
 
-	var all_objects = trees + bushes + rocks
 	world_grid = WorldGrid.new(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z), ROAD_WIDTH)
-	world_grid.calculate_weights(all_objects)
+	world_grid.calculate_weights(static_objects_qt)
 	add_child(world_grid)
 
 	var create_world_grid_time = Time.get_ticks_msec()
