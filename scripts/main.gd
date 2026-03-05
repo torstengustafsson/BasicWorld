@@ -19,3 +19,4 @@ extends Node3D
 func _ready() -> void:
 	add_child(game_world)
 	add_child(player_controls)
+	$PauseMenu.unpausable_nodes.append(player_controls)

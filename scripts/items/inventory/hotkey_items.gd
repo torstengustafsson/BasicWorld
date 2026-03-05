@@ -10,6 +10,16 @@ func _ready() -> void:
 	inventory_grid.columns = inventory_size.x
 	for i in range(inventory_size.x * inventory_size.y):
 		var slot = slot_scene.instantiate()
+		var hotkey_label = Label.new()
+		hotkey_label.text = str(i + 1)
+		var label_settings = LabelSettings.new()
+		label_settings.font_size = 14
+		label_settings.font_color = Color(0.1, 1.0, 0.5, 0.5)
+		label_settings.outline_color = Color(0.0, 0.0, 0.0, 1.0)
+		label_settings.outline_size = 6
+		hotkey_label.label_settings = label_settings
+		hotkey_label.z_index = 2
+		slot.add_child(hotkey_label)
 		inventory_grid.add_child(slot)
 
 func set_equipped_item_index(item_index: int) -> void:

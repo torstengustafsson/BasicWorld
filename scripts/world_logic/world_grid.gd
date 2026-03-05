@@ -114,14 +114,14 @@ func get_world_position(settlement: SettlementGenerator.SettlementData) -> Vecto
 # func _process(_delta):
 # 	render_grid()
 
-func render_grid():
-	for grid_point in grid_point_edges:
-		var point_with_edges = grid_point_edges[grid_point]
-		DebugDraw3D.draw_sphere(Vector3(point_with_edges.point.x, 0.5, point_with_edges.point.z))
-		for edge in point_with_edges.edges:
-			var neighbor = grid_point_edges.get(edge.grid_point, null)
-			if not neighbor:
-				continue
-			var red = edge.weight / max_weight
-			var color = Color(red, 0.0, 0.0, 1.0)
-			DebugDraw3D.draw_line(Vector3(point_with_edges.point.x, 0.5, point_with_edges.point.z), Vector3(neighbor.point.x, 0.5, neighbor.point.z), color)
+# func render_grid():
+# 	for grid_point in grid_point_edges:
+# 		var point_with_edges = grid_point_edges[grid_point]
+# 		DebugDraw3D.draw_sphere(Vector3(point_with_edges.point.x, 0.5, point_with_edges.point.z))
+# 		for edge in point_with_edges.edges:
+# 			var neighbor = grid_point_edges.get(edge.grid_point, null)
+# 			if not neighbor:
+# 				continue
+# 			var red = edge.weight / max_weight
+# 			var color = Color(red, 0.0, 0.0, 1.0)
+# 			DebugDraw3D.draw_line(Vector3(point_with_edges.point.x, 0.5, point_with_edges.point.z), Vector3(neighbor.point.x, 0.5, neighbor.point.z), color)

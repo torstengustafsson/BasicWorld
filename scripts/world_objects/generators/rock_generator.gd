@@ -46,9 +46,9 @@ func add_rock(position: Vector3, scale: Vector3):
 	add_child(rock.instance)
 
 func remove_at(index: int):
+	static_objects_qt.remove({"position": Vector2(rocks[index].instance.position.x, rocks[index].instance.position.z), "data": rocks[index]})
 	rocks[index].instance.queue_free()
 	rocks.remove_at(index)
-	static_objects_qt.remove({"position": Vector2(rocks[index].instance.position.x, rocks[index].instance.position.z), "data": rocks[index]})
 
 
 func handle_chop(collider) -> ChopResult:

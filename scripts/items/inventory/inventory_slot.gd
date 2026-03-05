@@ -2,8 +2,6 @@ extends Panel
 
 class_name InventorySlot
 
-
-
 var amount: int
 var item: ItemProperties.Item
 func max_stack_size() -> int:
@@ -11,8 +9,7 @@ func max_stack_size() -> int:
 		return 0
 	return ItemProperties.ITEMS[item].max_stack_size
 
-
-@onready var icon = $TextureRect
+@onready var icon = $ItemIcon
 @onready var amount_label = $AmountLabel
 
 func _ready() -> void:
@@ -56,9 +53,11 @@ func set_empty():
 
 func set_picked_up():
 	icon.modulate = Color(0.5, 0.5, 0.5, 1.0)
+	icon.z_index = 100
 
 func set_placed_down():
 	icon.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	icon.z_index = 2
 
 
 func set_equipped():

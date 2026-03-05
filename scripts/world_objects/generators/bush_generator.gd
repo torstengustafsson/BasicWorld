@@ -82,9 +82,9 @@ func _process(delta):
 		berrybush.berries_fill_secs += delta
 
 func remove_at(index: int):
+	static_objects_qt.remove({"position": Vector2(berrybushes[index].instance.position.x, berrybushes[index].instance.position.z), "data": berrybushes[index]})
 	berrybushes[index].instance.queue_free()
 	berrybushes.remove_at(index)
-	static_objects_qt.remove({"position": Vector2(berrybushes[index].instance.position.x, berrybushes[index].instance.position.z), "data": berrybushes[index]})
 
 # Returns amount of berries gained
 func interact(collider) -> int:

@@ -6,6 +6,7 @@
 script = ExtResource("1_msrby")
 
 [node name="Background" type="ColorRect" parent="." unique_id=208236631]
+z_index = -2
 offset_right = 480.0
 offset_bottom = 320.0
 color = Color(0.47137803, 0.97515553, 0.53800064, 1)
@@ -17,6 +18,7 @@ offset_right = 475.0
 offset_bottom = 250.0
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=1452527172]
+z_index = -1
 offset_left = 15.0
 offset_top = 250.0
 offset_right = 465.0

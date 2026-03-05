@@ -3,6 +3,8 @@ extends CanvasLayer
 var settings_menu_open: bool = false
 var inventory_open: bool = false
 
+var unpausable_nodes: Array[Node] = []
+
 @onready var save_load_state: SaveLoadState = SaveLoadState.new()
 
 @onready var inventory_menu = $InventoryMenu
@@ -45,6 +47,11 @@ func _process(_delta: float) -> void:
 		else:
 			_open_inventory()
 
+func pause_game():
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	show()
+	get_tree().paused = true
+
 # Close all menus and unpause the game
 func _resume_game() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -55,22 +62,18 @@ func _resume_game() -> void:
 	get_tree().paused = false
 
 func _open_settings_menu() -> void:
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	show()
+	pause_game()
 	settings_menu.show()
 	settings_submenu.show()
 	controls_submenu.hide()
 	inventory_menu.hide()
 	settings_menu_open = true
-	get_tree().paused = true
 
 func _open_inventory() -> void:
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	show()
+	pause_game()
 	settings_menu.hide()
 	inventory_menu.show()
 	inventory_open = true
-	get_tree().paused = true
 
 func _open_controls_menu() -> void:
 	controls_submenu.show()

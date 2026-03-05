@@ -11,17 +11,21 @@ font_color = Color(0, 0, 0, 1)
 outline_size = 4
 
 [node name="InventorySlot" type="Panel" unique_id=2122284051]
+z_index = -1
 custom_minimum_size = Vector2(50, 50)
 theme_override_styles/panel = SubResource("StyleBoxTexture_c7w7p")
 script = ExtResource("1_5agom")
 
-[node name="TextureRect" type="TextureRect" parent="." unique_id=1213385563]
+[node name="ItemIcon" type="TextureRect" parent="." unique_id=1213385563]
+z_index = 2
 layout_mode = 0
 offset_right = 50.0
 offset_bottom = 50.0
+mouse_filter = 2
 
 [node name="AmountLabel" type="Label" parent="." unique_id=822510060]
 z_index = 1
+z_as_relative = false
 layout_mode = 0
 offset_left = 18.0
 offset_top = 28.0

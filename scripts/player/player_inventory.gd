@@ -22,33 +22,26 @@ func _init(_inventory: Inventory, hotkey_menu: HotkeyItems, _player_camera: Node
 	hotkey_inventory.position = Vector2(25.0, 255.0)
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	equipped_item.set_item(ItemProperties.Item.NO_ITEM)
 	player_camera.add_child(equipped_item)
 	equipped_item.hide()
-
-
-# func item_in_hotkeys(item: ItemProperties.Item):
-# 	for hotkey_index in hotkey_assignments:
-# 		var hotkey_item = hotkey_assignments[hotkey_index]
-# 		if hotkey_item == item:
-# 			return true
-# 	return false
 
 
 func add_item(item: ItemProperties.Item, amount: int = 1):
 	var hotkeys_full = hotkey_inventory.add_item(item, amount)
 	if hotkeys_full:
 		var inventory_full = inventory.add_item(item, amount)
-		# TODO: Display message that inventory is full
-		print("Inventory full")
-	update_inventory()
-
+		if inventory_full:
+			print_text_to_screen("Inventory full")
+	update_inventory_bindings()
 
 func remove_item(item: ItemProperties.Item, amount: int = 1):
 	var last_removed_hotkey_item = hotkey_inventory.remove_item(item, amount)
 	if last_removed_hotkey_item:
-		var inventory_full = inventory.remove_item(item, amount)
-	update_inventory()
+		inventory.remove_item(item, amount)
+	update_inventory_bindings()
+
 
 func equip_item_index(index: int):
 	if index > hotkey_inventory.inventory_size.x * hotkey_inventory.inventory_size.y:
@@ -90,30 +83,68 @@ func delete_equipped_item():
 		hotkey_inventory.set_equipped_item_index(NO_EQUIPPED_ITEM)
 	remove_item(equipped_item.item_id, 1)
 
-func update_inventory():
+
+func update_inventory_bindings():
 	for slot in inventory.inventory_grid.get_children():
 		slot.gui_input.connect(slot_gui_input.bind(slot))
 	for slot in hotkey_inventory.inventory_grid.get_children():
 		slot.gui_input.connect(slot_gui_input.bind(slot))
 
+
+func print_text_to_screen(text: String):
+	# Create a CanvasLayer so UI renders on top of everything
+	var canvas = CanvasLayer.new()
+	add_child(canvas)
+
+	# Create the label
+	var label = Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", 48)
+
+	# Anchor to center of screen
+	label.anchor_left = 0.5
+	label.anchor_top = 0.5
+	label.anchor_right = 0.5
+	label.anchor_bottom = 0.5
+	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	label.grow_vertical = Control.GROW_DIRECTION_BOTH
+	label.offset_left = -200
+	label.offset_right = 200
+	label.offset_top = -30
+	label.offset_bottom = 30
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+	canvas.add_child(label)
+
+	# Remove after 2 seconds
+	await get_tree().create_timer(2.0).timeout
+	canvas.queue_free()
+
+
 # TODO: Handle equipped item
 func slot_gui_input(event: InputEvent, slot: InventorySlot) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MouseButton.MOUSE_BUTTON_LEFT:
 		if held_item == null:
+			if slot.item == ItemProperties.Item.NO_ITEM:
+				return
 			slot.set_picked_up()
 			held_item = slot
-			print("Picked up item " + str(ItemProperties.ITEMS[slot.item].name_singular) + " with amount " + str(slot.amount))
 		else:
+			held_item.icon.position = Vector2.ZERO
+			held_item.set_placed_down()
 			slot.set_item(held_item.item, held_item.amount)
 			slot.set_placed_down()
 			if held_item != slot:
 				held_item.set_empty()
 			held_item = null
-			print("Placed item " + str(ItemProperties.ITEMS[slot.item].name_singular) + " with amount " + str(slot.amount))
 
-func _input(event: InputEvent) -> void:
+
+# TODO: This node gets paused when inventory is up
+func _input(_event: InputEvent) -> void:
 	if held_item:
-		held_item.icon.position = get_global_mouse_position()
+		held_item.icon.position = get_global_mouse_position() - held_item.global_position - held_item.size / 2
+
 
 func save() -> Dictionary:
 	return {}

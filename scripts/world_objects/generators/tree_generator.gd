@@ -48,9 +48,9 @@ func add_tree(position: Vector3, scale: float):
 	add_child(tree.instance)
 
 func remove_at(index: int):
+	static_objects_qt.remove({"position": Vector2(trees[index].instance.position.x, trees[index].instance.position.z), "data": trees[index]})
 	trees[index].instance.queue_free()
 	trees.remove_at(index)
-	static_objects_qt.remove({"position": Vector2(trees[index].instance.position.x, trees[index].instance.position.z), "data": trees[index]})
 
 
 func handle_chop(collider) -> ChopResult:
