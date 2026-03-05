@@ -50,9 +50,9 @@ func _input(event: InputEvent) -> void:
 
 func handle_interaction():
 	const RAY_LENGTH = 1.8
-	var mousepos = get_viewport().get_mouse_position()
-	var origin = player_camera.project_ray_origin(mousepos)
-	var end = origin + player_camera.project_ray_normal(mousepos) * RAY_LENGTH
+	var origin = player_camera.global_position + Vector3(0.0, -0.25, 0.0)
+	var end = origin + -player_camera.global_transform.basis.z * RAY_LENGTH
+
 	var query = PhysicsRayQueryParameters3D.create(origin, end)
 	query.collide_with_areas = true
 
