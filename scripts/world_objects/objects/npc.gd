@@ -36,7 +36,7 @@ var health = 3
 const DAMAGE_TAKEN_SECS = 0.5
 
 func _init(pos: Vector3, rot: Vector3, scale: float):
-	super._init(pos, rot, Vector3(scale, scale, scale), WorldObject.human_scene)
+	super._init(pos, rot, Vector3(scale, scale, scale), WorldObject.human_scene, ObjectId.HUMAN)
 	model = instance.get_node("animated_human").get_node("Armature").get_node("Skeleton3D").get_node("Human")
 
 	# Need to make copy of material to avoid changing on all NPCs

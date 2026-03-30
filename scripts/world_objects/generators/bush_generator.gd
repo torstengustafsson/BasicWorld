@@ -15,7 +15,7 @@ class BerryBush extends WorldObject:
 
 	func _init(pos: Vector3, scale: float):
 		var rot = Vector3(0.0, 0.0, 0.0)
-		super._init(pos, rot, Vector3(scale, scale, scale), berrybush_scene)
+		super._init(pos, rot, Vector3(scale, scale, scale), berrybush_scene, ObjectId.BERRYBUSH)
 		instance = berrybush_scene.instantiate()
 		berries_fill_secs = randf_range(0.0, BERRYBUSH_FULL_SECS)
 		instance.position = pos
@@ -68,7 +68,6 @@ func add_bush(position: Vector3, scale: float) -> BerryBush:
 	var berrybush = BerryBush.new(position, scale)
 	berrybushes.append(berrybush)
 	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": berrybush})
-	#add_child(berrybush.instance)
 	return berrybush
 
 func _process(delta):

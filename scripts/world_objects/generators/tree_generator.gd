@@ -74,6 +74,7 @@ func _process(delta):
 			shake_timer = INF
 		shake_timer += delta
 
+# TODO: Move all save and load of objects to static_objects_qt
 func save() -> Dictionary:
 	var result: Dictionary = {}
 	var tree_data: Array = []

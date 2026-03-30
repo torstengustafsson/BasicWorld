@@ -19,7 +19,7 @@ const WORLD_SIZE = 1000.0
 # outside of LOD_DISTANCE_NO_COLLIDER are removed from the scene. The check is made whenever the
 # player moves beyond LOD_UPDATE_DISTANCE from its position at the last update.
 const LOD_DISTANCE_FULL = 50.0
-const LOD_DISTANCE_NO_COLLIDER = 250.0
+const LOD_DISTANCE_NO_COLLIDER = 200.0
 const LOD_UPDATE_DISTANCE = 25.0 # Objects will spawn and despawn whenever player moves this distance
 var last_player_pos: Vector3
 
@@ -147,12 +147,8 @@ func _ready() -> void:
 	ground_material.set_shader_parameter("road_edges", shader_road_edges_data)
 	ground.get_node("PlaneMesh").material_override = ground_material
 
-	settlements_generator.remove_objects_from_settlements(trees_generator.trees, trees_generator.remove_at)
-	settlements_generator.remove_objects_from_settlements(bush_generator.berrybushes, bush_generator.remove_at)
-	settlements_generator.remove_objects_from_settlements(rock_generator.rocks, rock_generator.remove_at)
-	road_generator.remove_objects_from_roads(trees_generator.trees, trees_generator.remove_at)
-	road_generator.remove_objects_from_roads(bush_generator.berrybushes, bush_generator.remove_at)
-	road_generator.remove_objects_from_roads(rock_generator.rocks, rock_generator.remove_at)
+	settlements_generator.remove_objects_from_settlements(remove_object)
+	road_generator.remove_objects_from_roads(static_objects_qt, remove_object)
 
 	# By default all collisions are disabled. They will be later re-added on distance calculations from player
 	for item in static_objects_qt.query_all():
@@ -177,22 +173,27 @@ func update_lods():
 	add_nearby_children_batched(player_pos)
 	remove_faraway_children_batched(player_pos)
 	var objects_full = static_objects_qt.query_circle(Vector2(player_pos.x, player_pos.z), LOD_DISTANCE_FULL)
+	print("objects_full.size() = " + str(objects_full.size()))
 	for index in objects_full.size():
 		var object: WorldObject = objects_full[index]["data"]
-		object.enable_colliders()
-		add_child(object.instance) # This is to guarantee that close objects are always added to the scene
+		if not object.in_scene or not object.collider_enabled:
+			object.enable_colliders()
+			add_child(object.instance) # This is to guarantee that close objects are always added to the scene
+			object.in_scene = true
+
 
 func add_nearby_children_batched(position: Vector3, batch_size: int = 1000):
-	var objects_no_collider = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), LOD_DISTANCE_NO_COLLIDER, LOD_DISTANCE_FULL)
+	var objects_no_collider = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), LOD_DISTANCE_NO_COLLIDER, LOD_DISTANCE_FULL + 50.0)
+	print("add_nearby_children_batched " + str(objects_no_collider.size()))
 	var i = 0
 	while i < objects_no_collider.size():
 		for j in min(batch_size, objects_no_collider.size() - i):
 			var object: WorldObject = objects_no_collider[i + j]["data"]
 			# Need to verify that object is not already a child, since we otherwise would disable its collider
-			if not object.instance.get_parent() == self:
+			if not object.in_scene:
 				object.disable_colliders()
 				add_child(object.instance)
-
+				object.in_scene = true
 		i += batch_size
 		await get_tree().process_frame
 
@@ -203,8 +204,9 @@ func remove_faraway_children_batched(position: Vector3, batch_size: int = 200):
 		for j in min(batch_size, faraway_objects.size() - i):
 			var object: WorldObject = faraway_objects[i + j]["data"]
 			# Need to verify again that object is still out-of-bounds, since we use batched removal
-			if object.instance.is_inside_tree() and object.instance.position.distance_to(position) > LOD_DISTANCE_NO_COLLIDER:
+			if object.in_scene and object.instance.position.distance_to(position) > LOD_DISTANCE_NO_COLLIDER:
 				remove_child(object.instance)
+				object.in_scene = false
 		i += batch_size
 		await get_tree().process_frame
 
@@ -225,6 +227,12 @@ func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.Settl
 		var end_pos_z = settlement.position.z + settlement.radius * square_in_circle_multiplier
 		npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
 		npcs_generator.create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
+
+
+func remove_object(object: WorldObject):
+	static_objects_qt.remove({"position": Vector2(object.instance.position.x, object.instance.position.z), "data": object})
+	object.instance.queue_free()
+
 
 func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> InteractResult:
 	var berries_picked = bush_generator.interact(collider)

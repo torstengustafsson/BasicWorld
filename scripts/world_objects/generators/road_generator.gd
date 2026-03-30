@@ -82,7 +82,6 @@ func get_closest_settlements(settlement: SettlementGenerator.SettlementData, set
 
 # Uses A* to find shortest weighted path to destination
 func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i, max_distance: float) -> Array:
-	var result = []
 	var pq: PriorityQueue = PriorityQueue.new()
 	pq.push(grid_from, 0.0)
 	var came_from: Dictionary[Vector2i, Vector2i] = { grid_from: NO_GRID_POINT }
@@ -106,30 +105,37 @@ func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i, max
 		# Shortest path is too long
 		return []
 
-	var current = grid_destination
+	# Step backwards to find the shortest path
+	var result = []
+	var current_step = grid_destination
 	var max_iterations = 0
-	while current != grid_from:
+	while current_step != grid_from:
 		if max_iterations > 100:
 			print("No road found between " + str(grid_from) + " and " + str(grid_destination))
 			break
 		max_iterations += 1
-		var previous = came_from[current]
-		var a = world_grid.grid_point_edges[previous].point
-		var b = world_grid.grid_point_edges[current].point
+		var previous_step = came_from[current_step]
+		var a = world_grid.grid_point_edges[previous_step].point
+		var b = world_grid.grid_point_edges[current_step].point
 		var new_road = RoadEdge.new(a, b)
 		result.append(new_road)
-		current = previous
+		current_step = previous_step
 
 	return result
 
 # NOTE: Does not use get_objects_in_road due to performance reasons
 # (it is more efficient to loop objects first and then roads)
-func remove_objects_from_roads(objects: Array[WorldObject], callback: Callable):
-	var to_be_removed: Array[int] = []
-	for index in objects.size():
-		var object: Node3D = objects[index].instance
-		var object_pos = Vector2(object.position.x, object.position.z)
-		for edge in road_edges:
+func remove_objects_from_roads(static_objects_qt: Quadtree, remove_callback: Callable):
+	for edge in road_edges:
+		var query_rect = Rect2(
+			min(edge.from.x, edge.to.x) - ROAD_WIDTH,
+			min(edge.from.z, edge.to.z) - ROAD_WIDTH,
+			abs(edge.from.x -edge.to.x) + 2 * ROAD_WIDTH,
+			abs(edge.from.z -edge.to.z) + 2 * ROAD_WIDTH)
+		var objects = static_objects_qt.query(query_rect)
+		for index in objects.size():
+			var object: WorldObject = objects[index]["data"]
+			var object_pos = Vector2(object.instance.position.x, object.instance.position.z)
 			var a = Vector2(edge.from.x, edge.from.z)
 			var b = Vector2(edge.to.x, edge.to.z)
 			var ab: Vector2 = b - a;
@@ -138,8 +144,26 @@ func remove_objects_from_roads(objects: Array[WorldObject], callback: Callable):
 			var closest: Vector2 = a + t * ab;
 			var road_dist: float = (object_pos - closest).length()
 			if road_dist < ROAD_WIDTH + 0.1:
-				to_be_removed.append(index)
-	to_be_removed.sort()
-	to_be_removed.reverse()
-	for index in to_be_removed:
-		callback.call(index)
+				remove_callback.call(object)
+
+
+
+
+	# var to_be_removed: Array[int] = []
+	# for index in objects.size():
+	# 	var object: Node3D = objects[index].instance
+	# 	var object_pos = Vector2(object.position.x, object.position.z)
+	# 	for edge in road_edges:
+	# 		var a = Vector2(edge.from.x, edge.from.z)
+	# 		var b = Vector2(edge.to.x, edge.to.z)
+	# 		var ab: Vector2 = b - a;
+	# 		var ap: Vector2 = object_pos - a;
+	# 		var t: float = clamp(ap.dot(ab) / ab.dot(ab), 0.0, 1.0);
+	# 		var closest: Vector2 = a + t * ab;
+	# 		var road_dist: float = (object_pos - closest).length()
+	# 		if road_dist < ROAD_WIDTH + 0.1:
+	# 			to_be_removed.append(index)
+	# to_be_removed.sort()
+	# to_be_removed.reverse()
+	# for index in to_be_removed:
+	# 	callback.call(index)

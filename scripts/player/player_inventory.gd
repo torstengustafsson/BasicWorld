@@ -158,7 +158,7 @@ func save() -> Dictionary:
 # 	result[SaveLoadState.StateType.PlayerInventory] =  items_dict
 # 	return result
 
-func load(data: Dictionary):
+func load(_data: Dictionary):
 	pass
 # 	var item_data = data[str(SaveLoadState.StateType.PlayerInventory)]
 # 	inventory_menu._load(item_data["items"])

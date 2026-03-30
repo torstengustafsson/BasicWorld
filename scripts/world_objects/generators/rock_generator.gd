@@ -42,7 +42,6 @@ func add_rock(position: Vector3, scale: Vector3):
 	var rock = WorldObject.add_rock(position, scale)
 	rocks.append(rock)
 	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": rock})
-	#add_child(rock.instance)
 
 func remove_at(index: int):
 	static_objects_qt.remove({"position": Vector2(rocks[index].instance.position.x, rocks[index].instance.position.z), "data": rocks[index]})

@@ -42,7 +42,7 @@ func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, road_width: float
 	world_start_pos = _world_start_pos
 	world_end_pos = _world_end_pos
 	WORLD_SIZE = abs(world_start_pos.x - world_end_pos.x)
-	grid_size = WORLD_SIZE / WORLD_GRID_STEP
+	grid_size = int(float(WORLD_SIZE) / WORLD_GRID_STEP)
 	if WORLD_SIZE != abs(world_start_pos.y - world_end_pos.y):
 		print("Not Square world! Exiting.")
 		get_tree().quit()
@@ -78,8 +78,11 @@ func calculate_weights(qt: Quadtree):
 				continue
 			var from = point_with_edges.point
 			var to = neighbor.point
-
-			var query_rect = Rect2(min(from.x, to.x) - ROAD_WIDTH, min(from.z, to.z) - ROAD_WIDTH, abs(from.x - to.x) + 2 * ROAD_WIDTH, abs(from.z - to.z) + 2 * ROAD_WIDTH)
+			var query_rect = Rect2(
+				min(from.x, to.x) - ROAD_WIDTH,
+				min(from.z, to.z) - ROAD_WIDTH,
+				abs(from.x - to.x) + 2 * ROAD_WIDTH,
+				abs(from.z - to.z) + 2 * ROAD_WIDTH)
 			var objects = qt.query(query_rect)
 			var num_obstacles = get_num_objects_in_edge(from, to, objects, ROAD_WIDTH)
 			var distance = (from - to).length()

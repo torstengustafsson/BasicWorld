@@ -14,11 +14,10 @@ class SettlementData:
 		num_houses = _num_houses
 
 # spread must be less than half of grid step to avoid overlap
-const SETTLEMENT_GRID_STEP = 10
-const SETTLEMENT_GRID_SPREAD = 3
+const SETTLEMENT_GRID_STEP = 20
+const SETTLEMENT_GRID_SPREAD = 5
 const WORLD_EDGE_MARGIN = 1 + SETTLEMENT_GRID_SPREAD
 
-var houses: Array[WorldObject] = []
 var settlements: Array[SettlementData]
 var static_objects_qt: Quadtree
 
@@ -66,34 +65,33 @@ func add_settlement(grid_position: Vector2i, position: Vector3) -> SettlementDat
 
 func add_house(position: Vector3, rotation: Vector3) -> WorldObject:
 	var house = WorldObject.add_house(position, rotation)
-	houses.append(house)
 	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": house})
 	return house
 
 func add_chest(position: Vector3, rotation: Vector3) -> WorldObject:
 	var chest = WorldObject.add_chest(position, rotation)
-	houses.append(chest)
 	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": chest})
 	return chest
 
-func remove_objects_from_settlements(objects, callback: Callable):
-	var to_be_removed: Array[int] = []
-	for index in objects.size():
-		var object: Node3D = objects[index].instance
-		var object_pos = Vector2(object.position.x, object.position.z)
-		for settlement in settlements:
-			if (object_pos - Vector2(settlement.position.x, settlement.position.z)).length() < settlement.radius + 1.0:
-				to_be_removed.append(index)
-	to_be_removed.sort()
-	to_be_removed.reverse()
-	for index in to_be_removed:
-		callback.call(index)
+func remove_objects_from_settlements(remove_callback: Callable):
+	for settlement in settlements:
+		var objects = static_objects_qt.query_circle(Vector2(settlement.position.x, settlement.position.z), settlement.radius)
+		for index in objects.size():
+			var object: WorldObject = objects[index]["data"]
+			var object_pos = Vector2(object.instance.position.x, object.instance.position.z)
+			var settlement_pos = Vector2(settlement.position.x, settlement.position.z)
+			var is_removable_type: bool = \
+				object.id == WorldObject.ObjectId.TREE or \
+				object.id == WorldObject.ObjectId.ROCK or \
+				object.id == WorldObject.ObjectId.BERRYBUSH
+			if is_removable_type and object_pos.distance_to(settlement_pos) < settlement.radius + 1.0:
+				remove_callback.call(object)
 
 
 func save() -> Dictionary:
 	#TODO
 	return {}
 
-func load(data: Dictionary):
+func load(_data: Dictionary):
 	#TODO
 	pass
