@@ -48,8 +48,26 @@ func insert(item: Dictionary) -> bool:
 		or southeast.insert(item))
 
 
+# Query all items
+func query_all(result: Array = []) -> Array:
+	for item in items:
+		result.append(item)
+
+	if divided:
+		northwest.query_all(result)
+		northeast.query_all(result)
+		southwest.query_all(result)
+		southeast.query_all(result)
+
+	return result
+
+
+func query(area: Rect2) -> Array:
+	var result: Array = []
+	return _query(area, result)
+
 # Query all items whose position falls within the given Rect2.
-func query(area: Rect2, result: Array = []) -> Array:
+func _query(area: Rect2, result: Array = []) -> Array:
 	if not boundary.intersects(area):
 		return result
 
@@ -58,34 +76,70 @@ func query(area: Rect2, result: Array = []) -> Array:
 			result.append(item)
 
 	if divided:
-		northwest.query(area, result)
-		northeast.query(area, result)
-		southwest.query(area, result)
-		southeast.query(area, result)
+		northwest._query(area, result)
+		northeast._query(area, result)
+		southwest._query(area, result)
+		southeast._query(area, result)
 
 	return result
 
+func query_circle(center: Vector2, radius: float) -> Array:
+	var result: Array = []
+	return _query_circle(center, radius, result)
 
 # Query all items within a circular area (center + radius).
-func query_circle(center: Vector2, radius: float, result: Array = []) -> Array:
+func _query_circle(center: Vector2, radius: float, result: Array = []) -> Array:
 	# Broad-phase: skip if circle doesn't intersect this boundary at all
 	var closest := Vector2(
 		clamp(center.x, boundary.position.x, boundary.end.x),
 		clamp(center.y, boundary.position.y, boundary.end.y)
 	)
-	if closest.distance_squared_to(center) > radius * radius:
-		return result
 
 	var r2 := radius * radius
+
+	if closest.distance_squared_to(center) > r2:
+		return result
+
 	for item in items:
 		if item["position"].distance_squared_to(center) <= r2:
 			result.append(item)
 
 	if divided:
-		northwest.query_circle(center, radius, result)
-		northeast.query_circle(center, radius, result)
-		southwest.query_circle(center, radius, result)
-		southeast.query_circle(center, radius, result)
+		northwest._query_circle(center, radius, result)
+		northeast._query_circle(center, radius, result)
+		southwest._query_circle(center, radius, result)
+		southeast._query_circle(center, radius, result)
+
+	return result
+
+func query_circle_holed(center: Vector2, radius: float, inner_radius) -> Array:
+	var result: Array = []
+	return _query_circle_holed(center, radius, inner_radius, result)
+
+# Query all items within a circular area (center + radius), ignoring an inner circular area (center + inner_radius).
+func _query_circle_holed(center: Vector2, radius: float, inner_radius: float, result: Array = []) -> Array:
+	# Broad-phase: skip if circle doesn't intersect this boundary at all
+	var closest := Vector2(
+		clamp(center.x, boundary.position.x, boundary.end.x),
+		clamp(center.y, boundary.position.y, boundary.end.y)
+	)
+
+	var r2 := radius * radius
+	var inner_r2 := inner_radius * inner_radius
+
+	if closest.distance_squared_to(center) > r2:
+		return result
+
+	for item in items:
+		var dist = item["position"].distance_squared_to(center)
+		if dist <= r2 and dist > inner_r2:
+			result.append(item)
+
+	if divided:
+		northwest._query_circle_holed(center, radius, inner_radius, result)
+		northeast._query_circle_holed(center, radius, inner_radius, result)
+		southwest._query_circle_holed(center, radius, inner_radius, result)
+		southeast._query_circle_holed(center, radius, inner_radius, result)
 
 	return result
 

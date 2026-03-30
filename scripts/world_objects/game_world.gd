@@ -13,22 +13,35 @@ class InteractResult:
 		item = _item
 
 const ROAD_WIDTH = 1.5
-const WORLD_SIZE = 320.0
+const WORLD_SIZE = 1000.0
+
+# Level of detail is set up so that objects within LOD_DISTANCE_FULL get a collider, and objects
+# outside of LOD_DISTANCE_NO_COLLIDER are removed from the scene. The check is made whenever the
+# player moves beyond LOD_UPDATE_DISTANCE from its position at the last update.
+const LOD_DISTANCE_FULL = 50.0
+const LOD_DISTANCE_NO_COLLIDER = 250.0
+const LOD_UPDATE_DISTANCE = 25.0 # Objects will spawn and despawn whenever player moves this distance
+var last_player_pos: Vector3
 
 var static_objects_qt: Quadtree = Quadtree.new(Rect2(-WORLD_SIZE / 2, -WORLD_SIZE / 2,WORLD_SIZE, WORLD_SIZE))
 var world_grid: WorldGrid
 var ground_material = ShaderMaterial.new()
 var ground: StaticBody3D
+var player: Node3D # Only used for position
 var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
-var trees_generator: TreeGenerator = TreeGenerator.new(static_objects_qt)
+var trees_generator: TreeGenerator
 var bush_generator: BushGenerator = BushGenerator.new(static_objects_qt)
 var rock_generator: RockGenerator = RockGenerator.new(static_objects_qt)
-var settlements_generator: SettlementGenerator = SettlementGenerator.new()
-var npcs_generator: NpcGenerator = NpcGenerator.new()
+var settlements_generator: SettlementGenerator = SettlementGenerator.new(static_objects_qt)
+var npcs_generator: NpcGenerator = NpcGenerator.new(static_objects_qt)
 var road_generator: RoadGenerator
 
-func _init(_ground: StaticBody3D) -> void:
+func _init(_ground: StaticBody3D, _player: Node3D) -> void:
 	ground = _ground
+	player = _player
+	last_player_pos = player.position
+	trees_generator = TreeGenerator.new(static_objects_qt)
+
 
 func _ready() -> void:
 	var start_time = Time.get_ticks_msec()
@@ -54,13 +67,8 @@ func _ready() -> void:
 
 
 	trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees, forest_noise)
-	add_child(trees_generator)
-
 	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes, forest_noise)
-	add_child(bush_generator)
-
 	rock_generator.create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_rocks, rocks_noise)
-	add_child(rock_generator)
 
 	var axe_position = Vector3(-1.0, 2.0, -4.0)
 	world_item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
@@ -99,7 +107,6 @@ func _ready() -> void:
 	# CREATE SETTLEMENTS
 
 	var settlement_data = settlements_generator.create_settlements(world_grid)
-	add_child(settlements_generator)
 
 	var create_settlements_time = Time.get_ticks_msec()
 	var create_settlements_elapsed = create_settlements_time - create_world_grid_time
@@ -110,7 +117,6 @@ func _ready() -> void:
 	# Create some random NPCs out in the forest as well
 	var num_npcs = 25
 	npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
-	add_child(npcs_generator)
 
 	# CREATE ROADS
 
@@ -148,11 +154,60 @@ func _ready() -> void:
 	road_generator.remove_objects_from_roads(bush_generator.berrybushes, bush_generator.remove_at)
 	road_generator.remove_objects_from_roads(rock_generator.rocks, rock_generator.remove_at)
 
+	# By default all collisions are disabled. They will be later re-added on distance calculations from player
+	for item in static_objects_qt.query_all():
+		item["data"].disable_colliders()
+	update_lods()
+
 	var elapsed = Time.get_ticks_msec() - start_time
 
 	print("")
 	print("Total time to generate world = " + str(elapsed / 1000.0) + " seconds")
 	print("Number of objects in scene = " + str(count_all_children(self)))
+
+
+func _process(_delta: float) -> void:
+	if (player.position - last_player_pos).length() > LOD_UPDATE_DISTANCE:
+		update_lods()
+		last_player_pos = player.position
+
+
+func update_lods():
+	var player_pos = player.global_transform.origin
+	add_nearby_children_batched(player_pos)
+	remove_faraway_children_batched(player_pos)
+	var objects_full = static_objects_qt.query_circle(Vector2(player_pos.x, player_pos.z), LOD_DISTANCE_FULL)
+	for index in objects_full.size():
+		var object: WorldObject = objects_full[index]["data"]
+		object.enable_colliders()
+		add_child(object.instance) # This is to guarantee that close objects are always added to the scene
+
+func add_nearby_children_batched(position: Vector3, batch_size: int = 1000):
+	var objects_no_collider = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), LOD_DISTANCE_NO_COLLIDER, LOD_DISTANCE_FULL)
+	var i = 0
+	while i < objects_no_collider.size():
+		for j in min(batch_size, objects_no_collider.size() - i):
+			var object: WorldObject = objects_no_collider[i + j]["data"]
+			# Need to verify that object is not already a child, since we otherwise would disable its collider
+			if not object.instance.get_parent() == self:
+				object.disable_colliders()
+				add_child(object.instance)
+
+		i += batch_size
+		await get_tree().process_frame
+
+func remove_faraway_children_batched(position: Vector3, batch_size: int = 200):
+	var faraway_objects = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), LOD_DISTANCE_NO_COLLIDER + LOD_UPDATE_DISTANCE + 5.0, LOD_DISTANCE_NO_COLLIDER)
+	var i = 0
+	while i < faraway_objects.size():
+		for j in min(batch_size, faraway_objects.size() - i):
+			var object: WorldObject = faraway_objects[i + j]["data"]
+			# Need to verify again that object is still out-of-bounds, since we use batched removal
+			if object.instance.is_inside_tree() and object.instance.position.distance_to(position) > LOD_DISTANCE_NO_COLLIDER:
+				remove_child(object.instance)
+		i += batch_size
+		await get_tree().process_frame
+
 
 func count_all_children(node: Node) -> int:
 	var count = node.get_child_count()

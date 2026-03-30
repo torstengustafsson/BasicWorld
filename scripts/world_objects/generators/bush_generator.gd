@@ -47,7 +47,7 @@ func _init(qt: Quadtree):
 	static_objects_qt = qt
 	add_to_group("Persist")
 
-func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise) -> Array[WorldObject]:
+func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise):
 	for x in (end_pos_x - start_pos_x) / step:
 		for z in (end_pos_z - start_pos_z) / step:
 			var rand_value_x = -step / 2 + randf_range(0.0, step)
@@ -63,13 +63,12 @@ func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, fo
 
 			var scale = randf_range(1.0, 1.25)
 			add_bush(position, scale)
-	return berrybushes
 
 func add_bush(position: Vector3, scale: float) -> BerryBush:
 	var berrybush = BerryBush.new(position, scale)
 	berrybushes.append(berrybush)
 	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": berrybush})
-	add_child(berrybush.instance)
+	#add_child(berrybush.instance)
 	return berrybush
 
 func _process(delta):

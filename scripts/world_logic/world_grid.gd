@@ -69,7 +69,6 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 			grid_point_edges[Vector2i(x, z)] = current_point
 	return grid_point_edges
 
-# TODO: This can be optimized by only checking objects that are close to the edge (e.g. using a quadtree)
 func calculate_weights(qt: Quadtree):
 	for grid_point in grid_point_edges:
 		var point_with_edges = grid_point_edges[grid_point]
@@ -81,8 +80,7 @@ func calculate_weights(qt: Quadtree):
 			var to = neighbor.point
 
 			var query_rect = Rect2(min(from.x, to.x) - ROAD_WIDTH, min(from.z, to.z) - ROAD_WIDTH, abs(from.x - to.x) + 2 * ROAD_WIDTH, abs(from.z - to.z) + 2 * ROAD_WIDTH)
-			var objects: Array[Dictionary]
-			qt.query(query_rect, objects)
+			var objects = qt.query(query_rect)
 			var num_obstacles = get_num_objects_in_edge(from, to, objects, ROAD_WIDTH)
 			var distance = (from - to).length()
 			var weight = num_obstacles * 10.0 + distance
@@ -91,7 +89,7 @@ func calculate_weights(qt: Quadtree):
 			edge.weight = weight
 
 
-func get_num_objects_in_edge(from: Vector3, to: Vector3, objects: Array[Dictionary], width_to_check: float) -> int:
+func get_num_objects_in_edge(from: Vector3, to: Vector3, objects: Array, width_to_check: float) -> int:
 	var result: int = 0
 	var a = Vector2(from.x, from.z)
 	var b = Vector2(to.x, to.z)

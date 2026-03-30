@@ -1,10 +1,8 @@
-extends Node
+extends WorldObject
 
 class_name NPC
 
 enum WantsOptions { FOOD, WOOD, NONE }
-
-var human = preload("res://scenes/human.tscn")
 
 enum Response { YES, NO }
 
@@ -25,7 +23,6 @@ static var sounds: Array[Resource] = [
 	load("res://assets/sounds/aoe2-en-taunt-22-quit-touchin-me.mp3"),
 ]
 
-var object: Node3D
 var model: MeshInstance3D
 var model_material: StandardMaterial3D
 var default_color: Color
@@ -39,11 +36,8 @@ var health = 3
 const DAMAGE_TAKEN_SECS = 0.5
 
 func _init(pos: Vector3, rot: Vector3, scale: float):
-	object = human.instantiate()
-	object.position = pos
-	object.rotation = rot
-	object.scale = Vector3(scale, scale, scale)
-	model = object.get_node("animated_human").get_node("Armature").get_node("Skeleton3D").get_node("Human")
+	super._init(pos, rot, Vector3(scale, scale, scale), WorldObject.human_scene)
+	model = instance.get_node("animated_human").get_node("Armature").get_node("Skeleton3D").get_node("Human")
 
 	# Need to make copy of material to avoid changing on all NPCs
 	model_material = model.get_active_material(0).duplicate()
@@ -51,7 +45,7 @@ func _init(pos: Vector3, rot: Vector3, scale: float):
 	default_color = model_material.albedo_color
 
 	# Start jogging animation
-	var animationplayer: AnimationPlayer = object.get_node("animated_human").get_node("AnimationPlayer")
+	var animationplayer: AnimationPlayer = instance.get_node("animated_human").get_node("AnimationPlayer")
 	animationplayer.get_animation("Armature|Armature|ArmatureAction").loop_mode = Animation.LOOP_LINEAR
 	animationplayer.play("Armature|Armature|ArmatureAction")
 
@@ -67,17 +61,19 @@ func _init(pos: Vector3, rot: Vector3, scale: float):
 	if default_sound.resource_path == "res://assets/sounds/aoe2-en-taunt-04-wood-please.mp3":
 		wants = WantsOptions.WOOD
 
-func play_sound(response: Response):
+func play_response(response: Response):
+	print("play_sound " + str(response))
 	audio_player.stream = sounds_responses[response]
+	instance.add_child(audio_player)
 	audio_player.play()
 
-# Retrun true if died
+# Return true if died
 func take_damage() -> bool:
 	health -= 1
 	if health <= 0:
-		object.queue_free()
+		instance.queue_free()
 		return true
-	play_sound(Response.NO)
+	play_response(Response.NO)
 	var blink_cycle = 0.1
 	var loops = int(DAMAGE_TAKEN_SECS / (blink_cycle * 2))
 	var tween = model.create_tween().set_loops(loops)
@@ -91,10 +87,10 @@ func _on_sound_finished():
 # Return true if NPC took item
 func interact_item(item: ItemProperties.Item) -> bool:
 	if wants == WantsOptions.FOOD and item == ItemProperties.Item.BERRY:
-		play_sound(Response.YES)
+		play_response(Response.YES)
 		return true
 	if wants == WantsOptions.WOOD and item == ItemProperties.Item.WOOD:
-		play_sound(Response.YES)
+		play_response(Response.YES)
 		return true
 	else:
 		audio_player.play()

@@ -20,8 +20,10 @@ const WORLD_EDGE_MARGIN = 1 + SETTLEMENT_GRID_SPREAD
 
 var houses: Array[WorldObject] = []
 var settlements: Array[SettlementData]
+var static_objects_qt: Quadtree
 
-func _init():
+func _init(qt: Quadtree):
+	static_objects_qt = qt
 	add_to_group("Persist")
 
 func create_settlements(world_grid: WorldGrid) -> Array[SettlementData]:
@@ -65,13 +67,13 @@ func add_settlement(grid_position: Vector2i, position: Vector3) -> SettlementDat
 func add_house(position: Vector3, rotation: Vector3) -> WorldObject:
 	var house = WorldObject.add_house(position, rotation)
 	houses.append(house)
-	add_child(house.instance)
+	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": house})
 	return house
 
 func add_chest(position: Vector3, rotation: Vector3) -> WorldObject:
 	var chest = WorldObject.add_chest(position, rotation)
 	houses.append(chest)
-	add_child(chest.instance)
+	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": chest})
 	return chest
 
 func remove_objects_from_settlements(objects, callback: Callable):

@@ -13,21 +13,23 @@ class ChopResult:
 		position = _position
 
 var trees: Array[WorldObject] = []
+var static_objects_qt: Quadtree
+
 var shaking_tree: Node3D = null
 const TREE_SHAKE_SECS = 0.3
 var shake_timer = INF # INF means not shaking
 var shake_direction: Vector3 = Vector3(0.0, 0.0, 0.0)
-var static_objects_qt: Quadtree
 
-func _init(qt: Quadtree):
+func _init(qt: Quadtree) -> void:
 	static_objects_qt = qt
 	add_to_group("Persist")
 
-func create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise) -> Array[WorldObject]:
+func create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise):
 	for x in (end_pos_x - start_pos_x) / step:
 		for z in (end_pos_z - start_pos_z) / step:
 			var rand_value_x = -step / 2 + randf_range(0.0, step)
 			var rand_value_z = -step / 2 + randf_range(0.0, step)
+			# TODO: Height will be added later
 			var position = Vector3(start_pos_x + x * step + rand_value_x, 0.0, start_pos_z + z * step + rand_value_z)
 
 			# Skip if out-of-bounds
@@ -39,19 +41,16 @@ func create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_n
 
 			var rand_scale = randf_range(1.0, 2.0)
 			add_tree(position, rand_scale)
-	return trees
 
 func add_tree(position: Vector3, scale: float):
 	var tree = WorldObject.add_tree(position, scale)
 	trees.append(tree)
 	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": tree})
-	add_child(tree.instance)
 
 func remove_at(index: int):
 	static_objects_qt.remove({"position": Vector2(trees[index].instance.position.x, trees[index].instance.position.z), "data": trees[index]})
 	trees[index].instance.queue_free()
 	trees.remove_at(index)
-
 
 func handle_chop(collider) -> ChopResult:
 	for tree_index in trees.size() - 1:

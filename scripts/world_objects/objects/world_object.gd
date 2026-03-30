@@ -9,6 +9,7 @@ static var house_scene = preload("res://scenes/house.tscn")
 static var chest_scene = preload("res://scenes/chest.tscn")
 static var tree_scene = preload("res://scenes/tree.tscn")
 static var rock_scene = preload("res://scenes/rock.tscn")
+static var human_scene = preload("res://scenes/human.tscn")
 
 var instance: Node3D
 
@@ -39,3 +40,22 @@ static func add_rock(pos: Vector3, scale: Vector3) -> WorldObject:
 	rock.max_health = round(scale.x + scale.y + scale.z)
 	rock.health = rock.max_health
 	return rock
+
+static func add_human(pos: Vector3, rot: Vector3, scale: Vector3) -> WorldObject:
+	var human = BreakableObject.new(pos, rot, scale, rock_scene)
+	human.max_health = round(scale.x + scale.y + scale.z)
+	human.health = human.max_health
+	return human
+
+func enable_colliders():
+	_update_colliders(instance, true)
+
+func disable_colliders():
+	_update_colliders(instance, false)
+
+func _update_colliders(parent_node: Node3D, colliders_enabled: bool):
+	for child in parent_node.get_children():
+		if child is CollisionShape3D or child is CollisionPolygon3D:
+			child.disabled = !colliders_enabled
+		if child.get_child_count() > 0:
+			_update_colliders(child, colliders_enabled)

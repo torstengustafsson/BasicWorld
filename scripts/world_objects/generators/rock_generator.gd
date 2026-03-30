@@ -21,7 +21,7 @@ func _init(qt: Quadtree):
 	static_objects_qt = qt
 	add_to_group("Persist")
 
-func create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, rocks_noise) -> Array[WorldObject]:
+func create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, rocks_noise):
 	for x in (end_pos_x - start_pos_x) / step:
 		for z in (end_pos_z - start_pos_z) / step:
 			var rand_value_x = -step / 2 + randf_range(0.0, step)
@@ -37,13 +37,12 @@ func create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, rocks_no
 
 			var rand_scale = Vector3(randf_range(1.0, 3.0), randf_range(1.2, 4.0), randf_range(1.0, 3.0))
 			add_rock(position, rand_scale)
-	return rocks
 
 func add_rock(position: Vector3, scale: Vector3):
 	var rock = WorldObject.add_rock(position, scale)
 	rocks.append(rock)
 	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": rock})
-	add_child(rock.instance)
+	#add_child(rock.instance)
 
 func remove_at(index: int):
 	static_objects_qt.remove({"position": Vector2(rocks[index].instance.position.x, rocks[index].instance.position.z), "data": rocks[index]})

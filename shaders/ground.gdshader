@@ -24,7 +24,7 @@ float point_to_segment_dist(vec2 p, vec2 a, vec2 b) {
 
 
 uniform vec2 world_size;
-uniform vec3 settlement_data[16]; // [pos_x, pos,z, radius]
+uniform vec3 settlement_data[128]; // [pos_x, pos,z, radius]
 uniform int settlement_count = 0;
 uniform vec4 road_edges[1024]; // Two vec2:s of (from, to) points
 uniform int road_edge_count = 0;
