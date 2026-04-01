@@ -2,44 +2,6 @@ extends Node
 
 class_name BushGenerator
 
-const BERRYBUSH_FULL_SECS = 30
-
-class BerryBush extends WorldObject:
-	static var berrybush_scene = preload("res://scenes/berrybush.tscn")
-	static var berrybush_empty = preload("res://assets/models/berrybush-empty.glb")
-	static var berrybush_full = preload("res://assets/models/berrybush-full.glb")
-	const BERRYBUSH_NAME = "berrybush"
-
-	var berries_fill_secs: float
-	var is_filled: bool = false
-
-	func _init(pos: Vector3, scale: float):
-		var rot = Vector3(0.0, 0.0, 0.0)
-		super._init(pos, rot, Vector3(scale, scale, scale), berrybush_scene, ObjectId.BERRYBUSH)
-		instance = berrybush_scene.instantiate()
-		berries_fill_secs = randf_range(0.0, BERRYBUSH_FULL_SECS)
-		instance.position = pos
-		instance.scale = Vector3(scale, scale, scale)
-
-	func fill():
-		is_filled = true
-		var object = instance.get_node(BERRYBUSH_NAME)
-		instance.remove_child(object)
-		object.queue_free()
-		object = berrybush_full.instantiate()
-		object.name = BERRYBUSH_NAME
-		instance.add_child(object)
-
-	func reset():
-		is_filled = false
-		berries_fill_secs = 0.0
-		var object = instance.get_node(BERRYBUSH_NAME)
-		instance.remove_child(object)
-		object.queue_free()
-		object = berrybush_empty.instantiate()
-		object.name = BERRYBUSH_NAME
-		instance.add_child(object)
-
 var static_objects_qt: Quadtree
 var berrybushes: Array[WorldObject] = []
 
@@ -64,25 +26,26 @@ func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, fo
 			var scale = randf_range(1.0, 1.25)
 			add_bush(position, scale)
 
-func add_bush(position: Vector3, scale: float) -> BerryBush:
-	var berrybush = BerryBush.new(position, scale)
+func add_bush(position: Vector3, scale: float) -> WorldObject.BerryBushObject:
+	var berrybush = WorldObject.add_berrybush(position, scale)
 	berrybushes.append(berrybush)
 	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": berrybush})
 	return berrybush
 
 func _process(delta):
-	for berrybush in berrybushes:
-		if berrybush.is_filled == true:
+	var to_be_removed: Array[int] = []
+	for index in berrybushes.size():
+		var berrybush = berrybushes[index]
+		if berrybush.instance == null: # Only happens when bush has been removed by the world state
+			to_be_removed.append(index)
 			continue
-		if berrybush.berries_fill_secs >= BERRYBUSH_FULL_SECS:
-			berrybush.fill()
-			continue
-		berrybush.berries_fill_secs += delta
+		berrybush.update(delta)
 
-func remove_at(index: int):
-	static_objects_qt.remove({"position": Vector2(berrybushes[index].instance.position.x, berrybushes[index].instance.position.z), "data": berrybushes[index]})
-	berrybushes[index].instance.queue_free()
-	berrybushes.remove_at(index)
+	to_be_removed.sort()
+	to_be_removed.reverse()
+	for index in to_be_removed:
+		berrybushes.remove_at(index)
+
 
 # Returns amount of berries gained
 func interact(collider) -> int:
@@ -93,27 +56,29 @@ func interact(collider) -> int:
 	return 0
 
 func save() -> Dictionary:
-	var result: Dictionary = {}
-	var bush_data: Array = []
-	for berrybush in berrybushes:
-		var data: Dictionary = {}
-		data["pos_x"] = snapped(berrybush.instance.position.x, 0.01)
-		data["pos_y"] = snapped(berrybush.instance.position.y, 0.01)
-		data["pos_z"] = snapped(berrybush.instance.position.z, 0.01)
-		data["scale"] = snapped(berrybush.instance.scale.x, 0.01) # Uniform scale
-		data["is_filled"] = berrybush.is_filled
-		bush_data.append(data)
-	result[SaveLoadState.StateType.Bushes] = bush_data
-	return result
+	return {}
+	# var result: Dictionary = {}
+	# var bush_data: Array = []
+	# for berrybush in berrybushes:
+	# 	var data: Dictionary = {}
+	# 	data["pos_x"] = snapped(berrybush.instance.position.x, 0.01)
+	# 	data["pos_y"] = snapped(berrybush.instance.position.y, 0.01)
+	# 	data["pos_z"] = snapped(berrybush.instance.position.z, 0.01)
+	# 	data["scale"] = snapped(berrybush.instance.scale.x, 0.01) # Uniform scale
+	# 	data["is_filled"] = berrybush.is_filled
+	# 	bush_data.append(data)
+	# result[SaveLoadState.StateType.Bushes] = bush_data
+	# return result
 
 func load(data: Dictionary):
-	for berrybush in berrybushes:
-		berrybush.instance.queue_free()
-	berrybushes.clear()
+	pass
+	# for berrybush in berrybushes:
+	# 	berrybush.instance.queue_free()
+	# berrybushes.clear()
 
-	for berrybush in data[str(SaveLoadState.StateType.Bushes)]:
-		var position = Vector3(berrybush["pos_x"], berrybush["pos_y"], berrybush["pos_z"])
-		var scale = berrybush["scale"]
-		var bush = add_bush(position, scale)
-		if berrybush["is_filled"]:
-			bush.fill()
+	# for berrybush in data[str(SaveLoadState.StateType.Bushes)]:
+	# 	var position = Vector3(berrybush["pos_x"], berrybush["pos_y"], berrybush["pos_z"])
+	# 	var scale = berrybush["scale"]
+	# 	var bush = add_bush(position, scale)
+	# 	if berrybush["is_filled"]:
+	# 		bush.fill()

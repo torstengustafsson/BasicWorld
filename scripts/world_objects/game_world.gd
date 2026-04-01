@@ -19,7 +19,7 @@ const WORLD_SIZE = 1000.0
 # outside of LOD_DISTANCE_NO_COLLIDER are removed from the scene. The check is made whenever the
 # player moves beyond LOD_UPDATE_DISTANCE from its position at the last update.
 const LOD_DISTANCE_FULL = 50.0
-const LOD_DISTANCE_NO_COLLIDER = 200.0
+const LOD_DISTANCE_NO_COLLIDER = 300.0
 const LOD_UPDATE_DISTANCE = 25.0 # Objects will spawn and despawn whenever player moves this distance
 var last_player_pos: Vector3
 
@@ -65,6 +65,7 @@ func _ready() -> void:
 	var forest_noise = NoiseFunctions.create_forest_noise()
 	var rocks_noise = NoiseFunctions.create_rocks_noise()
 
+	add_child(bush_generator)
 
 	trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees, forest_noise)
 	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes, forest_noise)
@@ -152,7 +153,7 @@ func _ready() -> void:
 
 	# By default all collisions are disabled. They will be later re-added on distance calculations from player
 	for item in static_objects_qt.query_all():
-		item["data"].disable_colliders()
+		item["data"].collider.disabled = true
 	update_lods()
 
 	var elapsed = Time.get_ticks_msec() - start_time
@@ -170,29 +171,34 @@ func _process(_delta: float) -> void:
 
 func update_lods():
 	var player_pos = player.global_transform.origin
-	add_nearby_children_batched(player_pos)
+	add_no_collider_children_batched(player_pos)
 	remove_faraway_children_batched(player_pos)
-	var objects_full = static_objects_qt.query_circle(Vector2(player_pos.x, player_pos.z), LOD_DISTANCE_FULL)
-	print("objects_full.size() = " + str(objects_full.size()))
+	add_nearby_children_full(player_pos)
+
+func add_nearby_children_full(position: Vector3):
+	var objects_full = static_objects_qt.query_circle(Vector2(position.x, position.z), LOD_DISTANCE_FULL)
 	for index in objects_full.size():
 		var object: WorldObject = objects_full[index]["data"]
-		if not object.in_scene or not object.collider_enabled:
-			object.enable_colliders()
-			add_child(object.instance) # This is to guarantee that close objects are always added to the scene
+		if not object.in_scene or object.collider.disabled:
+			object.collider.disabled = false
+			if object.glb_mesh_no_collider.get_parent() == self:
+				remove_child(object.glb_mesh_no_collider)
+			add_child(object.instance)
 			object.in_scene = true
 
 
-func add_nearby_children_batched(position: Vector3, batch_size: int = 1000):
-	var objects_no_collider = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), LOD_DISTANCE_NO_COLLIDER, LOD_DISTANCE_FULL + 50.0)
-	print("add_nearby_children_batched " + str(objects_no_collider.size()))
+func add_no_collider_children_batched(position: Vector3, batch_size: int = 1000):
+	var objects_no_collider = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), LOD_DISTANCE_NO_COLLIDER, LOD_DISTANCE_FULL)
 	var i = 0
 	while i < objects_no_collider.size():
 		for j in min(batch_size, objects_no_collider.size() - i):
 			var object: WorldObject = objects_no_collider[i + j]["data"]
 			# Need to verify that object is not already a child, since we otherwise would disable its collider
 			if not object.in_scene:
-				object.disable_colliders()
-				add_child(object.instance)
+				object.collider.disabled = true
+				if object.instance.get_parent() == self:
+					remove_child(object.instance)
+				add_child(object.glb_mesh_no_collider)
 				object.in_scene = true
 		i += batch_size
 		await get_tree().process_frame
@@ -205,7 +211,8 @@ func remove_faraway_children_batched(position: Vector3, batch_size: int = 200):
 			var object: WorldObject = faraway_objects[i + j]["data"]
 			# Need to verify again that object is still out-of-bounds, since we use batched removal
 			if object.in_scene and object.instance.position.distance_to(position) > LOD_DISTANCE_NO_COLLIDER:
-				remove_child(object.instance)
+				if object.glb_mesh_no_collider.get_parent() == self:
+					remove_child(object.glb_mesh_no_collider)
 				object.in_scene = false
 		i += batch_size
 		await get_tree().process_frame
@@ -231,7 +238,8 @@ func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.Settl
 
 func remove_object(object: WorldObject):
 	static_objects_qt.remove({"position": Vector2(object.instance.position.x, object.instance.position.z), "data": object})
-	object.instance.queue_free()
+	object.delete()
+	object = null
 
 
 func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> InteractResult:

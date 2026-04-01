@@ -36,8 +36,12 @@ var health = 3
 const DAMAGE_TAKEN_SECS = 0.5
 
 func _init(pos: Vector3, rot: Vector3, scale: float):
-	super._init(pos, rot, Vector3(scale, scale, scale), WorldObject.human_scene, ObjectId.HUMAN)
-	model = instance.get_node("animated_human").get_node("Armature").get_node("Skeleton3D").get_node("Human")
+	var col = CollisionShape3D.new()
+	col.shape = CylinderShape3D.new()
+	col.shape.height = 4.0 # ??? Was 1.8, why did it double
+	col.shape.radius = 0.5
+	super._init(pos, rot, Vector3(scale, scale, scale), WorldObject.human_mesh, col, ObjectId.HUMAN)
+	model = glb_mesh.get_node("Armature").get_node("Skeleton3D").get_node("Human") # This assumes .glb model structure
 
 	# Need to make copy of material to avoid changing on all NPCs
 	model_material = model.get_active_material(0).duplicate()
@@ -45,7 +49,7 @@ func _init(pos: Vector3, rot: Vector3, scale: float):
 	default_color = model_material.albedo_color
 
 	# Start jogging animation
-	var animationplayer: AnimationPlayer = instance.get_node("animated_human").get_node("AnimationPlayer")
+	var animationplayer: AnimationPlayer = glb_mesh.get_node("AnimationPlayer")
 	animationplayer.get_animation("Armature|Armature|ArmatureAction").loop_mode = Animation.LOOP_LINEAR
 	animationplayer.play("Armature|Armature|ArmatureAction")
 
@@ -62,7 +66,6 @@ func _init(pos: Vector3, rot: Vector3, scale: float):
 		wants = WantsOptions.WOOD
 
 func play_response(response: Response):
-	print("play_sound " + str(response))
 	audio_player.stream = sounds_responses[response]
 	instance.add_child(audio_player)
 	audio_player.play()
@@ -71,7 +74,8 @@ func play_response(response: Response):
 func take_damage() -> bool:
 	health -= 1
 	if health <= 0:
-		instance.queue_free()
+		# TODO: Remove world object as well, and remove from static_objects_qt
+		delete()
 		return true
 	play_response(Response.NO)
 	var blink_cycle = 0.1
@@ -95,3 +99,8 @@ func interact_item(item: ItemProperties.Item) -> bool:
 	else:
 		audio_player.play()
 		return false
+
+func delete():
+	super.delete()
+	audio_player.queue_free()
+	model.queue_free()
