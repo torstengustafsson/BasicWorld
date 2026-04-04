@@ -10,6 +10,7 @@ var mobile_controls: Node2D
 func _ready():
 	top_left = get_node("TopLeftArea")
 	top_left.get_node("CurrentPlayTime").text = str(last_whole_second)
+	top_left.get_node("CurrentPosition").text = str(Vector3())
 	top_left.get_node("CurrentFPS").text = str(0.0)
 	top_left.get_node("CurrentScreenSize").text = str(get_viewport().get_visible_rect().size)
 
@@ -22,6 +23,15 @@ func _process(delta: float):
 	if floor(time_played) > last_whole_second:
 		last_whole_second = floor(time_played)
 		top_left.get_node("CurrentPlayTime").text = str(last_whole_second)
+
+	var camera = get_viewport().get_camera_3d()
+	if camera:
+		var pos = camera.global_position
+		# Round each component to 1 decimal place
+		pos.x = float(int(pos.x * 10) / 10.0)
+		pos.y = float(int(pos.y * 10) / 10.0)
+		pos.z = float(int(pos.z * 10) / 10.0)
+		top_left.get_node("CurrentPosition").text = str(pos)
 
 	top_left.get_node("CurrentFPS").text = str(snapped(1 / delta, 0.01))
 

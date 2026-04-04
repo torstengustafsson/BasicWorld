@@ -12,21 +12,14 @@ class InteractResult:
 		result = _result
 		item = _item
 
-const ROAD_WIDTH = 1.5
-const WORLD_SIZE = 1000.0
+var terrain_height_noise: TerrainNoise
 
-# Level of detail is set up so that objects within LOD_DISTANCE_FULL get a collider, and objects
-# outside of LOD_DISTANCE_NO_COLLIDER are removed from the scene. The check is made whenever the
-# player moves beyond LOD_UPDATE_DISTANCE from its position at the last update.
-const LOD_DISTANCE_FULL = 50.0
-const LOD_DISTANCE_NO_COLLIDER = 300.0
-const LOD_UPDATE_DISTANCE = 25.0 # Objects will spawn and despawn whenever player moves this distance
 var last_player_pos: Vector3
 
-var static_objects_qt: Quadtree = Quadtree.new(Rect2(-WORLD_SIZE / 2, -WORLD_SIZE / 2,WORLD_SIZE, WORLD_SIZE))
+var static_objects_qt: Quadtree = Quadtree.new(Rect2(-Globals.WORLD_SIZE / 2, -Globals.WORLD_SIZE / 2,Globals.WORLD_SIZE, Globals.WORLD_SIZE))
 var world_grid: WorldGrid
-var ground_material = ShaderMaterial.new()
-var ground: StaticBody3D
+var terrain_generator: TerrainGenerator
+var terrain_material = ShaderMaterial.new()
 var player: Node3D # Only used for position
 var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
 var trees_generator: TreeGenerator
@@ -36,8 +29,7 @@ var settlements_generator: SettlementGenerator = SettlementGenerator.new(static_
 var npcs_generator: NpcGenerator = NpcGenerator.new(static_objects_qt)
 var road_generator: RoadGenerator
 
-func _init(_ground: StaticBody3D, _player: Node3D) -> void:
-	ground = _ground
+func _init(_player: Node3D) -> void:
 	player = _player
 	last_player_pos = player.position
 	trees_generator = TreeGenerator.new(static_objects_qt)
@@ -46,19 +38,25 @@ func _init(_ground: StaticBody3D, _player: Node3D) -> void:
 func _ready() -> void:
 	var start_time = Time.get_ticks_msec()
 
-	ground.get_node("PlaneMesh").mesh.size = Vector2(WORLD_SIZE, WORLD_SIZE)
-	ground.get_node("GroundCollider").shape.size = Vector3(WORLD_SIZE, 0.1, WORLD_SIZE)
-	var size_x = WORLD_SIZE
-	var size_z = WORLD_SIZE
+	var size_x = Globals.WORLD_SIZE
+	var size_z = Globals.WORLD_SIZE
 	var margin = 5.0
 	var start_pos_x = size_x / 2 - size_x + margin
 	var start_pos_z = size_z / 2 - size_z + margin
 	var end_pos_x = size_x / 2 - margin
 	var end_pos_z = size_z / 2 - margin
 
-	var step_trees = 3
-	var step_berrybushes = 10
-	var step_rocks = 10
+	# CREATE TERRAIN
+
+	terrain_height_noise = TerrainNoise.new(Globals.RANDOM_SEED.hash())
+
+	terrain_generator = TerrainGenerator.new(terrain_material, terrain_height_noise)
+	terrain_generator.add_chunks_around_player(player.position)
+	add_child(terrain_generator)
+
+	var create_terrain_time = Time.get_ticks_msec()
+	var create_terrain_elapsed = create_terrain_time - start_time
+	print("Time to generate terrain = " + str(create_terrain_elapsed / 1000.0) + " seconds")
 
 	# CREATE STATIC OBJECTS AND ITEMS
 
@@ -67,9 +65,9 @@ func _ready() -> void:
 
 	add_child(bush_generator)
 
-	trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_trees, forest_noise)
-	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_berrybushes, forest_noise)
-	rock_generator.create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step_rocks, rocks_noise)
+	trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, Globals.STEP_TREES, forest_noise, terrain_height_noise)
+	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, Globals.STEP_BERRYBUSHES, forest_noise, terrain_height_noise)
+	rock_generator.create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, Globals.STEP_ROCKS, rocks_noise, terrain_height_noise)
 
 	var axe_position = Vector3(-1.0, 2.0, -4.0)
 	world_item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
@@ -97,7 +95,7 @@ func _ready() -> void:
 
 	# CREATE WORLD GRID
 
-	world_grid = WorldGrid.new(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z), ROAD_WIDTH)
+	world_grid = WorldGrid.new(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z), terrain_height_noise)
 	world_grid.calculate_weights(static_objects_qt)
 	add_child(world_grid)
 
@@ -117,11 +115,11 @@ func _ready() -> void:
 
 	# Create some random NPCs out in the forest as well
 	var num_npcs = 25
-	npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
+	npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs, terrain_height_noise)
 
 	# CREATE ROADS
 
-	road_generator = RoadGenerator.new(world_grid, ROAD_WIDTH)
+	road_generator = RoadGenerator.new(world_grid)
 	var road_edges: Array = road_generator.generate_roads(settlement_data) # Type: Array[RoadGenerator.RoadEdge]
 	add_child(road_generator)
 
@@ -131,22 +129,21 @@ func _ready() -> void:
 
 	# SETUP SHADER PARAMETERS
 
-	ground_material.shader = load("res://shaders/ground.gdshader")
-	ground_material.set_shader_parameter("world_size", Vector2(size_x, size_z))
-	ground_material.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25))
-	ground_material.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
-	ground_material.set_shader_parameter("settlement_count", settlement_data.size())
+	terrain_material.shader = load("res://shaders/ground.gdshader")
+	terrain_material.set_shader_parameter("Globals.WORLD_SIZE", Vector2(size_x, size_z))
+	terrain_material.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25))
+	terrain_material.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
+	terrain_material.set_shader_parameter("settlement_count", settlement_data.size())
 	var shader_settlement_data: Array[Vector3] = []
 	for settlement in settlement_data:
 		shader_settlement_data.append(Vector3(settlement.position.x, settlement.position.z, settlement.radius))
-	ground_material.set_shader_parameter("settlement_data", shader_settlement_data)
-	ground_material.set_shader_parameter("road_width", ROAD_WIDTH)
-	ground_material.set_shader_parameter("road_edge_count", road_edges.size())
+	terrain_material.set_shader_parameter("settlement_data", shader_settlement_data)
+	terrain_material.set_shader_parameter("Globals.ROAD_WIDTH", Globals.ROAD_WIDTH)
+	terrain_material.set_shader_parameter("road_edge_count", road_edges.size())
 	var shader_road_edges_data: Array[Vector4] = []
 	for edge in road_edges:
 		shader_road_edges_data.append(Vector4(edge.from.x, edge.from.z, edge.to.x, edge.to.z))
-	ground_material.set_shader_parameter("road_edges", shader_road_edges_data)
-	ground.get_node("PlaneMesh").material_override = ground_material
+	terrain_material.set_shader_parameter("road_edges", shader_road_edges_data)
 
 	settlements_generator.remove_objects_from_settlements(remove_object)
 	road_generator.remove_objects_from_roads(static_objects_qt, remove_object)
@@ -164,7 +161,7 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if (player.position - last_player_pos).length() > LOD_UPDATE_DISTANCE:
+	if (player.position - last_player_pos).length() > Globals.LOD_UPDATE_DISTANCE:
 		update_lods()
 		last_player_pos = player.position
 
@@ -176,7 +173,7 @@ func update_lods():
 	add_nearby_children_full(player_pos)
 
 func add_nearby_children_full(position: Vector3):
-	var objects_full = static_objects_qt.query_circle(Vector2(position.x, position.z), LOD_DISTANCE_FULL)
+	var objects_full = static_objects_qt.query_circle(Vector2(position.x, position.z), Globals.LOD_DISTANCE_FULL)
 	for index in objects_full.size():
 		var object: WorldObject = objects_full[index]["data"]
 		if not object.in_scene or object.collider.disabled:
@@ -188,7 +185,7 @@ func add_nearby_children_full(position: Vector3):
 
 
 func add_no_collider_children_batched(position: Vector3, batch_size: int = 1000):
-	var objects_no_collider = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), LOD_DISTANCE_NO_COLLIDER, LOD_DISTANCE_FULL)
+	var objects_no_collider = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), Globals.LOD_DISTANCE_NO_COLLIDER, Globals.LOD_DISTANCE_FULL)
 	var i = 0
 	while i < objects_no_collider.size():
 		for j in min(batch_size, objects_no_collider.size() - i):
@@ -204,13 +201,13 @@ func add_no_collider_children_batched(position: Vector3, batch_size: int = 1000)
 		await get_tree().process_frame
 
 func remove_faraway_children_batched(position: Vector3, batch_size: int = 200):
-	var faraway_objects = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), LOD_DISTANCE_NO_COLLIDER + LOD_UPDATE_DISTANCE + 5.0, LOD_DISTANCE_NO_COLLIDER)
+	var faraway_objects = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), Globals.LOD_DISTANCE_NO_COLLIDER + Globals.LOD_UPDATE_DISTANCE + 5.0, Globals.LOD_DISTANCE_NO_COLLIDER)
 	var i = 0
 	while i < faraway_objects.size():
 		for j in min(batch_size, faraway_objects.size() - i):
 			var object: WorldObject = faraway_objects[i + j]["data"]
 			# Need to verify again that object is still out-of-bounds, since we use batched removal
-			if object.in_scene and object.instance.position.distance_to(position) > LOD_DISTANCE_NO_COLLIDER:
+			if object.in_scene and object.instance.position.distance_to(position) > Globals.LOD_DISTANCE_NO_COLLIDER:
 				if object.glb_mesh_no_collider.get_parent() == self:
 					remove_child(object.glb_mesh_no_collider)
 				object.in_scene = false
@@ -232,7 +229,7 @@ func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.Settl
 		var start_pos_z = settlement.position.z - settlement.radius * square_in_circle_multiplier
 		var end_pos_x = settlement.position.x + settlement.radius * square_in_circle_multiplier
 		var end_pos_z = settlement.position.z + settlement.radius * square_in_circle_multiplier
-		npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
+		npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs, terrain_height_noise)
 		npcs_generator.create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
 
 

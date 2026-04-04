@@ -1,12 +1,11 @@
 extends Node3D
 
-@onready var ground = $Ground
 @onready var player = $Player
 
 @onready var hotkey_menu = preload("res://scenes/inventory/hotkey_items.tscn").instantiate()
 
 
-@onready var game_world: GameWorld = GameWorld.new(ground, player)
+@onready var game_world: GameWorld = GameWorld.new(player)
 
 @onready var player_controls: PlayerControls = PlayerControls.new(
 	get_world_3d().direct_space_state,

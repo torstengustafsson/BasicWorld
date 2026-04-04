@@ -2,6 +2,8 @@ extends Node
 
 class_name BushGenerator
 
+const MAX_ALLOWED_HEIGHT = 50.0
+
 var static_objects_qt: Quadtree
 var berrybushes: Array[WorldObject] = []
 
@@ -9,12 +11,20 @@ func _init(qt: Quadtree):
 	static_objects_qt = qt
 	add_to_group("Persist")
 
-func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise):
+func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise, terrain_height_noise):
 	for x in (end_pos_x - start_pos_x) / step:
 		for z in (end_pos_z - start_pos_z) / step:
 			var rand_value_x = -step / 2 + randf_range(0.0, step)
 			var rand_value_z = -step / 2 + randf_range(0.0, step)
-			var position = Vector3(start_pos_x + x * step + rand_value_x, 0.0, start_pos_z + z * step + rand_value_z)
+			var pos_x = start_pos_x + x * step + rand_value_x
+			var pos_z = start_pos_z + z * step + rand_value_z
+			var height = min(terrain_height_noise.get_height_at(pos_x, pos_z), MAX_ALLOWED_HEIGHT)
+			var position = Vector3(pos_x, height, pos_z)
+
+			# Skip if at too high elevation
+			var height_value = MathFunctions.taper(height / MAX_ALLOWED_HEIGHT, 0.5)
+			if height_value < randf_range(0.0, 0.5):
+				continue
 
 			# Skip if out-of-bounds
 			if position.x < start_pos_x || position.z < start_pos_z || position.x > end_pos_x || position.z > end_pos_z:

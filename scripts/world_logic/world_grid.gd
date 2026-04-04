@@ -26,9 +26,6 @@ var POINTS_AROUND: Array[Vector2i] = [
 	Vector2i(1, 1),
 ]
 
-var WORLD_SIZE: int
-const WORLD_GRID_STEP: int = 10
-var ROAD_WIDTH: float
 var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
 
 var world_start_pos: Vector2
@@ -38,32 +35,34 @@ var grid_size: int = 0
 
 var max_weight: float = -1.0
 
-func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, road_width: float) -> void:
+func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, terrain_height_noise) -> void:
 	world_start_pos = _world_start_pos
 	world_end_pos = _world_end_pos
-	WORLD_SIZE = abs(world_start_pos.x - world_end_pos.x)
-	grid_size = int(float(WORLD_SIZE) / WORLD_GRID_STEP)
-	if WORLD_SIZE != abs(world_start_pos.y - world_end_pos.y):
+	var world_size = abs(world_start_pos.x - world_end_pos.x)
+	grid_size = int(world_size / Globals.WORLD_GRID_STEP)
+	if world_size != abs(world_start_pos.y - world_end_pos.y):
 		print("Not Square world! Exiting.")
 		get_tree().quit()
-	ROAD_WIDTH = road_width
-	create_points_and_edges()
+	create_points_and_edges(terrain_height_noise)
 
-func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
+func create_points_and_edges(terrain_height_noise) -> Dictionary[Vector2i, PointWithEdges]:
 	grid_point_edges.clear()
 
 	for x: int in grid_size:
 		for z: int in grid_size:
-			var pos_x = world_start_pos.x + x * WORLD_GRID_STEP
-			var pos_z = world_start_pos.y + z * WORLD_GRID_STEP
-			var rand_value_x = (-WORLD_GRID_STEP / 4.0 + randf_range(0.0, WORLD_GRID_STEP / 2.0))
-			var rand_value_z = (-WORLD_GRID_STEP / 4.0 + randf_range(0.0, WORLD_GRID_STEP / 2.0))
-			var point = Vector3(pos_x + rand_value_x, 0.0, pos_z + rand_value_z)
+			var pos_x = world_start_pos.x + x * Globals.WORLD_GRID_STEP
+			var pos_z = world_start_pos.y + z * Globals.WORLD_GRID_STEP
+			var height = terrain_height_noise.get_height_at(pos_x, pos_z)
+			var rand_value_x = (-Globals.WORLD_GRID_STEP / 4.0 + randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
+			var rand_value_z = (-Globals.WORLD_GRID_STEP / 4.0 + randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
+			var point = Vector3(pos_x + rand_value_x, height, pos_z + rand_value_z)
 			var current_point = PointWithEdges.new(point)
 			for point_around: Vector2i in POINTS_AROUND:
 				var neighbor: Vector2i = Vector2i(x + point_around.x, z + point_around.y)
 				var weight = 0.0
-				if neighbor.x < 0 or neighbor.x >= grid_size or neighbor.y < 0 or neighbor.y >= grid_size:
+				var out_of_bounds: bool = neighbor.x < 0 or neighbor.x >= grid_size or neighbor.y < 0 or neighbor.y >= grid_size
+				var too_steep = false # TODO
+				if out_of_bounds and not too_steep:
 					continue
 				current_point.edges.append(GridPointEdge.new(neighbor, weight))
 			grid_point_edges[Vector2i(x, z)] = current_point
@@ -79,12 +78,12 @@ func calculate_weights(qt: Quadtree):
 			var from = point_with_edges.point
 			var to = neighbor.point
 			var query_rect = Rect2(
-				min(from.x, to.x) - ROAD_WIDTH,
-				min(from.z, to.z) - ROAD_WIDTH,
-				abs(from.x - to.x) + 2 * ROAD_WIDTH,
-				abs(from.z - to.z) + 2 * ROAD_WIDTH)
+				min(from.x, to.x) - Globals.ROAD_WIDTH,
+				min(from.z, to.z) - Globals.ROAD_WIDTH,
+				abs(from.x - to.x) + 2 * Globals.ROAD_WIDTH,
+				abs(from.z - to.z) + 2 * Globals.ROAD_WIDTH)
 			var objects = qt.query(query_rect)
-			var num_obstacles = get_num_objects_in_edge(from, to, objects, ROAD_WIDTH)
+			var num_obstacles = get_num_objects_in_edge(from, to, objects, Globals.ROAD_WIDTH)
 			var distance = (from - to).length()
 			var weight = num_obstacles * 10.0 + distance
 			if max_weight < weight:

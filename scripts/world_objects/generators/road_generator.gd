@@ -12,7 +12,6 @@ class RoadEdge:
 		to = _to
 
 # Treated as constants. Are vars due to gdscript.
-var ROAD_WIDTH: float
 var world_grid: WorldGrid
 
 const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 300.0
@@ -20,8 +19,7 @@ const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 300.0
 var road_edges: Array[RoadEdge] = []
 var connected_settlements: Dictionary = {}  # Tracks which settlement pairs are already connected
 
-func _init(_world_grid: WorldGrid, _road_width: float) -> void:
-	ROAD_WIDTH = _road_width
+func _init(_world_grid: WorldGrid) -> void:
 	world_grid = _world_grid
 
 func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) -> Array:
@@ -128,10 +126,10 @@ func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i, max
 func remove_objects_from_roads(static_objects_qt: Quadtree, remove_callback: Callable):
 	for edge in road_edges:
 		var query_rect = Rect2(
-			min(edge.from.x, edge.to.x) - ROAD_WIDTH,
-			min(edge.from.z, edge.to.z) - ROAD_WIDTH,
-			abs(edge.from.x -edge.to.x) + 2 * ROAD_WIDTH,
-			abs(edge.from.z -edge.to.z) + 2 * ROAD_WIDTH)
+			min(edge.from.x, edge.to.x) - Globals.ROAD_WIDTH,
+			min(edge.from.z, edge.to.z) - Globals.ROAD_WIDTH,
+			abs(edge.from.x -edge.to.x) + 2 * Globals.ROAD_WIDTH,
+			abs(edge.from.z -edge.to.z) + 2 * Globals.ROAD_WIDTH)
 		var objects = static_objects_qt.query(query_rect)
 		for index in objects.size():
 			var object: WorldObject = objects[index]["data"]
@@ -143,7 +141,7 @@ func remove_objects_from_roads(static_objects_qt: Quadtree, remove_callback: Cal
 			var t: float = clamp(ap.dot(ab) / ab.dot(ab), 0.0, 1.0);
 			var closest: Vector2 = a + t * ab;
 			var road_dist: float = (object_pos - closest).length()
-			if road_dist < ROAD_WIDTH + 0.1:
+			if road_dist < Globals.ROAD_WIDTH + 0.1:
 				remove_callback.call(object)
 
 
