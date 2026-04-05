@@ -67,7 +67,8 @@ func _init(pos: Vector3, rot: Vector3, scale: float):
 
 func play_response(response: Response):
 	audio_player.stream = sounds_responses[response]
-	instance.add_child(audio_player)
+	if audio_player.get_parent() != instance:
+		instance.add_child(audio_player)
 	audio_player.play()
 
 # Return true if died
@@ -96,9 +97,9 @@ func interact_item(item: ItemProperties.Item) -> bool:
 	if wants == WantsOptions.WOOD and item == ItemProperties.Item.WOOD:
 		play_response(Response.YES)
 		return true
-	else:
+	if audio_player.is_inside_tree():
 		audio_player.play()
-		return false
+	return false
 
 func delete():
 	super.delete()

@@ -20,7 +20,8 @@ func set_item(item: ItemProperties.Item):
 	item_id = item
 
 	if item != ItemProperties.Item.NO_ITEM:
-		remove_child(object)
+		if object and object.get_parent() == self:
+			remove_child(object)
 		object = ItemProperties.ITEMS[item].glb.instantiate()
 		_disable_shadows_recursive(object)
 		add_child(object)

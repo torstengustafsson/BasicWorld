@@ -54,7 +54,8 @@ func equip_item_index(index: int):
 
 	if item != ItemProperties.Item.NO_ITEM:
 		equipped_item.set_item(item)
-		player_camera.add_child(equipped_item)
+		if equipped_item.get_parent() != player_camera:
+			player_camera.add_child(equipped_item)
 		if item_in_hand:
 			equipped_item.show()
 		else:
@@ -86,9 +87,11 @@ func delete_equipped_item():
 
 func update_inventory_bindings():
 	for slot in inventory.inventory_grid.get_children():
-		slot.gui_input.connect(slot_gui_input.bind(slot))
+		if not slot.is_connected("gui_input", Callable(self, "slot_gui_input")):
+			slot.gui_input.connect(slot_gui_input.bind(slot))
 	for slot in hotkey_inventory.inventory_grid.get_children():
-		slot.gui_input.connect(slot_gui_input.bind(slot))
+		if not slot.is_connected("gui_input", Callable(self, "slot_gui_input")):
+			slot.gui_input.connect(slot_gui_input.bind(slot))
 
 
 func print_text_to_screen(text: String):

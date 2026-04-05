@@ -41,7 +41,8 @@ func add_npc(position: Vector3, rotation: Vector3, scale: float) -> NPC:
 func interact(collider):
 	for npc in npcs:
 		if npc.instance == collider:
-			npc.instance.add_child(npc.audio_player)
+			if npc.audio_player.get_parent() != npc.instance:
+				npc.instance.add_child(npc.audio_player)
 			npc.audio_player.play()
 
 
