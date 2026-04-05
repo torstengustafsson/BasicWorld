@@ -13,11 +13,6 @@ class SettlementData:
 		radius = _radius
 		num_houses = _num_houses
 
-# spread must be less than half of grid step to avoid overlap
-const SETTLEMENT_GRID_STEP = 20
-const SETTLEMENT_GRID_SPREAD = 5
-const WORLD_EDGE_MARGIN = 1 + SETTLEMENT_GRID_SPREAD
-
 var settlements: Array[SettlementData]
 var static_objects_qt: Quadtree
 
@@ -28,10 +23,10 @@ func _init(qt: Quadtree):
 func create_settlements(world_grid: WorldGrid) -> Array[SettlementData]:
 	var result: Array[SettlementData] = []
 
-	for grid_point_x in range(WORLD_EDGE_MARGIN + 1, world_grid.grid_size - WORLD_EDGE_MARGIN, SETTLEMENT_GRID_STEP):
-		var rand_value_x = randi_range(-SETTLEMENT_GRID_SPREAD, SETTLEMENT_GRID_SPREAD)
-		for grid_point_z in range(WORLD_EDGE_MARGIN + 1, world_grid.grid_size - WORLD_EDGE_MARGIN, SETTLEMENT_GRID_STEP):
-			var rand_value_z = randi_range(-SETTLEMENT_GRID_SPREAD, SETTLEMENT_GRID_SPREAD)
+	for grid_point_x in range(Globals.SETTLEMENT_WORLD_EDGE_MARGIN + 1, world_grid.grid_size - Globals.SETTLEMENT_WORLD_EDGE_MARGIN, Globals.SETTLEMENT_GRID_STEP):
+		var rand_value_x = randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
+		for grid_point_z in range(Globals.SETTLEMENT_WORLD_EDGE_MARGIN + 1, world_grid.grid_size - Globals.SETTLEMENT_WORLD_EDGE_MARGIN, Globals.SETTLEMENT_GRID_STEP):
+			var rand_value_z = randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
 			var grid_point = Vector2i(grid_point_x + rand_value_x, grid_point_z + rand_value_z)
 			var grid_position = world_grid.grid_point_edges.get(grid_point, null)
 			if not grid_position:

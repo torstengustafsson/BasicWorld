@@ -14,18 +14,16 @@ class RoadEdge:
 # Treated as constants. Are vars due to gdscript.
 var world_grid: WorldGrid
 
-const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 300.0
-
 var road_edges: Array[RoadEdge] = []
 var connected_settlements: Dictionary = {}  # Tracks which settlement pairs are already connected
 
 func _init(_world_grid: WorldGrid) -> void:
 	world_grid = _world_grid
 
-func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) -> Array:
+func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) -> Array[RoadEdge]:
 	if settlement_data.size() <= 1:
 		return []
-	var result: Array = []
+	var result: Array[RoadEdge] = []
 	for settlement in settlement_data:
 		var num_available_roads: int = max(1, min(min(3, settlement_data.size() - 1), ceil(settlement.num_houses / 2.0)))
 		var closest_settlements = get_closest_settlements(settlement, settlement_data, num_available_roads)
@@ -34,7 +32,7 @@ func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) 
 			var other_settlement = closest_settlements[other_index]
 			if connection_exists_between_settlements(settlement, other_settlement):
 				continue
-			var max_distance = MAX_SETTLEMENT_DISTANCE_FOR_ROAD + settlement.num_houses * MAX_SETTLEMENT_DISTANCE_FOR_ROAD * 0.1
+			var max_distance = Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD + settlement.num_houses * Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD * 0.1
 			var new_roads = generate_road_segments(settlement.grid_position, other_settlement.grid_position, max_distance)
 			if new_roads.size() > 0:
 				add_connection_between_settlements(settlement, other_settlement)

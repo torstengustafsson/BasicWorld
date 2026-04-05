@@ -19,7 +19,14 @@ const STEP_ROCKS = 10
 
 # Average distance between grid points. Used to determine pathfinding and road generation.
 # Lower value means more detailed pathfinding, but takes longer to generate.
-const WORLD_GRID_STEP: int = 20
+const WORLD_GRID_STEP: int = 10
+
+# Settlement spread must be less than half of settlement grid step to avoid overlap
+const SETTLEMENT_GRID_STEP = 20
+const SETTLEMENT_GRID_SPREAD = 8
+# Adda margin to avoid having settlements at the edge of the world
+const SETTLEMENT_WORLD_EDGE_MARGIN = 1 + Globals.SETTLEMENT_GRID_SPREAD
+const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 300.0
 
 # All roads will have this width
 const ROAD_WIDTH: float = 1.5

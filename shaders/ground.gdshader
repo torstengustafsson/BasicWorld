@@ -1,8 +1,8 @@
 // color_areas.gdshader
 shader_type spatial;
 
-uniform float noise_strength = 3.0;  // how jagged the edge is
-uniform float noise_scale = 2.0;     // frequency of the noise
+uniform float NOISE_STRENGTH = 3.0;  // how jagged the edge is
+uniform float NOISE_SCALE = 2.0;     // frequency of the noise
 float hash(float n) {
     return fract(sin(n) * 43758.5453123);
 }
@@ -23,7 +23,8 @@ float point_to_segment_dist(vec2 p, vec2 a, vec2 b) {
 }
 
 
-uniform vec2 world_size;
+uniform vec2 chunk_position;
+uniform vec2 chunk_size;
 uniform vec3 settlement_data[128]; // [pos_x, pos,z, radius]
 uniform int settlement_count = 0;
 uniform vec4 road_edges[1024]; // Two vec2:s of (from, to) points
@@ -34,24 +35,24 @@ uniform vec4 road_albedo_texture;
 
 void fragment() {
     float in_road = 0.0;
-    vec2 world_uv = (UV - 0.5) * world_size;
+    vec2 world_uv = chunk_position + (UV - 0.5) * chunk_size;
 
     // Create spots under settlements
     for (int i = 0; i < settlement_count; i++) {
         vec2 dir = world_uv - settlement_data[i].xy;
         float angle = atan(dir.y, dir.x);
-
-        float n = noise1d(angle * noise_scale);
-        float radius = settlement_data[i].z + (n - 0.5) * 2.0 * noise_strength;
+        float n = noise1d(angle * NOISE_SCALE);
+        float radius = settlement_data[i].z + (n - 0.5) * 2.0 * NOISE_STRENGTH;
         float dist = length(dir);
         in_road = max(in_road, step(dist, radius));
+
     }
 
-    // Create roads between road edges
-    for (int i = 0; i < road_edge_count; i++) {
-        float road_dist = point_to_segment_dist(world_uv, road_edges[i].xy, road_edges[i].zw);
-        in_road = max(in_road, step(road_dist, road_width));
-    }
+     // Create roads between road edges
+     for (int i = 0; i < road_edge_count; i++) {
+         float road_dist = point_to_segment_dist(world_uv, road_edges[i].xy, road_edges[i].zw);
+         in_road = max(in_road, step(road_dist, road_width));
+     }
 
     ALBEDO = mix(grass_albedo_texture.rgb, road_albedo_texture.rgb, in_road);
 

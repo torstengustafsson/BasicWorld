@@ -19,7 +19,6 @@ var last_player_pos: Vector3
 var static_objects_qt: Quadtree = Quadtree.new(Rect2(-Globals.WORLD_SIZE / 2, -Globals.WORLD_SIZE / 2,Globals.WORLD_SIZE, Globals.WORLD_SIZE))
 var world_grid: WorldGrid
 var terrain_generator: TerrainGenerator
-var terrain_material = ShaderMaterial.new()
 var player: Node3D # Only used for position
 var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
 var trees_generator: TreeGenerator
@@ -50,7 +49,7 @@ func _ready() -> void:
 
 	terrain_height_noise = TerrainNoise.new(Globals.RANDOM_SEED.hash())
 
-	terrain_generator = TerrainGenerator.new(terrain_material, terrain_height_noise)
+	terrain_generator = TerrainGenerator.new(terrain_height_noise)
 	terrain_generator.add_chunks_around_player(player.position)
 	add_child(terrain_generator)
 
@@ -107,21 +106,25 @@ func _ready() -> void:
 
 	var settlement_data = settlements_generator.create_settlements(world_grid)
 
-	var create_settlements_time = Time.get_ticks_msec()
-	var create_settlements_elapsed = create_settlements_time - create_world_grid_time
-	print("Time to generate settlements = " + str(create_settlements_elapsed / 1000.0) + " seconds")
-
 	create_npcs_in_settlements(settlement_data)
 
 	# Create some random NPCs out in the forest as well
 	var num_npcs = 25
 	npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs, terrain_height_noise)
 
+	settlements_generator.remove_objects_from_settlements(remove_object)
+
+	var create_settlements_time = Time.get_ticks_msec()
+	var create_settlements_elapsed = create_settlements_time - create_world_grid_time
+	print("Time to generate settlements = " + str(create_settlements_elapsed / 1000.0) + " seconds")
+
 	# CREATE ROADS
 
 	road_generator = RoadGenerator.new(world_grid)
-	var road_edges: Array = road_generator.generate_roads(settlement_data) # Type: Array[RoadGenerator.RoadEdge]
+	var road_edges: Array[RoadGenerator.RoadEdge] = road_generator.generate_roads(settlement_data) # Type: Array[RoadGenerator.RoadEdge]
 	add_child(road_generator)
+
+	road_generator.remove_objects_from_roads(static_objects_qt, remove_object)
 
 	var create_roads_time = Time.get_ticks_msec()
 	var create_roads_elapsed = create_roads_time - create_settlements_time
@@ -129,24 +132,8 @@ func _ready() -> void:
 
 	# SETUP SHADER PARAMETERS
 
-	terrain_material.shader = load("res://shaders/ground.gdshader")
-	terrain_material.set_shader_parameter("Globals.WORLD_SIZE", Vector2(size_x, size_z))
-	terrain_material.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25))
-	terrain_material.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
-	terrain_material.set_shader_parameter("settlement_count", settlement_data.size())
-	var shader_settlement_data: Array[Vector3] = []
-	for settlement in settlement_data:
-		shader_settlement_data.append(Vector3(settlement.position.x, settlement.position.z, settlement.radius))
-	terrain_material.set_shader_parameter("settlement_data", shader_settlement_data)
-	terrain_material.set_shader_parameter("Globals.ROAD_WIDTH", Globals.ROAD_WIDTH)
-	terrain_material.set_shader_parameter("road_edge_count", road_edges.size())
-	var shader_road_edges_data: Array[Vector4] = []
-	for edge in road_edges:
-		shader_road_edges_data.append(Vector4(edge.from.x, edge.from.z, edge.to.x, edge.to.z))
-	terrain_material.set_shader_parameter("road_edges", shader_road_edges_data)
-
-	settlements_generator.remove_objects_from_settlements(remove_object)
-	road_generator.remove_objects_from_roads(static_objects_qt, remove_object)
+	for chunk: TerrainChunk in terrain_generator.get_chunks():
+		chunk.set_shader_data(settlement_data, road_edges)
 
 	# By default all collisions are disabled. They will be later re-added on distance calculations from player
 	for item in static_objects_qt.query_all():
@@ -200,6 +187,7 @@ func add_no_collider_children_batched(position: Vector3, batch_size: int = 1000)
 		i += batch_size
 		await get_tree().process_frame
 
+# TODO: Bug, Some objects are not removed sometimes
 func remove_faraway_children_batched(position: Vector3, batch_size: int = 200):
 	var faraway_objects = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), Globals.LOD_DISTANCE_NO_COLLIDER + Globals.LOD_UPDATE_DISTANCE + 5.0, Globals.LOD_DISTANCE_NO_COLLIDER)
 	var i = 0

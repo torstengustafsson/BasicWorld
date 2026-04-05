@@ -6,15 +6,15 @@ var x_pos : int
 var z_pos : int
 var chunk_size : int
 var chunk_res : float
-var terrain_mat : ShaderMaterial
+var terrain_material : ShaderMaterial
 var terrain_noise
 
-func _init(_x_pos, _z_pos, _chunk_size, _chunk_res, _terrain_mat, _terrain_noise):
+func _init(_x_pos, _z_pos, _chunk_size, _chunk_res, _terrain_noise):
 	x_pos = _x_pos
 	z_pos = _z_pos
 	chunk_size = _chunk_size
 	chunk_res = _chunk_res
-	terrain_mat = _terrain_mat
+	terrain_material = ShaderMaterial.new()
 	terrain_noise = _terrain_noise
 
 func _ready():
@@ -50,4 +50,24 @@ func generate_chunk():
 	create_trimesh_collision()
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
-	mesh.surface_set_material(0, terrain_mat)
+	mesh.surface_set_material(0, terrain_material)
+
+func set_shader_data(settlement_data: Array[SettlementGenerator.SettlementData], road_edges: Array[RoadGenerator.RoadEdge]):
+	terrain_material.shader = load("res://shaders/ground.gdshader")
+	terrain_material.set_shader_parameter("chunk_size", Vector2(Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE))
+	terrain_material.set_shader_parameter("chunk_position", Vector2(x_pos, z_pos))
+	terrain_material.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25))
+	terrain_material.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
+	terrain_material.set_shader_parameter("settlement_count", settlement_data.size())
+	var shader_settlement_data: Array[Vector3] = []
+	for settlement in settlement_data:
+		shader_settlement_data.append(Vector3(settlement.position.x, settlement.position.z, settlement.radius))
+	terrain_material.set_shader_parameter("settlement_data", shader_settlement_data)
+	terrain_material.set_shader_parameter("road_width", Globals.ROAD_WIDTH)
+	terrain_material.set_shader_parameter("road_edge_count", road_edges.size())
+
+	# TODO: Only give the road edges that are in each chunk, instead of all to everyone.
+	var shader_road_edges_data: Array[Vector4] = []
+	for edge in road_edges:
+		shader_road_edges_data.append(Vector4(edge.from.x, edge.from.z, edge.to.x, edge.to.z))
+	terrain_material.set_shader_parameter("road_edges", shader_road_edges_data)

@@ -10,11 +10,9 @@ const NUM_CHUNKS_FULL_RES = 2
 # Contains a Dictionary holding the chunks for each resolution size
 var chunks: Dictionary[int, Dictionary] = {}
 
-var terrain_mat : ShaderMaterial
 var terrain_noise
 
-func _init(_terrain_mat, _terrain_noise):
-	terrain_mat = _terrain_mat
+func _init(_terrain_noise):
 	terrain_noise = _terrain_noise
 
 	for res in range(Globals.NUM_CHUNK_RESOLUTIONS):
@@ -45,7 +43,7 @@ func add_chunks_around_player(player_pos: Vector3):
 				if x >= res_check and x < num_chunks - res_check and z >= res_check and z < num_chunks - res_check:
 					hide_chunks_at(key)
 					var chunk_resolution = 1 / (float(resolution) + 1) / 2
-					var chunk = TerrainChunk.new(chunk_x, chunk_z, Globals.TERRAIN_CHUNK_SIZE, chunk_resolution, terrain_mat, terrain_noise)
+					var chunk = TerrainChunk.new(chunk_x, chunk_z, Globals.TERRAIN_CHUNK_SIZE, chunk_resolution, terrain_noise)
 					chunks[resolution][key] = chunk
 					add_child(chunk)
 
@@ -74,4 +72,11 @@ func get_num_chunks():
 	var result = 0
 	for chunk_map in chunks.values():
 		result += chunk_map.size()
+	return result
+
+func get_chunks() -> Array[TerrainChunk]:
+	var result: Array[TerrainChunk] = []
+	for chunk_map in chunks.values():
+		for chunk: TerrainChunk in chunk_map.values():
+			result.append(chunk)
 	return result
