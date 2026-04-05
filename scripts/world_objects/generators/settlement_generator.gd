@@ -20,7 +20,7 @@ func _init(qt: Quadtree):
 	static_objects_qt = qt
 	add_to_group("Persist")
 
-func create_settlements(world_grid: WorldGrid) -> Array[SettlementData]:
+func create_settlements(world_grid: WorldGrid, terrain_height_noise: TerrainNoise) -> Array[SettlementData]:
 	var result: Array[SettlementData] = []
 
 	for grid_point_x in range(Globals.SETTLEMENT_WORLD_EDGE_MARGIN + 1, world_grid.grid_size - Globals.SETTLEMENT_WORLD_EDGE_MARGIN, Globals.SETTLEMENT_GRID_STEP):
@@ -28,16 +28,16 @@ func create_settlements(world_grid: WorldGrid) -> Array[SettlementData]:
 		for grid_point_z in range(Globals.SETTLEMENT_WORLD_EDGE_MARGIN + 1, world_grid.grid_size - Globals.SETTLEMENT_WORLD_EDGE_MARGIN, Globals.SETTLEMENT_GRID_STEP):
 			var rand_value_z = randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
 			var grid_point = Vector2i(grid_point_x + rand_value_x, grid_point_z + rand_value_z)
-			var grid_position = world_grid.grid_point_edges.get(grid_point, null)
+			var grid_position: WorldGrid.PointWithEdges = world_grid.grid_point_edges.get(grid_point, null)
 			if not grid_position:
 				continue
-			var settlement_data = add_settlement(grid_point, grid_position.point)
+			var settlement_data = add_settlement(grid_point, grid_position.point, terrain_height_noise)
 			result.append(settlement_data)
 	settlements.append_array(result)
 	return result
 
 # Returns radius of settlement
-func add_settlement(grid_position: Vector2i, position: Vector3) -> SettlementData:
+func add_settlement(grid_position: Vector2i, position: Vector3, terrain_height_noise: TerrainNoise) -> SettlementData:
 	const MAX_NUM_HOUSES = 5
 	var num_houses = randi_range(2, MAX_NUM_HOUSES)
 	var start_rotation: float = randf() * 2 * PI
@@ -50,7 +50,9 @@ func add_settlement(grid_position: Vector2i, position: Vector3) -> SettlementDat
 		var distance_from_town_center = randf_range(10.0, 16.0) * (MAX_NUM_HOUSES + num_houses) / 10.0
 		largest_radius = distance_from_town_center
 		var rotated = Basis(Vector3.UP,  angle) * Vector3(1, 0, 0) * distance_from_town_center
-		add_house(position + rotated, Vector3(0.0, angle + PI, 0.0))
+		var house_position = position + rotated
+		house_position.y = terrain_height_noise.get_height_at(house_position.x, house_position.z)
+		add_house(house_position, Vector3(0.0, angle + PI, 0.0))
 
 	var chest_rotation = randf_range(0.0, 2 * PI)
 	add_chest(position, Vector3(0.0, chest_rotation, 0.0))

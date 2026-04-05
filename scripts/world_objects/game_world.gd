@@ -104,7 +104,7 @@ func _ready() -> void:
 
 	# CREATE SETTLEMENTS
 
-	var settlement_data = settlements_generator.create_settlements(world_grid)
+	var settlement_data = settlements_generator.create_settlements(world_grid, terrain_height_noise)
 
 	create_npcs_in_settlements(settlement_data)
 
@@ -218,7 +218,7 @@ func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.Settl
 		var end_pos_x = settlement.position.x + settlement.radius * square_in_circle_multiplier
 		var end_pos_z = settlement.position.z + settlement.radius * square_in_circle_multiplier
 		npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs, terrain_height_noise)
-		npcs_generator.create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
+		npcs_generator.create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs, terrain_height_noise)
 
 
 func remove_object(object: WorldObject):

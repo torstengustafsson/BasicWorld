@@ -21,9 +21,12 @@ func create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount, terrain
 		var rand_scale = randf_range(1.0, 1.2)
 		add_npc(position, rotation, rand_scale)
 
-func create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount):
+func create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount, terrain_height_noise):
 	for i in amount:
-		var position = Vector3(randf_range(start_pos_x, end_pos_x), 0.0, randf_range(start_pos_z, end_pos_z))
+		var pos_x = randf_range(start_pos_x, end_pos_x)
+		var pos_z = randf_range(start_pos_z, end_pos_z)
+		var height = terrain_height_noise.get_height_at(pos_x, pos_z)
+		var position = Vector3(pos_x, height, pos_z)
 		var rotation = Vector3(0.0, randf() * 2 * PI, 0.0)
 		var rand_scale = randf_range(0.5, 0.6)
 		add_npc(position, rotation, rand_scale)
