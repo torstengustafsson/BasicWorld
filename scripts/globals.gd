@@ -17,9 +17,10 @@ const STEP_TREES = 4
 const STEP_BERRYBUSHES = 10
 const STEP_ROCKS = 10
 
-# Average distance between grid points. Used to determine pathfinding and road generation.
-# Lower value means more detailed pathfinding, but takes longer to generate.
-const WORLD_GRID_STEP: int = 10
+# World grid is used for determining pathfinding and road generation.
+# Step is average distance between grid points. Lower value means more detailed pathfinding, but
+# takes longer to generate.
+const WORLD_GRID_STEP: float = 10.0
 
 # Settlement spread must be less than half of settlement grid step to avoid overlap
 const SETTLEMENT_GRID_STEP = 20

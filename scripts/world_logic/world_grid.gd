@@ -3,11 +3,10 @@ class_name  WorldGrid extends Node3D
 
 class GridPointEdge:
 	var grid_point: Vector2i
-	var weight: float
+	var weight: float = 0.0
 
-	func _init(_grid_point: Vector2i, _weight: float = 0.0) -> void:
+	func _init(_grid_point: Vector2i) -> void:
 		grid_point = _grid_point
-		weight = _weight
 
 class PointWithEdges:
 	var point: Vector3
@@ -15,7 +14,7 @@ class PointWithEdges:
 	func _init(_point: Vector3):
 		point = _point
 
-var POINTS_AROUND: Array[Vector2i] = [
+const POINTS_AROUND: Array[Vector2i] = [
 	Vector2i(-1, -1),
 	Vector2i(0, -1),
 	Vector2i(1, -1),
@@ -26,28 +25,35 @@ var POINTS_AROUND: Array[Vector2i] = [
 	Vector2i(1, 1),
 ]
 
+# The max height-angle in degrees that two gridpoints can be connected by
+const MAX_STEEPNESS = 15.0
+
 var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
 
 var world_start_pos: Vector2
 var world_end_pos: Vector2
 
+var terrain_height_noise: TerrainNoise
+
 var grid_size: int = 0
 
 var max_weight: float = -1.0
 
-func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, terrain_height_noise) -> void:
+func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, _terrain_height_noise) -> void:
 	world_start_pos = _world_start_pos
 	world_end_pos = _world_end_pos
+	terrain_height_noise = _terrain_height_noise
 	var world_size = abs(world_start_pos.x - world_end_pos.x)
 	grid_size = int(world_size / Globals.WORLD_GRID_STEP)
 	if world_size != abs(world_start_pos.y - world_end_pos.y):
 		print("Not Square world! Exiting.")
 		get_tree().quit()
-	create_points_and_edges(terrain_height_noise)
+	create_points_and_edges()
 
-func create_points_and_edges(terrain_height_noise) -> Dictionary[Vector2i, PointWithEdges]:
+func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 	grid_point_edges.clear()
 
+	# Add grid points
 	for x: int in grid_size:
 		for z: int in grid_size:
 			var pos_x = world_start_pos.x + x * Globals.WORLD_GRID_STEP
@@ -57,15 +63,24 @@ func create_points_and_edges(terrain_height_noise) -> Dictionary[Vector2i, Point
 			var rand_value_z = (-Globals.WORLD_GRID_STEP / 4.0 + randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
 			var point = Vector3(pos_x + rand_value_x, height, pos_z + rand_value_z)
 			var current_point = PointWithEdges.new(point)
-			for point_around: Vector2i in POINTS_AROUND:
-				var neighbor: Vector2i = Vector2i(x + point_around.x, z + point_around.y)
-				var weight = 0.0
-				var out_of_bounds: bool = neighbor.x < 0 or neighbor.x >= grid_size or neighbor.y < 0 or neighbor.y >= grid_size
-				var too_steep = false # TODO
-				if out_of_bounds and not too_steep:
-					continue
-				current_point.edges.append(GridPointEdge.new(neighbor, weight))
 			grid_point_edges[Vector2i(x, z)] = current_point
+
+	# Add grid edges
+	var to_be_removed = []
+	for grid_point in grid_point_edges:
+		var grid_point_edge = grid_point_edges[grid_point]
+		for point_around: Vector2i in POINTS_AROUND:
+			var neighbor: Vector2i = grid_point + point_around
+			var out_of_bounds: bool = neighbor.x < 0 or neighbor.x >= grid_size or neighbor.y < 0 or neighbor.y >= grid_size
+			var too_steep = false
+			if grid_point_edges.has(neighbor):
+				too_steep = abs(MathFunctions.calculate_angle_between_points(grid_point_edge.point, grid_point_edges[neighbor].point)) > MAX_STEEPNESS
+			if not out_of_bounds and not too_steep:
+				grid_point_edge.edges.append(GridPointEdge.new(neighbor))
+		if grid_point_edge.edges.size() == 0:
+			to_be_removed.append(grid_point)
+	for grid_point in to_be_removed:
+		grid_point_edges.erase(grid_point)
 	return grid_point_edges
 
 func calculate_weights(qt: Quadtree):
@@ -111,17 +126,23 @@ func get_world_position(settlement: SettlementGenerator.SettlementData) -> Vecto
 	return grid_point_edges[settlement.grid_position].point
 
 
+# Uncomment to render grid. Tanks performance.
 # func _process(_delta):
 # 	render_grid()
 
 # func render_grid():
 # 	for grid_point in grid_point_edges:
 # 		var point_with_edges = grid_point_edges[grid_point]
-# 		DebugDraw3D.draw_sphere(Vector3(point_with_edges.point.x, 0.5, point_with_edges.point.z))
+# 		var point_height = terrain_height_noise.get_height_at(point_with_edges.point.x, point_with_edges.point.z)
+# 		DebugDraw3D.draw_sphere(Vector3(point_with_edges.point.x, point_height + 0.5, point_with_edges.point.z))
 # 		for edge in point_with_edges.edges:
 # 			var neighbor = grid_point_edges.get(edge.grid_point, null)
 # 			if not neighbor:
 # 				continue
 # 			var red = edge.weight / max_weight
 # 			var color = Color(red, 0.0, 0.0, 1.0)
-# 			DebugDraw3D.draw_line(Vector3(point_with_edges.point.x, 0.5, point_with_edges.point.z), Vector3(neighbor.point.x, 0.5, neighbor.point.z), color)
+# 			var neighbor_height = terrain_height_noise.get_height_at(neighbor.point.x, neighbor.point.z)
+# 			DebugDraw3D.draw_line(
+# 				Vector3(point_with_edges.point.x, point_height + 0.5, point_with_edges.point.z),
+# 				Vector3(neighbor.point.x, neighbor_height + 0.5, neighbor.point.z), color
+# 			)
