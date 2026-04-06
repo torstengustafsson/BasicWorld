@@ -37,6 +37,8 @@ func _init(_player: Node3D) -> void:
 func _ready() -> void:
 	var start_time = Time.get_ticks_msec()
 
+	seed(Globals.RANDOM_SEED.hash())
+
 	var size_x = Globals.WORLD_SIZE
 	var size_z = Globals.WORLD_SIZE
 	var margin = 5.0
@@ -47,7 +49,7 @@ func _ready() -> void:
 
 	# CREATE TERRAIN
 
-	terrain_height_noise = TerrainNoise.new(Globals.RANDOM_SEED.hash())
+	terrain_height_noise = TerrainNoise.new()
 
 	terrain_generator = TerrainGenerator.new(terrain_height_noise)
 	terrain_generator.add_chunks_around_player(player.position)

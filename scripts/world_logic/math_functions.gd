@@ -1,5 +1,16 @@
 class_name MathFunctions
 
+# This game uses strings as the seed, since it is easier to memorize specific values
+static func generate_random_seed() -> String:
+	var length = 20
+	var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+	var result = ""
+	for i in range(length):
+		var random_index = randi() % chars.length()
+		result += chars[random_index]
+	return result
+
+
 # Expects x to be between 0.0 and 1.0. Returns value between 0.0 and 1.0.
 # Return 1.0 when x is 0.0, and tapers down to 0.0, with threshold being the falloff point (x=threshold return 0.5).
 # Sharpness of 10 and threshold of 0.5 means x=1.0 return ~0.0. Lower sharpness means hight value at 1.0, and
