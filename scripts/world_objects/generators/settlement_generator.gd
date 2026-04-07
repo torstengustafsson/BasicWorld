@@ -15,12 +15,16 @@ class SettlementData:
 
 var settlements: Array[SettlementData]
 var static_objects_qt: Quadtree
+var world_grid: WorldGrid
+var terrain_height_noise: TerrainNoise
 
-func _init(qt: Quadtree):
+func _init(qt: Quadtree, _world_grid: WorldGrid, _terrain_height_noise):
 	static_objects_qt = qt
+	world_grid = _world_grid
+	terrain_height_noise = _terrain_height_noise
 	add_to_group("Persist")
 
-func create_settlements(world_grid: WorldGrid, terrain_height_noise: TerrainNoise) -> Array[SettlementData]:
+func create_settlements() -> Array[SettlementData]:
 	var result: Array[SettlementData] = []
 
 	for grid_point_x in range(Globals.SETTLEMENT_WORLD_EDGE_MARGIN + 1, world_grid.grid_size - Globals.SETTLEMENT_WORLD_EDGE_MARGIN, Globals.SETTLEMENT_GRID_STEP):
@@ -31,13 +35,39 @@ func create_settlements(world_grid: WorldGrid, terrain_height_noise: TerrainNois
 			var grid_position: WorldGrid.PointWithEdges = world_grid.grid_point_edges.get(grid_point, null)
 			if not grid_position:
 				continue
-			var settlement_data = add_settlement(grid_point, grid_position.point, terrain_height_noise)
-			result.append(settlement_data)
+			var settlement_data = try_add_settlement(grid_point, grid_position)
+			if settlement_data:
+				result.append(settlement_data)
 	settlements.append_array(result)
 	return result
 
+func try_add_settlement(grid_point: Vector2i, grid_position: WorldGrid.PointWithEdges) -> SettlementData:
+	var has_tested_neighbors = false
+	var pq: PriorityQueue = PriorityQueue.new()
+	pq.push(grid_position, 0.0)
+	while not pq.is_empty():
+		var current = pq.pop()
+		var not_too_steep = true
+		for edge in current.edges:
+			var height_diff = abs(current.point.y - world_grid.grid_point_edges[edge.grid_point].point.y)
+			if height_diff > Globals.MAX_SETTLEMENT_STEEPNESS:
+				not_too_steep = false
+				break
+		if current.edges.size() == 8 and not_too_steep:
+			return add_settlement(grid_point, grid_position.point)
+		else:
+			# Not ok. Test placing settlement on startpoints' edges instead
+			if not has_tested_neighbors:
+				has_tested_neighbors = true
+				for edge in current.edges:
+					var edge_grid_position = world_grid.grid_point_edges[edge.grid_point]
+					var height_diff = abs(current.point.y - world_grid.grid_point_edges[edge.grid_point].point.y)
+					if height_diff < Globals.MAX_SETTLEMENT_STEEPNESS:
+						pq.push(edge_grid_position, height_diff)
+	return null
+
 # Returns radius of settlement
-func add_settlement(grid_position: Vector2i, position: Vector3, terrain_height_noise: TerrainNoise) -> SettlementData:
+func add_settlement(grid_position: Vector2i, position: Vector3) -> SettlementData:
 	const MAX_NUM_HOUSES = 5
 	var num_houses = randi_range(2, MAX_NUM_HOUSES)
 	var start_rotation: float = randf() * 2 * PI

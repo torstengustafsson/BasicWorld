@@ -1,4 +1,4 @@
-extends Node
+extends Node3D
 
 class_name PlayerControls
 
@@ -8,18 +8,18 @@ var player_inventory: PlayerInventory
 var game_world: GameWorld
 
 func _init(
-	_space_state: PhysicsDirectSpaceState3D,
 	inventory: Node2D,
 	hotkey_menu: HotkeyItems,
 	_player_camera: Camera3D,
 	_game_world: GameWorld,
 ):
-	space_state = _space_state
 	player_camera = _player_camera
 	player_inventory = PlayerInventory.new(inventory, hotkey_menu, player_camera)
 	game_world = _game_world
 	add_child(player_inventory)
 
+func _ready() -> void:
+	space_state = get_world_3d().direct_space_state
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact"):

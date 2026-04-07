@@ -25,9 +25,6 @@ const POINTS_AROUND: Array[Vector2i] = [
 	Vector2i(1, 1),
 ]
 
-# The max height-angle in degrees that two gridpoints can be connected by
-const MAX_STEEPNESS = 15.0
-
 var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
 
 var world_start_pos: Vector2
@@ -74,7 +71,7 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 			var out_of_bounds: bool = neighbor.x < 0 or neighbor.x >= grid_size or neighbor.y < 0 or neighbor.y >= grid_size
 			var too_steep = false
 			if grid_point_edges.has(neighbor):
-				too_steep = abs(MathFunctions.calculate_angle_between_points(grid_point_edge.point, grid_point_edges[neighbor].point)) > MAX_STEEPNESS
+				too_steep = abs(MathFunctions.calculate_angle_between_points(grid_point_edge.point, grid_point_edges[neighbor].point)) > Globals.MAX_GRID_STEEPNESS
 			if not out_of_bounds and not too_steep:
 				grid_point_edge.edges.append(GridPointEdge.new(neighbor))
 		if grid_point_edge.edges.size() == 0:

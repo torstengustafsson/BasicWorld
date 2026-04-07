@@ -1,4 +1,4 @@
-extends Node
+extends Node3D
 
 class_name GameWorld
 
@@ -22,17 +22,15 @@ var terrain_generator: TerrainGenerator
 var player: Node3D # Only used for position
 var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
 var trees_generator: TreeGenerator
-var bush_generator: BushGenerator = BushGenerator.new(static_objects_qt)
-var rock_generator: RockGenerator = RockGenerator.new(static_objects_qt)
-var settlements_generator: SettlementGenerator = SettlementGenerator.new(static_objects_qt)
+var bush_generator: BushGenerator
+var rock_generator: RockGenerator
+var settlements_generator: SettlementGenerator
 var npcs_generator: NpcGenerator = NpcGenerator.new(static_objects_qt)
 var road_generator: RoadGenerator
 
 func _init(_player: Node3D) -> void:
 	player = _player
 	last_player_pos = player.position
-	trees_generator = TreeGenerator.new(static_objects_qt)
-
 
 func _ready() -> void:
 	var start_time = Time.get_ticks_msec()
@@ -55,6 +53,11 @@ func _ready() -> void:
 	terrain_generator.add_chunks_around_player(player.position)
 	add_child(terrain_generator)
 
+	# TODO: Find out why we need to wait here.
+	# Without the wait, ground collisions will not be available at start outside of player immediate area.
+	# This make below ground-based calculations like removing trees on steep terrain not possible.
+	await get_tree().create_timer(0.1).timeout
+
 	var create_terrain_time = Time.get_ticks_msec()
 	var create_terrain_elapsed = create_terrain_time - start_time
 	print("Time to generate terrain = " + str(create_terrain_elapsed / 1000.0) + " seconds")
@@ -64,7 +67,12 @@ func _ready() -> void:
 	var forest_noise = NoiseFunctions.create_forest_noise()
 	var rocks_noise = NoiseFunctions.create_rocks_noise()
 
-	add_child(bush_generator)
+	trees_generator = TreeGenerator.new(static_objects_qt, get_world_3d().direct_space_state)
+	bush_generator = BushGenerator.new(static_objects_qt, get_world_3d().direct_space_state)
+	rock_generator = RockGenerator.new(static_objects_qt, get_world_3d().direct_space_state)
+
+	add_child(trees_generator) # Needed for chop animation
+	add_child(bush_generator) # Needed for berry creation
 
 	trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, Globals.STEP_TREES, forest_noise, terrain_height_noise)
 	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, Globals.STEP_BERRYBUSHES, forest_noise, terrain_height_noise)
@@ -106,7 +114,8 @@ func _ready() -> void:
 
 	# CREATE SETTLEMENTS
 
-	var settlement_data = settlements_generator.create_settlements(world_grid, terrain_height_noise)
+	settlements_generator = SettlementGenerator.new(static_objects_qt, world_grid, terrain_height_noise)
+	var settlement_data = settlements_generator.create_settlements()
 
 	create_npcs_in_settlements(settlement_data)
 

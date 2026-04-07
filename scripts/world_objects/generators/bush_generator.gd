@@ -4,11 +4,14 @@ class_name BushGenerator
 
 const MAX_ALLOWED_HEIGHT = 50.0
 
+var space_state: PhysicsDirectSpaceState3D
+
 var static_objects_qt: Quadtree
 var berrybushes: Array[WorldObject] = []
 
-func _init(qt: Quadtree):
+func _init(qt: Quadtree, _space_state: PhysicsDirectSpaceState3D):
 	static_objects_qt = qt
+	space_state = _space_state
 	add_to_group("Persist")
 
 func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise, terrain_height_noise):
@@ -21,16 +24,22 @@ func create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, fo
 			var height = min(terrain_height_noise.get_height_at(pos_x, pos_z), MAX_ALLOWED_HEIGHT)
 			var position = Vector3(pos_x, height, pos_z)
 
-			# Skip if at too high elevation
-			var height_value = MathFunctions.taper(height / MAX_ALLOWED_HEIGHT, 0.5)
-			if height_value < randf_range(0.0, 0.5):
-				continue
-
 			# Skip if out-of-bounds
 			if position.x < start_pos_x || position.z < start_pos_z || position.x > end_pos_x || position.z > end_pos_z:
 				continue
 
+			# Skip if outside of noise function threshold
 			if forest_noise.above_threshold(position):
+				continue
+
+			# Skip if terrain is too steep
+			var terrain_angle = MathFunctions.get_terrain_angle_at_position(position, space_state)
+			if terrain_angle > Globals.MAX_OBJECT_STEEPNESS or terrain_angle == INF:
+				continue
+
+			# Skip if at too high elevation (use some randomness to reduce chance closer to max)
+			var height_value = MathFunctions.taper(height / MAX_ALLOWED_HEIGHT, 0.5)
+			if height_value < randf_range(0.0, 0.5):
 				continue
 
 			var scale = randf_range(1.0, 1.25)

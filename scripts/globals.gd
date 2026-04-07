@@ -24,12 +24,24 @@ const STEP_ROCKS = 10
 # takes longer to generate.
 const WORLD_GRID_STEP: float = 10.0
 
+# The max height-angle in degrees that two gridpoints can be connected by
+const MAX_GRID_STEEPNESS = 15.0
+
 # Settlement spread must be less than half of settlement grid step to avoid overlap
 const SETTLEMENT_GRID_STEP = 20
-const SETTLEMENT_GRID_SPREAD = 8
+const SETTLEMENT_GRID_SPREAD = 6
+
 # Adda margin to avoid having settlements at the edge of the world
 const SETTLEMENT_WORLD_EDGE_MARGIN = 1 + Globals.SETTLEMENT_GRID_SPREAD
 const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 300.0
+
+# The max height-angle in degrees that a settlements gridpoint and its edges can be connected by
+# This gives an approximation of even terrain for the settlement. It assumes the radius of the
+# settlement is about the same as the distance between the grid points. (settlement position is always on a grid point)
+const MAX_SETTLEMENT_STEEPNESS = 5.0
+
+# The max height-angle in degrees that objects can be generated on
+const MAX_OBJECT_STEEPNESS = 25.0
 
 # All roads will have this width
 const ROAD_WIDTH: float = 1.5

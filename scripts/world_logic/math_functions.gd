@@ -35,3 +35,28 @@ static func calculate_angle_between_points(point_a: Vector3, point_b: Vector3) -
 	# Angle between flat ground and the UP vector is 90 degrees, so subtract
 	# that amount to get 0 for flat ground.
 	return angle_deg - 90.0
+
+static func get_terrain_angle_at_position(position: Vector3, space_state: PhysicsDirectSpaceState3D) -> float:
+	# Set the raycast origin and direction
+	var origin = position + Vector3(0.0, 1.0, 0.0)
+	var end = position - Vector3(0.0, 1.0, 0.0)
+
+	var query = PhysicsRayQueryParameters3D.create(origin, end)
+	query.collide_with_areas = true
+
+	var result = space_state.intersect_ray(query)
+
+	# Check if the ray hit the terrain
+	if not result or result["collider"].get_parent() is not TerrainChunk:
+		return INF
+
+	var calculate_slope_angle = func(_normal: Vector3) -> float:
+		var dot_product: float = _normal.dot(Vector3.UP)
+		dot_product = clamp(dot_product, -1.0, 1.0)  # Avoid floating-point errors
+		var angle_rad: float = acos(dot_product)
+		var angle_deg: float = rad_to_deg(angle_rad)
+		return angle_deg
+
+	var normal: Vector3 = result["normal"]
+	var angle: float = calculate_slope_angle.call(normal)
+	return angle

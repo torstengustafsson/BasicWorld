@@ -5,19 +5,6 @@
 [ext_resource type="PackedScene" uid="uid://c3hlevqadr32h" path="res://scenes/pause_menu.tscn" id="4_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://dhaksq5wolwly" path="res://scenes/hud.tscn" id="5_tbgi4"]
 
-[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tefeu"]
-rough = true
-absorbent = true
-
-[sub_resource type="PlaneMesh" id="PlaneMesh_7dm0k"]
-size = Vector2(200, 200)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0xm2m"]
-albedo_color = Color(0.25882354, 0.5176471, 0.2509804, 1)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_0xm2m"]
-size = Vector3(200, 0.1, 200)
-
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0xm2m"]
 sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
 ground_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
@@ -51,18 +38,6 @@ freefly_speed = 100.0
 [node name="InteractRaycast" type="RayCast3D" parent="Player" unique_id=144849483]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 1.7, -0.5)
 target_position = Vector3(0, -1.2, 0)
-
-[node name="Ground" type="StaticBody3D" parent="." unique_id=2095662480]
-visible = false
-physics_material_override = SubResource("PhysicsMaterial_tefeu")
-
-[node name="PlaneMesh" type="MeshInstance3D" parent="Ground" unique_id=867671209]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.003232956, 0.004675865, -0.0006195307)
-mesh = SubResource("PlaneMesh_7dm0k")
-surface_material_override/0 = SubResource("StandardMaterial3D_0xm2m")
-
-[node name="GroundCollider" type="CollisionShape3D" parent="Ground" unique_id=413163075]
-shape = SubResource("BoxShape3D_0xm2m")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2119691324]
 environment = SubResource("Environment_h2yge")

@@ -8,7 +8,6 @@ extends Node3D
 @onready var game_world: GameWorld = GameWorld.new(player)
 
 @onready var player_controls: PlayerControls = PlayerControls.new(
-	get_world_3d().direct_space_state,
 	$PauseMenu/InventoryMenu/Inventory,
 	hotkey_menu,
 	player.get_node("Head/Camera3D"),
