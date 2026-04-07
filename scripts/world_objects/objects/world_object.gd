@@ -24,7 +24,6 @@ var collider = CollisionShape3D
 var glb_mesh_no_collider: Node3D # TODO
 
 var id: ObjectId
-var in_scene = false
 
 func _init(pos: Vector3, rot: Vector3, scale: Vector3, glb_mesh_scene: PackedScene, _collider: CollisionShape3D, _id: ObjectId):
 	id = _id

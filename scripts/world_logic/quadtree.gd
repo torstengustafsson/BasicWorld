@@ -112,34 +112,34 @@ func _query_circle(center: Vector2, radius: float, result: Array = []) -> Array:
 
 	return result
 
-func query_circle_holed(center: Vector2, radius: float, inner_radius) -> Array:
+func query_circle_holed(center: Vector2, inner_radius, outer_radius: float) -> Array:
 	var result: Array = []
-	return _query_circle_holed(center, radius, inner_radius, result)
+	return _query_circle_holed(center, inner_radius, outer_radius, result)
 
 # Query all items within a circular area (center + radius), ignoring an inner circular area (center + inner_radius).
-func _query_circle_holed(center: Vector2, radius: float, inner_radius: float, result: Array = []) -> Array:
+func _query_circle_holed(center: Vector2, inner_radius: float, outer_radius: float, result: Array = []) -> Array:
 	# Broad-phase: skip if circle doesn't intersect this boundary at all
 	var closest := Vector2(
 		clamp(center.x, boundary.position.x, boundary.end.x),
 		clamp(center.y, boundary.position.y, boundary.end.y)
 	)
 
-	var r2 := radius * radius
+	var outer_r2 := outer_radius * outer_radius
 	var inner_r2 := inner_radius * inner_radius
 
-	if closest.distance_squared_to(center) > r2:
+	if closest.distance_squared_to(center) > outer_r2:
 		return result
 
 	for item in items:
 		var dist = item["position"].distance_squared_to(center)
-		if dist <= r2 and dist > inner_r2:
+		if dist <= outer_r2 and dist > inner_r2:
 			result.append(item)
 
 	if divided:
-		northwest._query_circle_holed(center, radius, inner_radius, result)
-		northeast._query_circle_holed(center, radius, inner_radius, result)
-		southwest._query_circle_holed(center, radius, inner_radius, result)
-		southeast._query_circle_holed(center, radius, inner_radius, result)
+		northwest._query_circle_holed(center, inner_radius, outer_radius, result)
+		northeast._query_circle_holed(center, inner_radius, outer_radius, result)
+		southwest._query_circle_holed(center, inner_radius, outer_radius, result)
+		southeast._query_circle_holed(center, inner_radius, outer_radius, result)
 
 	return result
 

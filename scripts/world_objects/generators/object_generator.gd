@@ -19,6 +19,9 @@ const MAX_ALLOWED_HEIGHT = 100.0
 var space_state: PhysicsDirectSpaceState3D
 var static_objects_qt: Quadtree
 
+var forest_noise = NoiseFunctions.create_forest_noise()
+var rocks_noise = NoiseFunctions.create_rocks_noise()
+
 var rocks: Array[WorldObject] = []
 var berrybushes: Array[WorldObject] = []
 var trees: Array[WorldObject] = []
@@ -97,18 +100,15 @@ func _handle_chop(collider, objects) -> WorldObject:
 
 func _create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise):
 	var step = Globals.STEP_TREES
-	var noise_function = NoiseFunctions.create_forest_noise()
-	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, noise_function, terrain_height_noise, _add_tree)
+	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise, terrain_height_noise, _add_tree)
 
 func _create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise):
 	var step = Globals.STEP_BERRYBUSHES
-	var noise_function = NoiseFunctions.create_forest_noise()
-	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, noise_function, terrain_height_noise, _add_bush)
+	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise, terrain_height_noise, _add_bush)
 
 func _create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise):
 	var step = Globals.STEP_ROCKS
-	var noise_function = NoiseFunctions.create_rocks_noise()
-	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, noise_function, terrain_height_noise, _add_rock)
+	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, rocks_noise, terrain_height_noise, _add_rock)
 
 func create_world_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise):
 	_create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise)

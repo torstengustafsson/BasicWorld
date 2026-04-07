@@ -14,12 +14,11 @@ class InteractResult:
 
 var terrain_height_noise: TerrainNoise
 
-var last_player_pos: Vector3
-
 var static_objects_qt: Quadtree = Quadtree.new(Rect2(-Globals.WORLD_SIZE / 2, -Globals.WORLD_SIZE / 2,Globals.WORLD_SIZE, Globals.WORLD_SIZE))
 var world_grid: WorldGrid
 var terrain_generator: TerrainGenerator
 var player: Node3D # Only used for position
+var distance_controller: DistanceController
 var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
 var object_generator: ObjectGenerator
 var settlements_generator: SettlementGenerator
@@ -28,7 +27,8 @@ var road_generator: RoadGenerator
 
 func _init(_player: Node3D) -> void:
 	player = _player
-	last_player_pos = player.position
+	distance_controller = DistanceController.new(player, static_objects_qt)
+	add_child(distance_controller)
 
 func _ready() -> void:
 	var start_time = Time.get_ticks_msec()
@@ -113,7 +113,7 @@ func _ready() -> void:
 	var num_npcs = 25
 	npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs, terrain_height_noise)
 
-	settlements_generator.remove_objects_from_settlements(remove_object)
+	settlements_generator.remove_objects_from_settlements(remove_object_callback)
 
 	var create_settlements_time = Time.get_ticks_msec()
 	var create_settlements_elapsed = create_settlements_time - create_world_grid_time
@@ -125,7 +125,7 @@ func _ready() -> void:
 	var road_edges: Array[RoadGenerator.RoadEdge] = road_generator.generate_roads(settlement_data) # Type: Array[RoadGenerator.RoadEdge]
 	add_child(road_generator)
 
-	road_generator.remove_objects_from_roads(static_objects_qt, remove_object)
+	road_generator.remove_objects_from_roads(static_objects_qt, remove_object_callback)
 
 	var create_roads_time = Time.get_ticks_msec()
 	var create_roads_elapsed = create_roads_time - create_settlements_time
@@ -139,69 +139,13 @@ func _ready() -> void:
 	# By default all collisions are disabled. They will be later re-added on distance calculations from player
 	for item in static_objects_qt.query_all():
 		item["data"].collider.disabled = true
-	update_lods()
+	distance_controller.update_lods()
 
 	var elapsed = Time.get_ticks_msec() - start_time
 
 	print("")
 	print("Total time to generate world = " + str(elapsed / 1000.0) + " seconds")
 	print("Number of objects in scene = " + str(count_all_children(self)))
-
-
-func _process(_delta: float) -> void:
-	if (player.position - last_player_pos).length() > Globals.LOD_UPDATE_DISTANCE:
-		update_lods()
-		last_player_pos = player.position
-
-
-func update_lods():
-	var player_pos = player.global_transform.origin
-	add_no_collider_children_batched(player_pos)
-	remove_faraway_children_batched(player_pos)
-	add_nearby_children_full(player_pos)
-
-func add_nearby_children_full(player_position: Vector3):
-	var objects_full = static_objects_qt.query_circle(Vector2(player_position.x, player_position.z), Globals.LOD_DISTANCE_FULL)
-	for index in objects_full.size():
-		var object: WorldObject = objects_full[index]["data"]
-		if not object.in_scene or object.collider.disabled:
-			object.collider.disabled = false
-			if object.glb_mesh_no_collider.get_parent() == self:
-				remove_child(object.glb_mesh_no_collider)
-			add_child(object.instance)
-			object.in_scene = true
-
-
-func add_no_collider_children_batched(player_position: Vector3, batch_size: int = 1000):
-	var objects_no_collider = static_objects_qt.query_circle_holed(Vector2(player_position.x, player_position.z), Globals.LOD_DISTANCE_NO_COLLIDER, Globals.LOD_DISTANCE_FULL)
-	var i = 0
-	while i < objects_no_collider.size():
-		for j in min(batch_size, objects_no_collider.size() - i):
-			var object: WorldObject = objects_no_collider[i + j]["data"]
-			# Need to verify that object is not already a child, since we otherwise would disable its collider
-			if not object.in_scene:
-				object.collider.disabled = true
-				if object.instance.get_parent() == self:
-					remove_child(object.instance)
-				add_child(object.glb_mesh_no_collider)
-				object.in_scene = true
-		i += batch_size
-		await get_tree().process_frame
-
-# TODO: Bug, Some objects are not removed sometimes
-func remove_faraway_children_batched(player_position: Vector3, batch_size: int = 200):
-	var faraway_objects = static_objects_qt.query_circle_holed(Vector2(player_position.x, player_position.z), Globals.LOD_DISTANCE_NO_COLLIDER + Globals.LOD_UPDATE_DISTANCE + 5.0, Globals.LOD_DISTANCE_NO_COLLIDER)
-	var i = 0
-	while i < faraway_objects.size():
-		for j in min(batch_size, faraway_objects.size() - i):
-			var object: WorldObject = faraway_objects[i + j]["data"]
-			# Need to verify again that object is still out-of-bounds, since we use batched removal
-			if object.in_scene and object.instance.position.distance_to(player_position) > Globals.LOD_DISTANCE_NO_COLLIDER:
-				if object.glb_mesh_no_collider.get_parent() == self:
-					remove_child(object.glb_mesh_no_collider)
-				object.in_scene = false
-		i += batch_size
-		await get_tree().process_frame
 
 
 func count_all_children(node: Node) -> int:
@@ -222,7 +166,7 @@ func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.Settl
 		npcs_generator.create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs, terrain_height_noise)
 
 
-func remove_object(object: WorldObject):
+func remove_object_callback(object: WorldObject):
 	static_objects_qt.remove({"position": Vector2(object.instance.position.x, object.instance.position.z), "data": object})
 	object.delete()
 	object = null
