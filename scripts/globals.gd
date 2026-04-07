@@ -33,7 +33,7 @@ const SETTLEMENT_GRID_SPREAD = 6
 
 # Adda margin to avoid having settlements at the edge of the world
 const SETTLEMENT_WORLD_EDGE_MARGIN = 1 + Globals.SETTLEMENT_GRID_SPREAD
-const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 300.0
+const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 600.0
 
 # The max height-angle in degrees that a settlements gridpoint and its edges can be connected by
 # This gives an approximation of even terrain for the settlement. It assumes the radius of the

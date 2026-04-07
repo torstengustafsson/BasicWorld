@@ -25,21 +25,20 @@ const POINTS_AROUND: Array[Vector2i] = [
 	Vector2i(1, 1),
 ]
 
-var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
+var terrain_height_noise: TerrainNoise
+var space_state: PhysicsDirectSpaceState3D
 
+var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
 var world_start_pos: Vector2
 var world_end_pos: Vector2
-
-var terrain_height_noise: TerrainNoise
-
 var grid_size: int = 0
-
 var max_weight: float = -1.0
 
-func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, _terrain_height_noise) -> void:
+func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, _terrain_height_noise, _space_state) -> void:
 	world_start_pos = _world_start_pos
 	world_end_pos = _world_end_pos
 	terrain_height_noise = _terrain_height_noise
+	space_state = _space_state
 	var world_size = abs(world_start_pos.x - world_end_pos.x)
 	grid_size = int(world_size / Globals.WORLD_GRID_STEP)
 	if world_size != abs(world_start_pos.y - world_end_pos.y):
@@ -69,25 +68,39 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 		for point_around: Vector2i in POINTS_AROUND:
 			var neighbor: Vector2i = grid_point + point_around
 			var out_of_bounds: bool = neighbor.x < 0 or neighbor.x >= grid_size or neighbor.y < 0 or neighbor.y >= grid_size
-			var too_steep = false
+			var edge_too_steep = false
 			if grid_point_edges.has(neighbor):
-				too_steep = abs(MathFunctions.calculate_angle_between_points(grid_point_edge.point, grid_point_edges[neighbor].point)) > Globals.MAX_GRID_STEEPNESS
-			if not out_of_bounds and not too_steep:
+				var edge_angle = MathFunctions.calculate_angle_between_points(grid_point_edge.point, grid_point_edges[neighbor].point)
+				edge_too_steep = edge_angle > Globals.MAX_GRID_STEEPNESS
+			if not out_of_bounds and not edge_too_steep:
 				grid_point_edge.edges.append(GridPointEdge.new(neighbor))
-		if grid_point_edge.edges.size() == 0:
+		var point_too_steep = MathFunctions.get_terrain_angle_at_position(grid_point_edge.point, space_state) > Globals.MAX_GRID_STEEPNESS
+		if grid_point_edge.edges.size() == 0 or point_too_steep:
 			to_be_removed.append(grid_point)
 	for grid_point in to_be_removed:
 		grid_point_edges.erase(grid_point)
+
+	# Remove edges whose destination has been removed
+	for grid_point in grid_point_edges:
+		var edges_to_be_removed = []
+		var grid_point_edge = grid_point_edges[grid_point]
+		for edge in grid_point_edge.edges:
+			if not grid_point_edges.has(edge.grid_point):
+				edges_to_be_removed.append(edge)
+		for edge in edges_to_be_removed:
+			grid_point_edge.edges.erase(edge)
+
 	return grid_point_edges
 
 func calculate_weights(qt: Quadtree):
 	for grid_point in grid_point_edges:
-		var point_with_edges = grid_point_edges[grid_point]
-		for edge in point_with_edges.edges:
+		var grid_point_edge = grid_point_edges[grid_point]
+		for edge in grid_point_edge.edges:
 			var neighbor = grid_point_edges.get(edge.grid_point, null)
 			if not neighbor:
 				continue
-			var from = point_with_edges.point
+			var edge_angle = MathFunctions.calculate_angle_between_points(grid_point_edge.point, neighbor.point)
+			var from = grid_point_edge.point
 			var to = neighbor.point
 			var query_rect = Rect2(
 				min(from.x, to.x) - Globals.ROAD_WIDTH,
@@ -97,7 +110,8 @@ func calculate_weights(qt: Quadtree):
 			var objects = qt.query(query_rect)
 			var num_obstacles = get_num_objects_in_edge(from, to, objects, Globals.ROAD_WIDTH)
 			var distance = (from - to).length()
-			var weight = num_obstacles * 10.0 + distance
+			# Every object in the way adds weight 10, every flat meter adds weight 1, adding a multiplier of 1 more per meter, per 10 degrees steepness
+			var weight = num_obstacles * 10.0 + distance * (1 + edge_angle * 0.1)
 			if max_weight < weight:
 				max_weight = weight
 			edge.weight = weight

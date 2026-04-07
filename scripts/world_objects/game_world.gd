@@ -21,9 +21,7 @@ var world_grid: WorldGrid
 var terrain_generator: TerrainGenerator
 var player: Node3D # Only used for position
 var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
-var trees_generator: TreeGenerator
-var bush_generator: BushGenerator
-var rock_generator: RockGenerator
+var object_generator: ObjectGenerator
 var settlements_generator: SettlementGenerator
 var npcs_generator: NpcGenerator = NpcGenerator.new(static_objects_qt)
 var road_generator: RoadGenerator
@@ -36,6 +34,8 @@ func _ready() -> void:
 	var start_time = Time.get_ticks_msec()
 
 	seed(Globals.RANDOM_SEED.hash())
+
+	var space_state = get_world_3d().direct_space_state
 
 	var size_x = Globals.WORLD_SIZE
 	var size_z = Globals.WORLD_SIZE
@@ -64,19 +64,9 @@ func _ready() -> void:
 
 	# CREATE STATIC OBJECTS AND ITEMS
 
-	var forest_noise = NoiseFunctions.create_forest_noise()
-	var rocks_noise = NoiseFunctions.create_rocks_noise()
-
-	trees_generator = TreeGenerator.new(static_objects_qt, get_world_3d().direct_space_state)
-	bush_generator = BushGenerator.new(static_objects_qt, get_world_3d().direct_space_state)
-	rock_generator = RockGenerator.new(static_objects_qt, get_world_3d().direct_space_state)
-
-	add_child(trees_generator) # Needed for chop animation
-	add_child(bush_generator) # Needed for berry creation
-
-	trees_generator.create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, Globals.STEP_TREES, forest_noise, terrain_height_noise)
-	bush_generator.create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, Globals.STEP_BERRYBUSHES, forest_noise, terrain_height_noise)
-	rock_generator.create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, Globals.STEP_ROCKS, rocks_noise, terrain_height_noise)
+	object_generator = ObjectGenerator.new(static_objects_qt, space_state)
+	object_generator.create_world_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise)
+	add_child(object_generator)
 
 	var axe_position = Vector3(-1.0, 2.0, -4.0)
 	world_item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
@@ -104,7 +94,7 @@ func _ready() -> void:
 
 	# CREATE WORLD GRID
 
-	world_grid = WorldGrid.new(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z), terrain_height_noise)
+	world_grid = WorldGrid.new(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z), terrain_height_noise, space_state)
 	world_grid.calculate_weights(static_objects_qt)
 	add_child(world_grid)
 
@@ -170,8 +160,8 @@ func update_lods():
 	remove_faraway_children_batched(player_pos)
 	add_nearby_children_full(player_pos)
 
-func add_nearby_children_full(position: Vector3):
-	var objects_full = static_objects_qt.query_circle(Vector2(position.x, position.z), Globals.LOD_DISTANCE_FULL)
+func add_nearby_children_full(player_position: Vector3):
+	var objects_full = static_objects_qt.query_circle(Vector2(player_position.x, player_position.z), Globals.LOD_DISTANCE_FULL)
 	for index in objects_full.size():
 		var object: WorldObject = objects_full[index]["data"]
 		if not object.in_scene or object.collider.disabled:
@@ -182,8 +172,8 @@ func add_nearby_children_full(position: Vector3):
 			object.in_scene = true
 
 
-func add_no_collider_children_batched(position: Vector3, batch_size: int = 1000):
-	var objects_no_collider = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), Globals.LOD_DISTANCE_NO_COLLIDER, Globals.LOD_DISTANCE_FULL)
+func add_no_collider_children_batched(player_position: Vector3, batch_size: int = 1000):
+	var objects_no_collider = static_objects_qt.query_circle_holed(Vector2(player_position.x, player_position.z), Globals.LOD_DISTANCE_NO_COLLIDER, Globals.LOD_DISTANCE_FULL)
 	var i = 0
 	while i < objects_no_collider.size():
 		for j in min(batch_size, objects_no_collider.size() - i):
@@ -199,14 +189,14 @@ func add_no_collider_children_batched(position: Vector3, batch_size: int = 1000)
 		await get_tree().process_frame
 
 # TODO: Bug, Some objects are not removed sometimes
-func remove_faraway_children_batched(position: Vector3, batch_size: int = 200):
-	var faraway_objects = static_objects_qt.query_circle_holed(Vector2(position.x, position.z), Globals.LOD_DISTANCE_NO_COLLIDER + Globals.LOD_UPDATE_DISTANCE + 5.0, Globals.LOD_DISTANCE_NO_COLLIDER)
+func remove_faraway_children_batched(player_position: Vector3, batch_size: int = 200):
+	var faraway_objects = static_objects_qt.query_circle_holed(Vector2(player_position.x, player_position.z), Globals.LOD_DISTANCE_NO_COLLIDER + Globals.LOD_UPDATE_DISTANCE + 5.0, Globals.LOD_DISTANCE_NO_COLLIDER)
 	var i = 0
 	while i < faraway_objects.size():
 		for j in min(batch_size, faraway_objects.size() - i):
 			var object: WorldObject = faraway_objects[i + j]["data"]
 			# Need to verify again that object is still out-of-bounds, since we use batched removal
-			if object.in_scene and object.instance.position.distance_to(position) > Globals.LOD_DISTANCE_NO_COLLIDER:
+			if object.in_scene and object.instance.position.distance_to(player_position) > Globals.LOD_DISTANCE_NO_COLLIDER:
 				if object.glb_mesh_no_collider.get_parent() == self:
 					remove_child(object.glb_mesh_no_collider)
 				object.in_scene = false
@@ -239,7 +229,7 @@ func remove_object(object: WorldObject):
 
 
 func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> InteractResult:
-	var berries_picked = bush_generator.interact(collider)
+	var berries_picked = object_generator.interact(collider)
 	if berries_picked > 0:
 		return InteractResult.new(InteractResults.GainItem, ItemProperties.Item.BERRY)
 
@@ -257,13 +247,13 @@ func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM)
 
 func handle_use_item(collider, item: ItemProperties.Item) -> void:
 	if item == ItemProperties.Item.AXE:
-		var tree_chopped_down: TreeGenerator.ChopResult = trees_generator.handle_chop(collider)
-		if tree_chopped_down.result == TreeGenerator.ChopResults.ChoppedDown:
+		var tree_chopped_down: ObjectGenerator.ChopResult = object_generator.handle_tree_chop(collider)
+		if tree_chopped_down.result == ObjectGenerator.ChopResults.ChoppedDown:
 			world_item_generator.spawn_item(tree_chopped_down.position, ItemProperties.Item.WOOD)
 		npcs_generator.handle_chop(collider)
 
 	if item == ItemProperties.Item.PICKAXE:
-		var rock_chopped_down: RockGenerator.ChopResult = rock_generator.handle_chop(collider)
-		if rock_chopped_down.result == RockGenerator.ChopResults.ChoppedDown:
+		var rock_chopped_down: ObjectGenerator.ChopResult = object_generator.handle_rock_chop(collider)
+		if rock_chopped_down.result == ObjectGenerator.ChopResults.ChoppedDown:
 			for i in rock_chopped_down.amount_gained:
 				world_item_generator.spawn_item(rock_chopped_down.position, ItemProperties.Item.STONE)
