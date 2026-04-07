@@ -33,13 +33,14 @@ uniform float road_width = 0.0;
 uniform vec4 grass_albedo_texture;
 uniform vec4 road_albedo_texture;
 uniform vec4 cliff_albedo_texture;
+uniform vec4 barren_albedo_texture;
 uniform vec4 snow_albedo_texture;
 
 const float blend_sharpness = 2.0;
-const float snow_height = 90.0;
+const float barren_height = 40.0;
+const float snow_height = 100.0;
 varying vec3 world_position;
-varying float slope;
-
+varying float terrain_slope;
 
 // 2D noise function (replace with your own or use Godot's noise if available)
 float rand(vec2 co) {
@@ -59,12 +60,36 @@ float noise(vec2 uv) {
     return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
 }
 
+
+vec3 mix_with_cliff(vec3 input_color) {
+    // Add transition between grass and cliffs
+    float blend_factor = smoothstep(0.1, 0.3, terrain_slope);
+    blend_factor = pow(blend_factor, blend_sharpness); // Apply sharpness
+
+    vec3 flat_and_cliff_color = mix(input_color, cliff_albedo_texture.rgb, blend_factor);
+    return flat_and_cliff_color;
+}
+
+vec3 mix_at_height(vec3 input_color, float height, float blend_distance_multiplier, vec4 to_mix_color) {
+    float noise_frequency = 0.02;
+    float noise_amplitude = 20.0;
+    float n = noise(world_position.xz * noise_frequency);
+    float noisy_elevation = height + (n - 0.5) * noise_amplitude;
+
+    float blend_factor = smoothstep(noisy_elevation * (1.0 - blend_distance_multiplier), noisy_elevation * (1.0 + blend_distance_multiplier), world_position.y);
+    blend_factor = pow(blend_factor, blend_sharpness); // Apply sharpness
+
+    vec3 output_color = mix(input_color, to_mix_color.rgb, blend_factor);
+    return output_color;
+}
+
+
 void vertex() {
-    // Calculate the normal and tangent vectors for slope detection
+    // Calculate the normal and tangent vectors for terrain slope detection
     vec3 normal = normalize(NORMAL);
     vec3 up = vec3(0.0, 1.0, 0.0);
     world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-    slope = 1.0 - abs(dot(normal, up));
+    terrain_slope = 1.0 - abs(dot(normal, up));
 }
 
 void fragment() {
@@ -88,24 +113,8 @@ void fragment() {
     }
 
     vec3 flat_color = mix(grass_albedo_texture.rgb, road_albedo_texture.rgb, in_road);
-
-    // Add transition between grass and cliffs
-    float blend_factor = smoothstep(0.1, 0.3, slope);
-    blend_factor = pow(blend_factor, blend_sharpness); // Apply sharpness
-
-    vec3 flat_and_cliff_color = mix(flat_color, cliff_albedo_texture.rgb, blend_factor);
-
-    // Add transition between grass/cliffs and snow
-    float noise_frequency = 0.02;
-    float noise_amplitude = 20.0;
-    float n = noise(world_position.xz * noise_frequency);
-    float noisy_elevation = snow_height + (n - 0.5) * noise_amplitude;
-
-    // Calculate snow amount based on noisy elevation
-    float snow_amount = smoothstep(noisy_elevation - 1.0, noisy_elevation + 1.0, world_position.y);
-
-    blend_factor = smoothstep(noisy_elevation * 0.85, noisy_elevation * 1.15, world_position.y);
-    blend_factor = pow(blend_factor, blend_sharpness); // Apply sharpness
-
-    ALBEDO = mix(flat_and_cliff_color, snow_albedo_texture.rgb, blend_factor);
+    vec3 add_barren_color = mix_at_height(flat_color, barren_height, 0.5, barren_albedo_texture);
+    vec3 snow_color = mix_at_height(add_barren_color, snow_height, 0.15, snow_albedo_texture);
+    vec3 final_color = mix_with_cliff(snow_color);
+    ALBEDO = final_color;
 }

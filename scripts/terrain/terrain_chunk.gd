@@ -59,6 +59,7 @@ func set_shader_data(settlement_data: Array[SettlementGenerator.SettlementData],
 	terrain_material.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25))
 	terrain_material.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
 	terrain_material.set_shader_parameter("cliff_albedo_texture", Color(0.35, 0.35, 0.35, 1.0))
+	terrain_material.set_shader_parameter("barren_albedo_texture", Color(0.35, 0.3, 0.2, 1.0))
 	terrain_material.set_shader_parameter("snow_albedo_texture", Color(0.9, 0.9, 0.9, 1.0))
 	terrain_material.set_shader_parameter("settlement_count", settlement_data.size())
 	var shader_settlement_data: Array[Vector3] = []
