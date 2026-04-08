@@ -2,7 +2,7 @@ extends WorldObject
 
 class_name NPC
 
-enum WantsOptions { FOOD, WOOD, NONE }
+enum WantsOptions { FOOD, WOOD, STONE, NONE }
 
 enum Response { YES, NO }
 
@@ -64,12 +64,18 @@ func _init(pos: Vector3, rot: Vector3, scale: float):
 		wants = WantsOptions.FOOD
 	if default_sound.resource_path == "res://assets/sounds/aoe2-en-taunt-04-wood-please.mp3":
 		wants = WantsOptions.WOOD
+	if default_sound.resource_path == "res://assets/sounds/aoe2-en-taunt-06-stone-please.mp3":
+		wants = WantsOptions.STONE
 
-func play_response(response: Response):
-	audio_player.stream = sounds_responses[response]
+func play_sound():
 	if audio_player.get_parent() != instance:
 		instance.add_child(audio_player)
 	audio_player.play()
+
+
+func play_response(response: Response):
+	audio_player.stream = sounds_responses[response]
+	play_sound()
 
 # Return true if died
 func take_damage() -> bool:
@@ -91,14 +97,13 @@ func _on_sound_finished():
 
 # Return true if NPC took item
 func interact_item(item: ItemProperties.Item) -> bool:
-	if wants == WantsOptions.FOOD and item == ItemProperties.Item.BERRY:
+	var want_and_is_food = wants == WantsOptions.FOOD and item == ItemProperties.Item.BERRY
+	var want_and_is_wood = wants == WantsOptions.WOOD and item == ItemProperties.Item.WOOD
+	var want_and_is_stone = wants == WantsOptions.STONE and item == ItemProperties.Item.STONE
+	if want_and_is_food or want_and_is_wood or want_and_is_stone:
 		play_response(Response.YES)
 		return true
-	if wants == WantsOptions.WOOD and item == ItemProperties.Item.WOOD:
-		play_response(Response.YES)
-		return true
-	if audio_player.is_inside_tree():
-		audio_player.play()
+	play_sound()
 	return false
 
 func delete():

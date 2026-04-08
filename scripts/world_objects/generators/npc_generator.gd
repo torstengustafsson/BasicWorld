@@ -41,9 +41,7 @@ func add_npc(position: Vector3, rotation: Vector3, scale: float) -> NPC:
 func interact(collider):
 	for npc in npcs:
 		if npc.instance == collider:
-			if npc.audio_player.get_parent() != npc.instance:
-				npc.instance.add_child(npc.audio_player)
-			npc.audio_player.play()
+			npc.play_sound()
 
 
 func interact_equipped_item(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> bool:
