@@ -1,13 +1,18 @@
-# Baserat på https://www.youtube.com/watch?v=rWeQ30h25Yg
-# Thread verkar ha ändrats sedan godot 3..
+# Based on https://www.youtube.com/watch?v=rWeQ30h25Yg
 
 extends Node
-
 class_name TerrainGenerator
 
-const NUM_CHUNKS_FULL_RES = 2
+var shader_parameters: TerrainChunk.ShaderParameters = TerrainChunk.ShaderParameters.new()
+
+const NUM_CHUNKS_FULL_RES = 3 # 3 Mean 3x3 chunks around player at full res, with player expected to be in the middle chunk
+const GRID_SIZE = NUM_CHUNKS_FULL_RES + 2 * (Globals.NUM_CHUNK_RESOLUTIONS - 1)
+@warning_ignore("integer_division")
+var HALF_GRID_SIZE: int = floor(GRID_SIZE / 2) # Make constant to avoid handling the integer division warning each time
 
 # Contains a Dictionary holding the chunks for each resolution size
+# resolution=1 means highest resolution, 2 means half of that, and so on.
+# The value is also a dictionary, of type Dictorionary[Vector2i, TerrainChunk], where the int key is its hashed x and z position.
 var chunks: Dictionary[int, Dictionary] = {}
 
 var terrain_noise
@@ -18,65 +23,105 @@ func _init(_terrain_noise):
 	for res in range(Globals.NUM_CHUNK_RESOLUTIONS):
 		chunks[res] = {}
 
+func update_shader_data(settlement_data: Array[SettlementGenerator.SettlementData], road_edges: Array[RoadGenerator.RoadEdge]):
+	shader_parameters.settlement_data = settlement_data
+	shader_parameters.road_edges = road_edges
 
-func add_chunks_around_player(player_pos: Vector3):
-	var num_chunks_lowest_res = NUM_CHUNKS_FULL_RES * pow(2, Globals.NUM_CHUNK_RESOLUTIONS - 1)
+	for chunk_res in chunks:
+		var chunks_for_res = chunks[chunk_res]
+		for key in chunks_for_res:
+			var chunk: TerrainChunk = chunks_for_res[key]
+			chunk.set_shader_data(shader_parameters)
 
-	var num_chunks = num_chunks_lowest_res
-	for x in range(0, num_chunks):
-		for z in range(0, num_chunks):
-			for resolution in range(Globals.NUM_CHUNK_RESOLUTIONS):
-				var player_fit_x = floor(player_pos.x) - (int(floor(player_pos.x)) % Globals.TERRAIN_CHUNK_SIZE)
-				var player_fit_z = floor(player_pos.z) - (int(floor(player_pos.z)) % Globals.TERRAIN_CHUNK_SIZE)
-				var chunk_x = player_fit_x + (-num_chunks / 2 + x) * Globals.TERRAIN_CHUNK_SIZE + float(Globals.TERRAIN_CHUNK_SIZE) / 2
-				var chunk_z = player_fit_z + (-num_chunks / 2 + z) * Globals.TERRAIN_CHUNK_SIZE + float(Globals.TERRAIN_CHUNK_SIZE) / 2
-				var key = chunk_x * 1000000000 + chunk_z
-				if chunks[resolution].has(key):
-					if chunks[resolution].get(key).process_mode == Node.PROCESS_MODE_DISABLED:
-						hide_chunks_at(key)
-						chunks[resolution].get(key).process_mode = Node.PROCESS_MODE_INHERIT
-						add_child(chunks[resolution].get(key))
-					continue
+func update_chunks_around_player(player_pos: Vector3, batch_size = 1000):
+	cleanup_chunks(player_pos)
+	add_chunks_around_player(player_pos, batch_size)
 
-				var res_bounds = NUM_CHUNKS_FULL_RES * pow(2, resolution) / 2
-				var res_check = num_chunks_lowest_res / 2 - res_bounds
-				if x >= res_check and x < num_chunks - res_check and z >= res_check and z < num_chunks - res_check:
-					hide_chunks_at(key)
-					var chunk_resolution = 1 / (float(resolution) + 1) / 2
-					var chunk = TerrainChunk.new(chunk_x, chunk_z, Globals.TERRAIN_CHUNK_SIZE, chunk_resolution, terrain_noise)
-					chunks[resolution][key] = chunk
-					add_child(chunk)
+func add_chunks_around_player(player_pos: Vector3, batch_size = 1000):
+	var i = 0
+	for x in range(0, GRID_SIZE):
+		for z in range(0, GRID_SIZE):
+			_add_chunk(x, z, player_pos)
+			i += 1
+			if i > batch_size:
+				i = 0
+				await get_tree().process_frame
+
+func _add_chunk(grid_x_index: int, grid_z_index: int, player_pos: Vector3):
+	var x_index: int = floor(player_pos.x / Globals.TERRAIN_CHUNK_SIZE) + grid_x_index - HALF_GRID_SIZE
+	var z_index: int = floor(player_pos.z / Globals.TERRAIN_CHUNK_SIZE) + grid_z_index - HALF_GRID_SIZE
+	var chunk_x_pos: float = x_index * Globals.TERRAIN_CHUNK_SIZE
+	var chunk_z_pos: float = z_index * Globals.TERRAIN_CHUNK_SIZE
+	var key = Vector2i(x_index, z_index)
+	var resolution_index = calculate_resolution(grid_x_index, grid_z_index)
+
+	# First check if chunk has already been added
+	if chunks[resolution_index].has(key):
+		if chunks[resolution_index].get(key).get_parent() != self:
+			hide_other_resolutions_at_index(resolution_index, key)
+			add_child(chunks[resolution_index].get(key))
+		return
+	# else, new chunk
+	hide_other_resolutions_at_index(resolution_index, key)
+
+	var chunk_resolution = 1.0 / pow(2.0, resolution_index) * Globals.TERRAIN_RESOLUTION_MULTIPLIER
+	var chunk = TerrainChunk.new(chunk_x_pos, chunk_z_pos, Globals.TERRAIN_CHUNK_SIZE, chunk_resolution, terrain_noise)
+	chunk.set_shader_data(shader_parameters)
+
+	chunks[resolution_index][key] = chunk
+	add_child(chunk)
+
+func get_player_chunk_index(player_pos: Vector3) -> Vector2i:
+	var player_fit_x = floor(player_pos.x) - (int(floor(player_pos.x)) % Globals.TERRAIN_CHUNK_SIZE)
+	var player_fit_z = floor(player_pos.z) - (int(floor(player_pos.z)) % Globals.TERRAIN_CHUNK_SIZE)
+	var x_index = HALF_GRID_SIZE + player_fit_x / Globals.TERRAIN_CHUNK_SIZE - HALF_GRID_SIZE
+	var z_index = HALF_GRID_SIZE + player_fit_z / Globals.TERRAIN_CHUNK_SIZE - HALF_GRID_SIZE
+	return Vector2i(x_index, z_index)
 
 func cleanup_chunks(player_pos: Vector3):
-	for i in range(chunks.size()):
-		var current_res = NUM_CHUNKS_FULL_RES * pow(2, i)
-		var chunk_map = chunks[i]
-		for key in chunk_map.keys():
-			var distance_vector = Vector2(chunk_map[key].position.x, chunk_map[key].position.z) - Vector2(player_pos.x, player_pos.z)
-			if distance_vector.length() > Globals.TERRAIN_CHUNK_SIZE * current_res * 1.2:
-				remove_chunk(chunk_map, key)
+	var to_be_removed = []
+	for chunk_res in range(chunks.size()):
+		var chunks_for_res = chunks[chunk_res]
+		for key in chunks_for_res:
+			var chunk = chunks_for_res[key]
+			var player_chunk_index: Vector2i = get_player_chunk_index(player_pos)
+			var distance_x: int = abs(player_chunk_index.x - chunk.x_index)
+			var distance_z: int = abs(player_chunk_index.y - chunk.z_index)
+			if distance_x > HALF_GRID_SIZE + 2 or distance_z > HALF_GRID_SIZE + 2:
+				to_be_removed.append({"chunks_for_res": chunks_for_res, "key": key})
+	for item in to_be_removed:
+		remove_chunk(item["chunks_for_res"], item["key"])
 
-func remove_chunk(chunk_map,key):
-	if chunk_map.get(key):
-		remove_child(chunk_map.get(key))
-		chunk_map.get(key).queue_free()
-		chunk_map.erase(key)
+func calculate_resolution(x_index: int, z_index: int) -> int:
+	var center = (GRID_SIZE - 1) / 2.0
+	var distance_from_center_x = abs(x_index - center)
+	var distance_from_center_z = abs(z_index - center)
+	var max_distance_from_center = max(distance_from_center_x, distance_from_center_z)
+	var full_res_margin = floor(NUM_CHUNKS_FULL_RES / 2.0)
+	return max(max_distance_from_center - full_res_margin, 0)
 
-func hide_chunks_at(key):
-	for chunk_map in chunks.values():
-		if chunk_map.has(key):
-			chunk_map.get(key).process_mode = Node.PROCESS_MODE_DISABLED
+func hide_other_resolutions_at_index(resolution: int, key: Vector2i) -> void:
+	for chunk_resolution in chunks:
+		var chunks_for_resolution = chunks[chunk_resolution]
+		if chunks_for_resolution.has(key) and chunk_resolution != resolution and chunks_for_resolution.get(key).get_parent() == self:
+			remove_child(chunks_for_resolution.get(key))
 
+func remove_chunk(chunks_for_resolution: Dictionary, key: Vector2i) -> void:
+	if chunks_for_resolution.get(key):
+		if chunks_for_resolution.get(key).get_parent() == self:
+			remove_child(chunks_for_resolution.get(key))
+		chunks_for_resolution.get(key).queue_free()
+		chunks_for_resolution.erase(key)
 
-func get_num_chunks():
+func get_num_chunks() -> int:
 	var result = 0
-	for chunk_map in chunks.values():
-		result += chunk_map.size()
+	for chunks_for_resolution in chunks.values():
+		result += chunks_for_resolution.size()
 	return result
 
 func get_chunks() -> Array[TerrainChunk]:
 	var result: Array[TerrainChunk] = []
-	for chunk_map in chunks.values():
-		for chunk: TerrainChunk in chunk_map.values():
+	for chunks_for_resolution in chunks.values():
+		for chunk: TerrainChunk in chunks_for_resolution.values():
 			result.append(chunk)
 	return result

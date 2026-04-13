@@ -12,6 +12,7 @@ const WORLD_SIZE: float = 1000.0
 # Each terrain resolution halves the detail, and doubles the amount of chunks in the distance
 const NUM_CHUNK_RESOLUTIONS: int = 4
 const TERRAIN_CHUNK_SIZE: int = 256
+const TERRAIN_RESOLUTION_MULTIPLIER: float = 0.25
 
 # Average distance between each object on generation.
 # Lower values means more clumped up. So Low value for STEP_TREES means dense forests.

@@ -2,14 +2,22 @@ extends MeshInstance3D
 
 class_name TerrainChunk
 
-var x_pos : int
-var z_pos : int
+class ShaderParameters:
+	var settlement_data: Array[SettlementGenerator.SettlementData] = []
+	var road_edges: Array[RoadGenerator.RoadEdge] = []
+
+var x_index : int
+var z_index : int
+var x_pos : float
+var z_pos : float
 var chunk_size : int
 var chunk_res : float
 var terrain_material : ShaderMaterial
 var terrain_noise
 
 func _init(_x_pos, _z_pos, _chunk_size, _chunk_res, _terrain_noise):
+	x_index = int(_x_pos / _chunk_size)
+	z_index = int(_z_pos / _chunk_size)
 	x_pos = _x_pos
 	z_pos = _z_pos
 	chunk_size = _chunk_size
@@ -23,9 +31,15 @@ func _ready():
 
 func generate_chunk():
 	var plane_mesh = PlaneMesh.new()
-	plane_mesh.size = Vector2(chunk_size, chunk_size)
-	plane_mesh.subdivide_depth = chunk_size * chunk_res
-	plane_mesh.subdivide_width = chunk_size * chunk_res
+	# TODO: Add a margin to avoid holes between chunks due to floating point precision issues.
+	# Currently, this works for seams, but displaces UV textures. Need to fix before adding margin.
+	const MARGIN = 0
+	var subdivisions = chunk_size * chunk_res + MARGIN
+	var size = chunk_size + 2 * MARGIN * chunk_size / (chunk_size * chunk_res)
+
+	plane_mesh.size = Vector2(size, size)
+	plane_mesh.subdivide_depth = subdivisions
+	plane_mesh.subdivide_width = subdivisions
 
 	var surface_tool = SurfaceTool.new()
 	var data_tool = MeshDataTool.new()
@@ -52,25 +66,25 @@ func generate_chunk():
 
 	mesh.surface_set_material(0, terrain_material)
 
-func set_shader_data(settlement_data: Array[SettlementGenerator.SettlementData], road_edges: Array[RoadGenerator.RoadEdge]):
+func set_shader_data(params: ShaderParameters):
 	terrain_material.shader = load("res://shaders/ground.gdshader")
 	terrain_material.set_shader_parameter("chunk_size", Vector2(Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE))
 	terrain_material.set_shader_parameter("chunk_position", Vector2(x_pos, z_pos))
-	terrain_material.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25))
+	terrain_material.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25, 1.0))
 	terrain_material.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
 	terrain_material.set_shader_parameter("cliff_albedo_texture", Color(0.35, 0.35, 0.35, 1.0))
 	terrain_material.set_shader_parameter("barren_albedo_texture", Color(0.35, 0.3, 0.2, 1.0))
 	terrain_material.set_shader_parameter("snow_albedo_texture", Color(0.9, 0.9, 0.9, 1.0))
-	terrain_material.set_shader_parameter("settlement_count", settlement_data.size())
+	terrain_material.set_shader_parameter("settlement_count", params.settlement_data.size())
 	var shader_settlement_data: Array[Vector3] = []
-	for settlement in settlement_data:
+	for settlement in params.settlement_data:
 		shader_settlement_data.append(Vector3(settlement.position.x, settlement.position.z, settlement.radius))
 	terrain_material.set_shader_parameter("settlement_data", shader_settlement_data)
 	terrain_material.set_shader_parameter("road_width", Globals.ROAD_WIDTH)
-	terrain_material.set_shader_parameter("road_edge_count", road_edges.size())
+	terrain_material.set_shader_parameter("road_edge_count", params.road_edges.size())
 
 	# TODO: Only give the road edges that are in each chunk, instead of all to everyone.
 	var shader_road_edges_data: Array[Vector4] = []
-	for edge in road_edges:
+	for edge in params.road_edges:
 		shader_road_edges_data.append(Vector4(edge.from.x, edge.from.z, edge.to.x, edge.to.z))
 	terrain_material.set_shader_parameter("road_edges", shader_road_edges_data)

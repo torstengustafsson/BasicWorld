@@ -30,6 +30,7 @@ func _init(pos: Vector3, rot: Vector3, scale: Vector3, glb_mesh_scene: PackedSce
 	instance = StaticBody3D.new()
 	glb_mesh = glb_mesh_scene.instantiate()
 	collider = _collider
+	collider.disabled = true # By default all collisions are disabled. They will be later re-added on distance calculations from player
 	instance.add_child(glb_mesh)
 	instance.add_child(collider)
 

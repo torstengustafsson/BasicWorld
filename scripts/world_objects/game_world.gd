@@ -27,7 +27,9 @@ var road_generator: RoadGenerator
 
 func _init(_player: Node3D) -> void:
 	player = _player
-	distance_controller = DistanceController.new(player, static_objects_qt)
+	terrain_height_noise = TerrainNoise.new()
+	terrain_generator = TerrainGenerator.new(terrain_height_noise)
+	distance_controller = DistanceController.new(player, static_objects_qt, terrain_generator)
 	add_child(distance_controller)
 
 func _ready() -> void:
@@ -47,9 +49,6 @@ func _ready() -> void:
 
 	# CREATE TERRAIN
 
-	terrain_height_noise = TerrainNoise.new()
-
-	terrain_generator = TerrainGenerator.new(terrain_height_noise)
 	terrain_generator.add_chunks_around_player(player.position)
 	add_child(terrain_generator)
 
@@ -131,14 +130,9 @@ func _ready() -> void:
 	var create_roads_elapsed = create_roads_time - create_settlements_time
 	print("Time to generate roads = " + str(create_roads_elapsed / 1000.0) + " seconds")
 
-	# SETUP SHADER PARAMETERS
+	# FINAL TOUCHES
 
-	for chunk: TerrainChunk in terrain_generator.get_chunks():
-		chunk.set_shader_data(settlement_data, road_edges)
-
-	# By default all collisions are disabled. They will be later re-added on distance calculations from player
-	for item in static_objects_qt.query_all():
-		item["data"].collider.disabled = true
+	terrain_generator.update_shader_data(settlement_data, road_edges)
 	distance_controller.update_lods()
 
 	var elapsed = Time.get_ticks_msec() - start_time
