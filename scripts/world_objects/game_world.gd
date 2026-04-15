@@ -12,6 +12,9 @@ class InteractResult:
 		result = _result
 		item = _item
 
+# NOTE: Must use this generator for all random values, in order for world generation to be deterministic based on the seed.
+var rng: RandomNumberGenerator
+
 var terrain_height_noise: TerrainNoise
 
 var static_objects_qt: Quadtree = Quadtree.new(Rect2(-Globals.WORLD_SIZE / 2, -Globals.WORLD_SIZE / 2,Globals.WORLD_SIZE, Globals.WORLD_SIZE))
@@ -19,23 +22,23 @@ var world_grid: WorldGrid
 var terrain_generator: TerrainGenerator
 var player: Node3D # Only used for position
 var distance_controller: DistanceController
-var world_item_generator: WorldItemGenerator = WorldItemGenerator.new()
+var world_item_generator: WorldItemGenerator
 var object_generator: ObjectGenerator
 var settlements_generator: SettlementGenerator
-var npcs_generator: NpcGenerator = NpcGenerator.new(static_objects_qt)
+var npcs_generator: NpcGenerator
 var road_generator: RoadGenerator
 
 func _init(_player: Node3D) -> void:
 	player = _player
-	terrain_height_noise = TerrainNoise.new()
+	rng = RandomNumberGenerator.new()
+	rng.seed = hash(Globals.RANDOM_SEED)
+	terrain_height_noise = TerrainNoise.new(rng)
 	terrain_generator = TerrainGenerator.new(terrain_height_noise)
 	distance_controller = DistanceController.new(player, static_objects_qt, terrain_generator)
 	add_child(distance_controller)
 
 func _ready() -> void:
 	var start_time = Time.get_ticks_msec()
-
-	seed(Globals.RANDOM_SEED.hash())
 
 	var space_state = get_world_3d().direct_space_state
 
@@ -63,7 +66,9 @@ func _ready() -> void:
 
 	# CREATE STATIC OBJECTS AND ITEMS
 
-	object_generator = ObjectGenerator.new(static_objects_qt, space_state)
+	world_item_generator = WorldItemGenerator.new(rng)
+
+	object_generator = ObjectGenerator.new(rng, static_objects_qt, space_state)
 	object_generator.create_world_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise)
 	add_child(object_generator)
 
@@ -74,15 +79,15 @@ func _ready() -> void:
 	world_item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
 
 	for berry in 40:
-		var berry_position = Vector3(randf_range(start_pos_x, end_pos_x), 5.0, randf_range(start_pos_z, end_pos_z))
+		var berry_position = Vector3(rng.randf_range(start_pos_x, end_pos_x), 5.0, rng.randf_range(start_pos_z, end_pos_z))
 		world_item_generator.spawn_item(berry_position, ItemProperties.Item.BERRY)
 
 	for wood in 40:
-		var wood_position = Vector3(randf_range(start_pos_x, end_pos_x), 5.0, randf_range(start_pos_z, end_pos_z))
+		var wood_position = Vector3(rng.randf_range(start_pos_x, end_pos_x), 5.0, rng.randf_range(start_pos_z, end_pos_z))
 		world_item_generator.spawn_item(wood_position, ItemProperties.Item.WOOD)
 
 	for stone in 40:
-		var stone_position = Vector3(randf_range(start_pos_x, end_pos_x), 5.0, randf_range(start_pos_z, end_pos_z))
+		var stone_position = Vector3(rng.randf_range(start_pos_x, end_pos_x), 5.0, rng.randf_range(start_pos_z, end_pos_z))
 		world_item_generator.spawn_item(stone_position, ItemProperties.Item.STONE)
 
 	add_child(world_item_generator)
@@ -93,7 +98,7 @@ func _ready() -> void:
 
 	# CREATE WORLD GRID
 
-	world_grid = WorldGrid.new(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z), terrain_height_noise, space_state)
+	world_grid = WorldGrid.new(rng, Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z), terrain_height_noise, space_state)
 	world_grid.calculate_weights(static_objects_qt)
 	add_child(world_grid)
 
@@ -103,10 +108,11 @@ func _ready() -> void:
 
 	# CREATE SETTLEMENTS
 
-	settlements_generator = SettlementGenerator.new(static_objects_qt, world_grid, terrain_height_noise)
+	settlements_generator = SettlementGenerator.new(rng, static_objects_qt, world_grid, terrain_height_noise)
 	var settlement_data = settlements_generator.create_settlements()
 
-	create_npcs_in_settlements(settlement_data)
+	npcs_generator = NpcGenerator.new(rng, static_objects_qt)
+	create_npcs_in_settlements(rng, settlement_data)
 
 	# Create some random NPCs out in the forest as well
 	var num_npcs = 25
@@ -149,9 +155,9 @@ func count_all_children(node: Node) -> int:
 		count += count_all_children(child)
 	return count
 
-func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.SettlementData]):
+func create_npcs_in_settlements(rng: RandomNumberGenerator, settlement_data: Array[SettlementGenerator.SettlementData]):
 	for settlement in settlement_data:
-		var num_npcs = randf_range(settlement.num_houses, settlement.num_houses * 2)
+		var num_npcs = rng.randf_range(settlement.num_houses, settlement.num_houses * 2)
 		var square_in_circle_multiplier = 0.7 # sin(45degrees)
 		var start_pos_x = settlement.position.x - settlement.radius * square_in_circle_multiplier
 		var start_pos_z = settlement.position.z - settlement.radius * square_in_circle_multiplier

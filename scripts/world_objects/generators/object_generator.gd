@@ -17,10 +17,11 @@ class ChopResult:
 const MAX_ALLOWED_HEIGHT = 100.0
 
 var space_state: PhysicsDirectSpaceState3D
+var rng: RandomNumberGenerator
 var static_objects_qt: Quadtree
 
-var forest_noise = NoiseFunctions.create_forest_noise()
-var rocks_noise = NoiseFunctions.create_rocks_noise()
+var forest_noise: NoiseFunctions
+var rocks_noise: NoiseFunctions
 
 var rocks: Array[WorldObject] = []
 var berrybushes: Array[WorldObject] = []
@@ -32,15 +33,18 @@ var shake_timer = INF # INF means not shaking
 var shake_direction: Vector3 = Vector3(0.0, 0.0, 0.0)
 
 
-func _init(qt: Quadtree, _space_state: PhysicsDirectSpaceState3D):
+func _init(_rng: RandomNumberGenerator, qt : Quadtree, _space_state: PhysicsDirectSpaceState3D):
+	rng = _rng
+	forest_noise = NoiseFunctions.create_forest_noise(rng)
+	rocks_noise = NoiseFunctions.create_rocks_noise(rng)
 	static_objects_qt = qt
 	space_state = _space_state
 
 func _create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, noise_function, terrain_height_noise, add_callback):
 	for x in (end_pos_x - start_pos_x) / step:
 		for z in (end_pos_z - start_pos_z) / step:
-			var rand_value_x = -step / 2 + randf_range(0.0, step)
-			var rand_value_z = -step / 2 + randf_range(0.0, step)
+			var rand_value_x = -step / 2 + rng.randf_range(0.0, step)
+			var rand_value_z = -step / 2 + rng.randf_range(0.0, step)
 			var pos_x = start_pos_x + x * step + rand_value_x
 			var pos_z = start_pos_z + z * step + rand_value_z
 			var height = min(terrain_height_noise.get_height_at(pos_x, pos_z), MAX_ALLOWED_HEIGHT)
@@ -61,26 +65,26 @@ func _create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, noise
 
 			# Skip if at too high elevation (use some randomness to reduce chance closer to max)
 			var height_value = MathFunctions.taper(height / MAX_ALLOWED_HEIGHT, 0.5)
-			if height_value < randf_range(0.0, 0.5):
+			if height_value < rng.randf_range(0.0, 0.5):
 				continue
 
 			add_callback.call(position)
 
 func _add_rock(position: Vector3):
-	var rand_scale = Vector3(randf_range(1.0, 3.0), randf_range(1.2, 4.0), randf_range(1.0, 3.0))
-	var rock = WorldObject.add_rock(position, rand_scale)
+	var rand_scale = Vector3(rng.randf_range(1.0, 3.0), rng.randf_range(1.2, 4.0), rng.randf_range(1.0, 3.0))
+	var rock = WorldObject.add_rock(rng, position, rand_scale)
 	rocks.append(rock)
 	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": rock})
 
 func _add_bush(position: Vector3) -> WorldObject.BerryBushObject:
-	var rand_scale = randf_range(1.0, 1.25)
-	var berrybush = WorldObject.add_berrybush(position, rand_scale)
+	var rand_scale = rng.randf_range(1.0, 1.25)
+	var berrybush = WorldObject.add_berrybush(rng, position, rand_scale)
 	berrybushes.append(berrybush)
 	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": berrybush})
 	return berrybush
 
 func _add_tree(position: Vector3):
-	var rand_scale = randf_range(1.0, 2.0)
+	var rand_scale = rng.randf_range(1.0, 2.0)
 	var tree = WorldObject.add_tree(position, rand_scale)
 	trees.append(tree)
 	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": tree})

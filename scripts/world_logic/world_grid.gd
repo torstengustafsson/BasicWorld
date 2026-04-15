@@ -25,6 +25,7 @@ const POINTS_AROUND: Array[Vector2i] = [
 	Vector2i(1, 1),
 ]
 
+var rng: RandomNumberGenerator
 var terrain_height_noise: TerrainNoise
 var space_state: PhysicsDirectSpaceState3D
 
@@ -34,7 +35,8 @@ var world_end_pos: Vector2
 var grid_size: int = 0
 var max_weight: float = -1.0
 
-func _init(_world_start_pos: Vector2, _world_end_pos: Vector2, _terrain_height_noise, _space_state) -> void:
+func _init(_rng: RandomNumberGenerator, _world_start_pos: Vector2, _world_end_pos: Vector2, _terrain_height_noise, _space_state) -> void:
+	rng = _rng
 	world_start_pos = _world_start_pos
 	world_end_pos = _world_end_pos
 	terrain_height_noise = _terrain_height_noise
@@ -55,8 +57,8 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 			var pos_x = world_start_pos.x + x * Globals.WORLD_GRID_STEP
 			var pos_z = world_start_pos.y + z * Globals.WORLD_GRID_STEP
 			var height = terrain_height_noise.get_height_at(pos_x, pos_z)
-			var rand_value_x = (-Globals.WORLD_GRID_STEP / 4.0 + randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
-			var rand_value_z = (-Globals.WORLD_GRID_STEP / 4.0 + randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
+			var rand_value_x = (-Globals.WORLD_GRID_STEP / 4.0 + rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
+			var rand_value_z = (-Globals.WORLD_GRID_STEP / 4.0 + rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
 			var point = Vector3(pos_x + rand_value_x, height, pos_z + rand_value_z)
 			var current_point = PointWithEdges.new(point)
 			grid_point_edges[Vector2i(x, z)] = current_point

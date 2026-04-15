@@ -23,19 +23,23 @@ static var sounds: Array[Resource] = [
 	load("res://assets/sounds/aoe2-en-taunt-22-quit-touchin-me.mp3"),
 ]
 
+var rng: RandomNumberGenerator
+
 var model: MeshInstance3D
 var model_material: StandardMaterial3D
 var default_color: Color
 
 var audio_player: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
-var default_sound_index: int = randi() % sounds.size()
+var default_sound_index: int
 var default_sound: AudioStream = sounds[default_sound_index]
 var wants: WantsOptions = WantsOptions.NONE
 var has_what_it_wants: bool = false
 var health = 3
 const DAMAGE_TAKEN_SECS = 0.5
 
-func _init(pos: Vector3, rot: Vector3, scale: float):
+func _init(_rng: RandomNumberGenerator, pos: Vector3, rot: Vector3, scale: float):
+	rng = _rng
+	default_sound_index = rng.randi() % sounds.size()
 	var col = CollisionShape3D.new()
 	col.shape = CylinderShape3D.new()
 	col.shape.height = 4.0 # ??? Was 1.8, why did it double
@@ -54,7 +58,7 @@ func _init(pos: Vector3, rot: Vector3, scale: float):
 	animationplayer.play("Armature|Armature|ArmatureAction")
 
 	if scale <= 0.6:
-		default_sound = child_sounds[randi() % child_sounds.size()]
+		default_sound = child_sounds[rng.randi() % child_sounds.size()]
 
 	audio_player.stream = default_sound
 	audio_player.finished.connect(_on_sound_finished)

@@ -28,23 +28,23 @@ func above_threshold(position: Vector3) -> bool:
 				return true # Non-additive noise cuts directly
 	return num_true == num_needed
 
-static func create_forest_noise() -> NoiseFunctions:
+static func create_forest_noise(rng: RandomNumberGenerator) -> NoiseFunctions:
 	var high_density_noise = FastNoiseLite.new()
-	high_density_noise.seed = randi()
+	high_density_noise.seed = rng.randi()
 	high_density_noise.frequency = 0.006
 	var noise_container_1 = NoiseContainer.new()
 	noise_container_1.noise = high_density_noise
 	noise_container_1.threshold = 0.5
 
 	var low_density_noise = FastNoiseLite.new()
-	high_density_noise.seed = randi()
+	high_density_noise.seed = rng.randi()
 	low_density_noise.frequency = 0.5
 	var noise_container_2 = NoiseContainer.new()
 	noise_container_2.noise = low_density_noise
 	noise_container_2.threshold = 0.25
 
 	var no_forest_noise = FastNoiseLite.new()
-	high_density_noise.seed = randi()
+	high_density_noise.seed = rng.randi()
 	no_forest_noise.frequency = 0.0006
 	var noise_container_3 = NoiseContainer.new()
 	noise_container_3.noise = no_forest_noise
@@ -53,16 +53,16 @@ static func create_forest_noise() -> NoiseFunctions:
 
 	return NoiseFunctions.new([noise_container_1, noise_container_2, noise_container_3])
 
-static func create_rocks_noise() -> NoiseFunctions:
+static func create_rocks_noise(rng: RandomNumberGenerator) -> NoiseFunctions:
 	var noise = FastNoiseLite.new()
-	noise.seed = randi()
+	noise.seed = rng.randi()
 	noise.frequency = 0.8
 	var noise_container_1 = NoiseContainer.new()
 	noise_container_1.noise = noise
 	noise_container_1.threshold = 0.3
 
 	var no_rocks_noise = FastNoiseLite.new()
-	no_rocks_noise.seed = randi()
+	no_rocks_noise.seed = rng.randi()
 	no_rocks_noise.frequency = 0.001
 	var noise_container_2 = NoiseContainer.new()
 	noise_container_2.noise = no_rocks_noise

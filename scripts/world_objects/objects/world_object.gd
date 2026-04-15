@@ -85,8 +85,8 @@ static func add_tree(pos: Vector3, scale: float) -> WorldObject:
 	tree.health = tree.max_health
 	return tree
 
-static func add_rock(pos: Vector3, scale: Vector3) -> WorldObject:
-	var rot = Vector3(0.0, randf_range(0.0, 2 * PI), 0.0)
+static func add_rock(rng: RandomNumberGenerator, pos: Vector3, scale: Vector3) -> WorldObject:
+	var rot = Vector3(0.0, rng.randf_range(0.0, 2 * PI), 0.0)
 	var col = CollisionShape3D.new()
 	col.shape = SphereShape3D.new()
 	col.shape.radius = 1.0
@@ -95,12 +95,12 @@ static func add_rock(pos: Vector3, scale: Vector3) -> WorldObject:
 	rock.health = rock.max_health
 	return rock
 
-static func add_berrybush(pos: Vector3, scale: float) -> WorldObject:
+static func add_berrybush(rng: RandomNumberGenerator, pos: Vector3, scale: float) -> WorldObject:
 	var rot = Vector3(0.0, 0.0, 0.0)
 	var col = CollisionShape3D.new()
 	col.shape = SphereShape3D.new()
 	col.shape.radius = 0.7
-	var berrybush = BerryBushObject.new(pos, rot, Vector3(scale, scale, scale), col)
+	var berrybush = BerryBushObject.new(rng, pos, rot, Vector3(scale, scale, scale), col)
 	return berrybush
 
 
@@ -114,9 +114,9 @@ class BerryBushObject extends WorldObject:
 	var is_filled: bool = false
 	var full_bush_glb_mesh = berrybush_full_mesh.instantiate()
 
-	func _init(pos: Vector3, rot: Vector3, scale: Vector3, col: CollisionShape3D):
+	func _init(rng: RandomNumberGenerator, pos: Vector3, rot: Vector3, scale: Vector3, col: CollisionShape3D):
 		super._init(pos, rot, scale, berrybush_empty_mesh, col, ObjectId.BERRYBUSH)
-		berries_fill_secs = randf_range(0.0, BERRYBUSH_FULL_SECS)
+		berries_fill_secs = rng.randf_range(0.0, BERRYBUSH_FULL_SECS)
 
 	func update(delta: float):
 		if is_filled == true:

@@ -2,38 +2,39 @@ extends Node
 
 class_name NpcGenerator
 
-
 var npcs: Array[NPC] = []
+var rng: RandomNumberGenerator
 var static_objects_qt: Quadtree
 
-func _init(qt: Quadtree) -> void:
+func _init(_rng, qt: Quadtree) -> void:
+	rng = _rng
 	static_objects_qt = qt
 	add_to_group("Persist")
 
 
 func create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount, terrain_height_noise):
 	for i in amount:
-		var pos_x = randf_range(start_pos_x, end_pos_x)
-		var pos_z = randf_range(start_pos_z, end_pos_z)
+		var pos_x = rng.randf_range(start_pos_x, end_pos_x)
+		var pos_z = rng.randf_range(start_pos_z, end_pos_z)
 		var height = terrain_height_noise.get_height_at(pos_x, pos_z)
 		var position = Vector3(pos_x, height, pos_z)
-		var rotation = Vector3(0.0, randf() * 2 * PI, 0.0)
-		var rand_scale = randf_range(1.0, 1.2)
+		var rotation = Vector3(0.0, rng.randf() * 2 * PI, 0.0)
+		var rand_scale = rng.randf_range(1.0, 1.2)
 		add_npc(position, rotation, rand_scale)
 
 func create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount, terrain_height_noise):
 	for i in amount:
-		var pos_x = randf_range(start_pos_x, end_pos_x)
-		var pos_z = randf_range(start_pos_z, end_pos_z)
+		var pos_x = rng.randf_range(start_pos_x, end_pos_x)
+		var pos_z = rng.randf_range(start_pos_z, end_pos_z)
 		var height = terrain_height_noise.get_height_at(pos_x, pos_z)
 		var position = Vector3(pos_x, height, pos_z)
-		var rotation = Vector3(0.0, randf() * 2 * PI, 0.0)
-		var rand_scale = randf_range(0.5, 0.6)
+		var rotation = Vector3(0.0, rng.randf() * 2 * PI, 0.0)
+		var rand_scale = rng.randf_range(0.5, 0.6)
 		add_npc(position, rotation, rand_scale)
 
 
 func add_npc(position: Vector3, rotation: Vector3, scale: float) -> NPC:
-		var npc: NPC = NPC.new(position, rotation, scale)
+		var npc: NPC = NPC.new(rng, position, rotation, scale)
 		npcs.append(npc)
 		static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": npc})
 		return npc

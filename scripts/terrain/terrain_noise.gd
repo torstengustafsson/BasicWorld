@@ -8,9 +8,9 @@ var noise_terraintype2 : Noise
 var noise_terraintype3 : Noise
 
 
-func _init():
+func _init(rng: RandomNumberGenerator):
 	noise_terraintype = FastNoiseLite.new()
-	noise_terraintype.seed = randi()
+	noise_terraintype.seed = rng.seed
 	noise_terraintype.frequency = 0.001
 	noise_terraintype.fractal_octaves = 2
 	noise_terraintype.fractal_lacunarity = 4.0
@@ -18,7 +18,7 @@ func _init():
 
 	# Mountains
 	noise_terraintype1 = FastNoiseLite.new()
-	noise_terraintype1.seed = randi()
+	noise_terraintype1.seed = rng.seed
 	noise_terraintype1.frequency = 0.00001
 	noise_terraintype1.fractal_octaves = 3
 	noise_terraintype1.fractal_lacunarity = 10.0
@@ -26,7 +26,7 @@ func _init():
 
 	# Small hills and details
 	noise_terraintype2 = FastNoiseLite.new()
-	noise_terraintype2.seed = randi()
+	noise_terraintype2.seed = rng.seed
 	noise_terraintype2.frequency = 0.01
 	noise_terraintype2.fractal_octaves = 2
 	noise_terraintype2.fractal_lacunarity = 2.0
@@ -34,7 +34,7 @@ func _init():
 
 	# Plains
 	noise_terraintype3 = FastNoiseLite.new()
-	noise_terraintype3.seed = randi()
+	noise_terraintype3.seed = rng.seed
 	noise_terraintype3.frequency = 0.0005
 	noise_terraintype3.fractal_octaves = 3
 	noise_terraintype3.fractal_lacunarity = 1.5
