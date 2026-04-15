@@ -36,18 +36,20 @@ func _init(_world_state: WorldState):
 	forest_noise = NoiseFunctions.create_forest_noise(world_state.rng)
 	rocks_noise = NoiseFunctions.create_rocks_noise(world_state.rng)
 
-func _create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, noise_function, add_callback):
-	for x in (end_pos_x - start_pos_x) / step:
-		for z in (end_pos_z - start_pos_z) / step:
+func _create_objects(boundary: Rect2, step: int, noise_function: NoiseFunctions, add_callback: Callable):
+	for x in boundary.size.x / step:
+		for z in boundary.size.y / step:
+			@warning_ignore("integer_division")
 			var rand_value_x = -step / 2 + world_state.rng.randf_range(0.0, step)
+			@warning_ignore("integer_division")
 			var rand_value_z = -step / 2 + world_state.rng.randf_range(0.0, step)
-			var pos_x = start_pos_x + x * step + rand_value_x
-			var pos_z = start_pos_z + z * step + rand_value_z
+			var pos_x = boundary.position.x + x * step + rand_value_x
+			var pos_z = boundary.position.y + z * step + rand_value_z
 			var height = min(world_state.terrain_height_noise.get_height_at(pos_x, pos_z), MAX_ALLOWED_HEIGHT)
 			var position = Vector3(pos_x, height, pos_z)
 
 			# Skip if out-of-bounds
-			if position.x < start_pos_x || position.z < start_pos_z || position.x > end_pos_x || position.z > end_pos_z:
+			if not boundary.has_point(Vector2(pos_x, pos_z)):
 				continue
 
 			# Skip if outside of noise function threshold
@@ -98,22 +100,22 @@ func _handle_chop(collider, objects) -> WorldObject:
 			return object
 	return null
 
-func _create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z):
+func _create_trees(boundary: Rect2):
 	var step = Globals.STEP_TREES
-	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise, _add_tree)
+	_create_objects(boundary, step, forest_noise, _add_tree)
 
-func _create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z):
+func _create_berrybushes(boundary: Rect2):
 	var step = Globals.STEP_BERRYBUSHES
-	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise, _add_bush)
+	_create_objects(boundary, step, forest_noise, _add_bush)
 
-func _create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z):
+func _create_rocks(boundary: Rect2):
 	var step = Globals.STEP_ROCKS
-	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, rocks_noise, _add_rock)
+	_create_objects(boundary, step, rocks_noise, _add_rock)
 
-func create_world_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z):
-	_create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z)
-	_create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z)
-	_create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z)
+func create_world_objects(boundary: Rect2):
+	_create_rocks(boundary)
+	_create_berrybushes(boundary)
+	_create_trees(boundary)
 
 func handle_tree_chop(collider) -> ChopResult:
 	var tree = _handle_chop(collider, trees)

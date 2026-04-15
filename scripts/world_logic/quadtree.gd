@@ -21,11 +21,23 @@ var southwest: Quadtree
 var southeast: Quadtree
 
 
-func _init(rect: Rect2, p_capacity: int = MAX_CAPACITY, p_depth: int = 0) -> void:
+func _init(rect: Rect2 = Rect2(0.0, 0.0, 0.0, 0.0), p_capacity: int = MAX_CAPACITY, p_depth: int = 0) -> void:
 	boundary = rect
 	capacity = p_capacity
 	depth = p_depth
 
+func update_boundary(new_boundary: Rect2) -> void:
+	boundary = new_boundary
+	if divided:
+		var x  := boundary.position.x
+		var y  := boundary.position.y
+		var hw := boundary.size.x * 0.5
+		var hh := boundary.size.y * 0.5
+
+		northwest.update_boundary(Rect2(x,      y,      hw, hh))
+		northeast.update_boundary(Rect2(x + hw, y,      hw, hh))
+		southwest.update_boundary(Rect2(x,      y + hh, hw, hh))
+		southeast.update_boundary(Rect2(x + hw, y + hh, hw, hh))
 
 # Insert an item dict with at least a "position" key (Vector2).
 # Returns true if inserted successfully.

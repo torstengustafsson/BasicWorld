@@ -10,20 +10,20 @@ func _init(_world_state: WorldState) -> void:
 	add_to_group("Persist")
 
 
-func create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount):
+func create_npcs(boundary: Rect2, amount: int):
 	for i in amount:
-		var pos_x = world_state.rng.randf_range(start_pos_x, end_pos_x)
-		var pos_z = world_state.rng.randf_range(start_pos_z, end_pos_z)
+		var pos_x = world_state.rng.randf_range(boundary.position.x, boundary.end.x)
+		var pos_z = world_state.rng.randf_range(boundary.position.y, boundary.end.y)
 		var height = world_state.terrain_height_noise.get_height_at(pos_x, pos_z)
 		var position = Vector3(pos_x, height, pos_z)
 		var rotation = Vector3(0.0, world_state.rng.randf() * 2 * PI, 0.0)
 		var rand_scale = world_state.rng.randf_range(1.0, 1.2)
 		add_npc(position, rotation, rand_scale)
 
-func create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount):
+func create_npc_children(boundary: Rect2, amount):
 	for i in amount:
-		var pos_x = world_state.rng.randf_range(start_pos_x, end_pos_x)
-		var pos_z = world_state.rng.randf_range(start_pos_z, end_pos_z)
+		var pos_x = world_state.rng.randf_range(boundary.position.x, boundary.end.x)
+		var pos_z = world_state.rng.randf_range(boundary.position.y, boundary.end.y)
 		var height = world_state.terrain_height_noise.get_height_at(pos_x, pos_z)
 		var position = Vector3(pos_x, height, pos_z)
 		var rotation = Vector3(0.0, world_state.rng.randf() * 2 * PI, 0.0)
@@ -38,8 +38,9 @@ func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.Settl
 		var start_pos_z = settlement.position.z - settlement.radius * square_in_circle_multiplier
 		var end_pos_x = settlement.position.x + settlement.radius * square_in_circle_multiplier
 		var end_pos_z = settlement.position.z + settlement.radius * square_in_circle_multiplier
-		create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
-		create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
+		var boundary = Rect2(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x - start_pos_x, end_pos_z - start_pos_z))
+		create_npcs(boundary, num_npcs)
+		create_npc_children(boundary, num_npcs)
 
 
 func add_npc(position: Vector3, rotation: Vector3, scale: float) -> NPC:

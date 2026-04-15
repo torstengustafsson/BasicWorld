@@ -124,3 +124,18 @@ func get_chunks() -> Array[TerrainChunk]:
 		for chunk: TerrainChunk in chunks_for_resolution.values():
 			result.append(chunk)
 	return result
+
+func get_terrain_size() -> Rect2:
+	var min_x = INF
+	var max_x = -INF
+	var min_z = INF
+	var max_z = -INF
+	for chunk_res in chunks:
+		var chunks_for_res = chunks[chunk_res]
+		for key in chunks_for_res:
+			var chunk: TerrainChunk = chunks_for_res[key]
+			min_x = min(min_x, chunk.x_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0)
+			max_x = max(max_x, chunk.x_pos + Globals.TERRAIN_CHUNK_SIZE / 2.0)
+			min_z = min(min_z, chunk.z_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0)
+			max_z = max(max_z, chunk.z_pos + Globals.TERRAIN_CHUNK_SIZE / 2.0)
+	return Rect2(min_x, min_z, max_x - min_x, max_z - min_z)

@@ -28,30 +28,22 @@ const POINTS_AROUND: Array[Vector2i] = [
 var world_state: WorldState
 
 var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
-var world_start_pos: Vector2
-var world_end_pos: Vector2
-var grid_size: int = 0
+var world_bounds: Rect2
 var max_weight: float = -1.0
 
-func _init(_world_state: WorldState, _world_start_pos: Vector2, _world_end_pos: Vector2) -> void:
+func _init(_world_state: WorldState, _world_bounds: Rect2) -> void:
 	world_state = _world_state
-	world_start_pos = _world_start_pos
-	world_end_pos = _world_end_pos
-	var world_size = abs(world_start_pos.x - world_end_pos.x)
-	grid_size = int(world_size / Globals.WORLD_GRID_STEP)
-	if world_size != abs(world_start_pos.y - world_end_pos.y):
-		print("Not Square world! Exiting.")
-		get_tree().quit()
+	world_bounds = _world_bounds
 	create_points_and_edges()
 
 func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 	grid_point_edges.clear()
 
 	# Add grid points
-	for x: int in grid_size:
-		for z: int in grid_size:
-			var pos_x = world_start_pos.x + x * Globals.WORLD_GRID_STEP
-			var pos_z = world_start_pos.y + z * Globals.WORLD_GRID_STEP
+	for x: int in world_bounds.size.x / Globals.WORLD_GRID_STEP:
+		for z: int in world_bounds.size.y / Globals.WORLD_GRID_STEP:
+			var pos_x = world_bounds.position.x + x * Globals.WORLD_GRID_STEP
+			var pos_z = world_bounds.position.y + z * Globals.WORLD_GRID_STEP
 			var height = world_state.terrain_height_noise.get_height_at(pos_x, pos_z)
 			var rand_value_x = (-Globals.WORLD_GRID_STEP / 4.0 + world_state.rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
 			var rand_value_z = (-Globals.WORLD_GRID_STEP / 4.0 + world_state.rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
@@ -65,16 +57,13 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 		var grid_point_edge = grid_point_edges[grid_point]
 		for point_around: Vector2i in POINTS_AROUND:
 			var neighbor: Vector2i = grid_point + point_around
-			var out_of_bounds: bool = neighbor.x < 0 or neighbor.x >= grid_size or neighbor.y < 0 or neighbor.y >= grid_size
-			var edge_too_steep = false
-			if grid_point_edges.has(neighbor):
-				var edge_angle = MathFunctions.calculate_angle_between_points(grid_point_edge.point, grid_point_edges[neighbor].point)
-				edge_too_steep = edge_angle > Globals.MAX_GRID_STEEPNESS
-			if not out_of_bounds and not edge_too_steep:
+			var edge_too_steep = _edge_too_steep(grid_point_edge.point, neighbor)
+			if world_bounds.has_point(neighbor) and not edge_too_steep:
 				grid_point_edge.edges.append(GridPointEdge.new(neighbor))
 		var point_too_steep = MathFunctions.get_terrain_angle_at_position(grid_point_edge.point, world_state.space_state) > Globals.MAX_GRID_STEEPNESS
 		if grid_point_edge.edges.size() == 0 or point_too_steep:
 			to_be_removed.append(grid_point)
+
 	for grid_point in to_be_removed:
 		grid_point_edges.erase(grid_point)
 
@@ -134,6 +123,11 @@ func get_num_objects_in_edge(from: Vector3, to: Vector3, objects: Array, width_t
 func get_world_position(settlement: SettlementGenerator.SettlementData) -> Vector3:
 	return grid_point_edges[settlement.grid_position].point
 
+func _edge_too_steep(point: Vector3, neighbor: Vector2i) -> bool:
+	if not grid_point_edges.has(neighbor):
+		return true
+	var edge_angle = MathFunctions.calculate_angle_between_points(point, grid_point_edges[neighbor].point)
+	return edge_angle > Globals.MAX_GRID_STEEPNESS
 
 # Uncomment to render grid. Tanks performance.
 # func _process(_delta):

@@ -24,15 +24,6 @@ func _init(_world_state: WorldState):
 	terrain_last_player_index = Vector2i(0, 0)
 
 func _ready() -> void:
-	# TODO: Do for each chunks postion instead
-	var size_x = Globals.WORLD_SIZE
-	var size_z = Globals.WORLD_SIZE
-	var margin = 5.0
-	var start_pos_x = size_x / 2 - size_x + margin
-	var start_pos_z = size_z / 2 - size_z + margin
-	var end_pos_x = size_x / 2 - margin
-	var end_pos_z = size_z / 2 - margin
-
 	# CREATE TERRAIN
 
 	terrain_generator.add_chunks_around_player(world_state.player.position)
@@ -43,9 +34,19 @@ func _ready() -> void:
 	# This make below ground-based calculations like removing trees on steep terrain not possible.
 	await get_tree().process_frame
 
+	var terrain_boundary = terrain_generator.get_terrain_size()
+	world_state.static_objects_qt.update_boundary(terrain_boundary)
+
+	settlements_generator = SettlementGenerator.new(world_state)
+	road_generator = RoadGenerator.new(world_state)
+	npcs_generator = NpcGenerator.new(world_state)
+
+	generate_world(terrain_boundary)
+
+func generate_world(boundary: Rect2):
 	# CREATE STATIC OBJECTS AND ITEMS
 
-	object_generator.create_world_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z)
+	object_generator.create_world_objects(boundary)
 	add_child(object_generator)
 
 	world_item_generator = WorldItemGenerator.new(world_state)
@@ -57,50 +58,44 @@ func _ready() -> void:
 	var pickaxe_position = Vector3(1.0, 2.0, -4.0)
 	world_item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
 
+	var get_random_position = func() -> Vector3:
+		return Vector3(
+			world_state.rng.randf_range(boundary.position.x, boundary.end.x),
+			5.0,
+			world_state.rng.randf_range(boundary.position.y, boundary.end.y))
+
 	for berry in 40:
-		var berry_position = Vector3(world_state.rng.randf_range(start_pos_x, end_pos_x), 5.0, world_state.rng.randf_range(start_pos_z, end_pos_z))
+		var berry_position = get_random_position.call()
 		world_item_generator.spawn_item(berry_position, ItemProperties.Item.BERRY)
 
 	for wood in 40:
-		var wood_position = Vector3(world_state.rng.randf_range(start_pos_x, end_pos_x), 5.0, world_state.rng.randf_range(start_pos_z, end_pos_z))
+		var wood_position = get_random_position.call()
 		world_item_generator.spawn_item(wood_position, ItemProperties.Item.WOOD)
 
 	for stone in 40:
-		var stone_position = Vector3(world_state.rng.randf_range(start_pos_x, end_pos_x), 5.0, world_state.rng.randf_range(start_pos_z, end_pos_z))
+		var stone_position = get_random_position.call()
 		world_item_generator.spawn_item(stone_position, ItemProperties.Item.STONE)
 
 	# CREATE WORLD GRID
 
-	world_state.world_grid = WorldGrid.new(world_state, Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x, end_pos_z))
+	world_state.world_grid = WorldGrid.new(world_state, boundary)
 	world_state.world_grid.calculate_weights()
 	add_child(world_state.world_grid)
 
-	# CREATE TERRAIN
-
-	terrain_generator.add_chunks_around_player(world_state.player.position)
-
-	# TODO: Find out why we need to wait here.
-	# Without the wait, ground collisions will not be available at start outside of player immediate area.
-	# This make below ground-based calculations like removing trees on steep terrain not possible.
-	await get_tree().create_timer(0.1).timeout
-
 	# CREATE SETTLEMENTS
 
-	settlements_generator = SettlementGenerator.new(world_state)
 	var settlement_data = settlements_generator.create_settlements()
 
-	npcs_generator = NpcGenerator.new(world_state)
 	npcs_generator.create_npcs_in_settlements(settlement_data)
 
 	# Create some random NPCs out in the forest as well
 	var num_npcs = 25
-	npcs_generator.create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
+	npcs_generator.create_npcs(boundary, num_npcs)
 
 	settlements_generator.remove_objects_from_settlements(remove_object_callback)
 
 	# CREATE ROADS
 
-	road_generator = RoadGenerator.new(world_state)
 	var road_edges: Array[RoadGenerator.RoadEdge] = road_generator.generate_roads(settlement_data) # Type: Array[RoadGenerator.RoadEdge]
 	add_child(road_generator)
 

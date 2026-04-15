@@ -4,12 +4,8 @@ class_name Globals
 # Set to specific string to get repeatable result
 static var RANDOM_SEED = MathFunctions.generate_random_seed()
 
-# The size of the world. Objects will only be created in this area.
-# TODO: Set to INF for infinite world.
-const WORLD_SIZE: float = 1000.0
-
 # Each terrain resolution halves the detail, and doubles the amount of chunks in the distance
-const NUM_CHUNK_RESOLUTIONS: int = 4
+const NUM_CHUNK_RESOLUTIONS: int = 2
 const TERRAIN_CHUNK_SIZE: int = 256
 const TERRAIN_RESOLUTION_MULTIPLIER: float = 0.25
 
@@ -29,10 +25,8 @@ const MAX_GRID_STEEPNESS = 15.0
 
 # Settlement spread must be less than half of settlement grid step to avoid overlap
 const SETTLEMENT_GRID_STEP = 20
-const SETTLEMENT_GRID_SPREAD = 6
+const SETTLEMENT_GRID_SPREAD = 8
 
-# Adda margin to avoid having settlements at the edge of the world
-const SETTLEMENT_WORLD_EDGE_MARGIN = 1 + Globals.SETTLEMENT_GRID_SPREAD
 const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 600.0
 
 # The max height-angle in degrees that a settlements gridpoint and its edges can be connected by

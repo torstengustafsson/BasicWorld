@@ -13,6 +13,6 @@ var player: Node3D # Only used for position
 func _init(_player: Node3D) -> void:
 	rng = RandomNumberGenerator.new()
 	rng.seed = hash(Globals.RANDOM_SEED)
-	static_objects_qt = Quadtree.new(Rect2(-Globals.WORLD_SIZE / 2, -Globals.WORLD_SIZE / 2,Globals.WORLD_SIZE, Globals.WORLD_SIZE))
+	static_objects_qt = Quadtree.new()
 	terrain_height_noise = TerrainNoise.new(rng)
 	player = _player

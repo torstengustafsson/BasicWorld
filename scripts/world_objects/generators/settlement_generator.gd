@@ -22,10 +22,10 @@ func _init(_world_state: WorldState):
 
 func create_settlements() -> Array[SettlementData]:
 	var result: Array[SettlementData] = []
-
-	for grid_point_x in range(Globals.SETTLEMENT_WORLD_EDGE_MARGIN + 1, world_state.world_grid.grid_size - Globals.SETTLEMENT_WORLD_EDGE_MARGIN, Globals.SETTLEMENT_GRID_STEP):
+	var world_size = world_state.world_grid.world_bounds.size
+	for grid_point_x in range(0, world_size.x, Globals.SETTLEMENT_GRID_STEP):
 		var rand_value_x = world_state.rng.randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
-		for grid_point_z in range(Globals.SETTLEMENT_WORLD_EDGE_MARGIN + 1, world_state.world_grid.grid_size - Globals.SETTLEMENT_WORLD_EDGE_MARGIN, Globals.SETTLEMENT_GRID_STEP):
+		for grid_point_z in range(0, world_size.y, Globals.SETTLEMENT_GRID_STEP):
 			var rand_value_z = world_state.rng.randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
 			var grid_point = Vector2i(grid_point_x + rand_value_x, grid_point_z + rand_value_z)
 			var grid_position: WorldGrid.PointWithEdges = world_state.world_grid.grid_point_edges.get(grid_point, null)
