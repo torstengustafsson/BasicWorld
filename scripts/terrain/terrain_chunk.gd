@@ -6,6 +6,12 @@ class ShaderParameters:
 	var settlement_data: Array[SettlementGenerator.SettlementData] = []
 	var road_edges: Array[RoadGenerator.RoadEdge] = []
 
+# Add this number of subdivisions to each side of the chunk. Will not be rendered.
+# Used to avoid visible seams between terrain chunks
+# TODO: Fix seams between chunks of different resolutions
+const MARGIN: int = 1
+
+# Input values
 var x_index : int
 var z_index : int
 var x_pos : float
@@ -14,6 +20,10 @@ var chunk_size : int
 var chunk_res : float
 var terrain_material : ShaderMaterial
 var terrain_noise
+
+# Calculated values
+var subdivisions: int
+var chunk_size_with_margins: float # Chunk size + margins
 
 func _init(_x_pos, _z_pos, _chunk_size, _chunk_res, _terrain_noise):
 	x_index = int(_x_pos / _chunk_size)
@@ -24,20 +34,16 @@ func _init(_x_pos, _z_pos, _chunk_size, _chunk_res, _terrain_noise):
 	chunk_res = _chunk_res
 	terrain_material = ShaderMaterial.new()
 	terrain_noise = _terrain_noise
-
-func _ready():
 	generate_chunk()
 	translate(Vector3(x_pos, 0, z_pos))
 
 func generate_chunk():
 	var plane_mesh = PlaneMesh.new()
-	# TODO: Add a margin to avoid holes between chunks due to floating point precision issues.
-	# Currently, this works for seams, but displaces UV textures. Need to fix before adding margin.
-	const MARGIN = 0
-	var subdivisions = chunk_size * chunk_res + MARGIN
-	var size = chunk_size + 2 * MARGIN * chunk_size / (chunk_size * chunk_res)
-
-	plane_mesh.size = Vector2(size, size)
+	# NOTE: Subdivisions is number of cuts in plane. So 1 subdivision means 4 total cells, 2 means 9 total cells, etc.
+	subdivisions = floor((chunk_size * chunk_res) + 2 * MARGIN)
+	var cell_size = 1.0 / (subdivisions - 1) * chunk_size
+	chunk_size_with_margins = chunk_size + 2 * cell_size
+	plane_mesh.size = Vector2(chunk_size_with_margins, chunk_size_with_margins)
 	plane_mesh.subdivide_depth = subdivisions
 	plane_mesh.subdivide_width = subdivisions
 
@@ -70,6 +76,13 @@ func set_shader_data(params: ShaderParameters):
 	terrain_material.shader = load("res://shaders/ground.gdshader")
 	terrain_material.set_shader_parameter("chunk_size", Vector2(Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE))
 	terrain_material.set_shader_parameter("chunk_position", Vector2(x_pos, z_pos))
+
+	if MARGIN > 0:
+		var uv_scale: float = chunk_size_with_margins / chunk_size
+		var uv_offset: float = 1.0 / (subdivisions + 1)
+		terrain_material.set_shader_parameter("uv_scale", Vector2(uv_scale, uv_scale))
+		terrain_material.set_shader_parameter("uv_offset", Vector2(uv_offset, uv_offset))
+
 	terrain_material.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25, 1.0))
 	terrain_material.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
 	terrain_material.set_shader_parameter("cliff_albedo_texture", Color(0.35, 0.35, 0.35, 1.0))

@@ -2,7 +2,6 @@ class_name Globals
 
 # The random seed used for all the worlds objects and logic
 # Set to specific string to get repeatable result
-#static var RANDOM_SEED = "random"
 static var RANDOM_SEED = MathFunctions.generate_random_seed()
 
 # The size of the world. Objects will only be created in this area.

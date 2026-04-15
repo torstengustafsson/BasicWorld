@@ -24,8 +24,8 @@ func _init(_terrain_noise):
 		chunks[res] = {}
 
 func update_shader_data(settlement_data: Array[SettlementGenerator.SettlementData], road_edges: Array[RoadGenerator.RoadEdge]):
-	shader_parameters.settlement_data = settlement_data
-	shader_parameters.road_edges = road_edges
+	shader_parameters.settlement_data = settlement_data.duplicate()
+	shader_parameters.road_edges = road_edges.duplicate()
 
 	for chunk_res in chunks:
 		var chunks_for_res = chunks[chunk_res]
@@ -61,13 +61,12 @@ func _add_chunk(grid_x_index: int, grid_z_index: int, player_pos: Vector3):
 			hide_other_resolutions_at_index(resolution_index, key)
 			add_child(chunks[resolution_index].get(key))
 		return
+
 	# else, new chunk
 	hide_other_resolutions_at_index(resolution_index, key)
-
 	var chunk_resolution = 1.0 / pow(2.0, resolution_index) * Globals.TERRAIN_RESOLUTION_MULTIPLIER
 	var chunk = TerrainChunk.new(chunk_x_pos, chunk_z_pos, Globals.TERRAIN_CHUNK_SIZE, chunk_resolution, terrain_noise)
 	chunk.set_shader_data(shader_parameters)
-
 	chunks[resolution_index][key] = chunk
 	add_child(chunk)
 

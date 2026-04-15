@@ -140,6 +140,7 @@ func _ready() -> void:
 	print("")
 	print("Total time to generate world = " + str(elapsed / 1000.0) + " seconds")
 	print("Number of objects in scene = " + str(count_all_children(self)))
+	print("RANDOM SEED = " + str(Globals.RANDOM_SEED))
 
 
 func count_all_children(node: Node) -> int:

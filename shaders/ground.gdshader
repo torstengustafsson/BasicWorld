@@ -25,6 +25,10 @@ float point_to_segment_dist(vec2 p, vec2 a, vec2 b) {
 
 uniform vec2 chunk_position;
 uniform vec2 chunk_size;
+
+uniform vec2 uv_scale = vec2(1.0, 1.0);
+uniform vec2 uv_offset = vec2(0.0, 0.0);
+
 uniform vec3 settlement_data[128]; // [pos_x, pos,z, radius]
 uniform int settlement_count = 0;
 uniform vec4 road_edges[1024]; // Two vec2:s of (from, to) points
@@ -83,7 +87,6 @@ vec3 mix_at_height(vec3 input_color, float height, float blend_distance_multipli
     return output_color;
 }
 
-
 void vertex() {
     // Calculate the normal and tangent vectors for terrain slope detection
     vec3 normal = normalize(NORMAL);
@@ -93,28 +96,36 @@ void vertex() {
 }
 
 void fragment() {
-    float in_road = 0.0;
-    vec2 world_uv = chunk_position + (UV - 0.5) * chunk_size;
+    vec2 scaled_uv = (UV - uv_offset) * uv_scale;
+    vec2 world_uv = chunk_position + (scaled_uv - 0.5) * chunk_size;
 
-    // Create spots under settlements
-    for (int i = 0; i < settlement_count; i++) {
-        vec2 dir = world_uv - settlement_data[i].xy;
-        float angle = atan(dir.y, dir.x);
-        float n = noise1d(angle * NOISE_SCALE);
-        float radius = settlement_data[i].z + (n - 0.5) * 2.0 * NOISE_STRENGTH;
-        float dist = length(dir);
-        in_road = max(in_road, step(dist, radius));
+    if (scaled_uv.x < 0.0 || scaled_uv.x > 1.0 || scaled_uv.y < 0.0 || scaled_uv.y > 1.0) {
+        // Skip chunk margins, neighboring chunks will render this
+        discard;
     }
+    else {
+        float in_road = 0.0;
 
-    // Create roads between road edges
-    for (int i = 0; i < road_edge_count; i++) {
-        float road_dist = point_to_segment_dist(world_uv, road_edges[i].xy, road_edges[i].zw);
-        in_road = max(in_road, step(road_dist, road_width));
+        // Create spots under settlements
+        for (int i = 0; i < settlement_count; i++) {
+            vec2 dir = world_uv - settlement_data[i].xy;
+            float angle = atan(dir.y, dir.x);
+            float n = noise1d(angle * NOISE_SCALE);
+            float radius = settlement_data[i].z + (n - 0.5) * 2.0 * NOISE_STRENGTH;
+            float dist = length(dir);
+            in_road = max(in_road, step(dist, radius));
+        }
+
+        // Create roads between road edges
+        for (int i = 0; i < road_edge_count; i++) {
+            float road_dist = point_to_segment_dist(world_uv, road_edges[i].xy, road_edges[i].zw);
+            in_road = max(in_road, step(road_dist, road_width));
+        }
+
+        vec3 flat_color = mix(grass_albedo_texture.rgb, road_albedo_texture.rgb, in_road);
+        vec3 add_barren_color = mix_at_height(flat_color, barren_height, 0.5, barren_albedo_texture);
+        vec3 snow_color = mix_at_height(add_barren_color, snow_height, 0.15, snow_albedo_texture);
+        vec3 final_color = mix_with_cliff(snow_color);
+        ALBEDO = final_color;
     }
-
-    vec3 flat_color = mix(grass_albedo_texture.rgb, road_albedo_texture.rgb, in_road);
-    vec3 add_barren_color = mix_at_height(flat_color, barren_height, 0.5, barren_albedo_texture);
-    vec3 snow_color = mix_at_height(add_barren_color, snow_height, 0.15, snow_albedo_texture);
-    vec3 final_color = mix_with_cliff(snow_color);
-    ALBEDO = final_color;
 }
