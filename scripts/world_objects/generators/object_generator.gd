@@ -16,9 +16,7 @@ class ChopResult:
 
 const MAX_ALLOWED_HEIGHT = 100.0
 
-var space_state: PhysicsDirectSpaceState3D
-var rng: RandomNumberGenerator
-var static_objects_qt: Quadtree
+var world_state: WorldState
 
 var forest_noise: NoiseFunctions
 var rocks_noise: NoiseFunctions
@@ -33,21 +31,19 @@ var shake_timer = INF # INF means not shaking
 var shake_direction: Vector3 = Vector3(0.0, 0.0, 0.0)
 
 
-func _init(_rng: RandomNumberGenerator, qt : Quadtree, _space_state: PhysicsDirectSpaceState3D):
-	rng = _rng
-	forest_noise = NoiseFunctions.create_forest_noise(rng)
-	rocks_noise = NoiseFunctions.create_rocks_noise(rng)
-	static_objects_qt = qt
-	space_state = _space_state
+func _init(_world_state: WorldState):
+	world_state = _world_state
+	forest_noise = NoiseFunctions.create_forest_noise(world_state.rng)
+	rocks_noise = NoiseFunctions.create_rocks_noise(world_state.rng)
 
-func _create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, noise_function, terrain_height_noise, add_callback):
+func _create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, noise_function, add_callback):
 	for x in (end_pos_x - start_pos_x) / step:
 		for z in (end_pos_z - start_pos_z) / step:
-			var rand_value_x = -step / 2 + rng.randf_range(0.0, step)
-			var rand_value_z = -step / 2 + rng.randf_range(0.0, step)
+			var rand_value_x = -step / 2 + world_state.rng.randf_range(0.0, step)
+			var rand_value_z = -step / 2 + world_state.rng.randf_range(0.0, step)
 			var pos_x = start_pos_x + x * step + rand_value_x
 			var pos_z = start_pos_z + z * step + rand_value_z
-			var height = min(terrain_height_noise.get_height_at(pos_x, pos_z), MAX_ALLOWED_HEIGHT)
+			var height = min(world_state.terrain_height_noise.get_height_at(pos_x, pos_z), MAX_ALLOWED_HEIGHT)
 			var position = Vector3(pos_x, height, pos_z)
 
 			# Skip if out-of-bounds
@@ -59,38 +55,38 @@ func _create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, noise
 				continue
 
 			# Skip if terrain is too steep
-			var terrain_angle = MathFunctions.get_terrain_angle_at_position(position, space_state)
+			var terrain_angle = MathFunctions.get_terrain_angle_at_position(position, world_state.space_state)
 			if terrain_angle > Globals.MAX_OBJECT_STEEPNESS or terrain_angle == INF:
 				continue
 
 			# Skip if at too high elevation (use some randomness to reduce chance closer to max)
 			var height_value = MathFunctions.taper(height / MAX_ALLOWED_HEIGHT, 0.5)
-			if height_value < rng.randf_range(0.0, 0.5):
+			if height_value < world_state.rng.randf_range(0.0, 0.5):
 				continue
 
 			add_callback.call(position)
 
 func _add_rock(position: Vector3):
-	var rand_scale = Vector3(rng.randf_range(1.0, 3.0), rng.randf_range(1.2, 4.0), rng.randf_range(1.0, 3.0))
-	var rock = WorldObject.add_rock(rng, position, rand_scale)
+	var rand_scale = Vector3(world_state.rng.randf_range(1.0, 3.0), world_state.rng.randf_range(1.2, 4.0), world_state.rng.randf_range(1.0, 3.0))
+	var rock = WorldObject.add_rock(world_state.rng, position, rand_scale)
 	rocks.append(rock)
-	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": rock})
+	world_state.static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": rock})
 
 func _add_bush(position: Vector3) -> WorldObject.BerryBushObject:
-	var rand_scale = rng.randf_range(1.0, 1.25)
-	var berrybush = WorldObject.add_berrybush(rng, position, rand_scale)
+	var rand_scale = world_state.rng.randf_range(1.0, 1.25)
+	var berrybush = WorldObject.add_berrybush(world_state.rng, position, rand_scale)
 	berrybushes.append(berrybush)
-	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": berrybush})
+	world_state.static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": berrybush})
 	return berrybush
 
 func _add_tree(position: Vector3):
-	var rand_scale = rng.randf_range(1.0, 2.0)
+	var rand_scale = world_state.rng.randf_range(1.0, 2.0)
 	var tree = WorldObject.add_tree(position, rand_scale)
 	trees.append(tree)
-	static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": tree})
+	world_state.static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": tree})
 
 func _remove_object(object: WorldObject, objects: Array):
-	static_objects_qt.remove({"position": Vector2(object.instance.position.x, object.instance.position.z), "data": object})
+	world_state.static_objects_qt.remove({"position": Vector2(object.instance.position.x, object.instance.position.z), "data": object})
 	object.instance.queue_free()
 	objects.erase(object)
 
@@ -102,22 +98,22 @@ func _handle_chop(collider, objects) -> WorldObject:
 			return object
 	return null
 
-func _create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise):
+func _create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z):
 	var step = Globals.STEP_TREES
-	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise, terrain_height_noise, _add_tree)
+	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise, _add_tree)
 
-func _create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise):
+func _create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z):
 	var step = Globals.STEP_BERRYBUSHES
-	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise, terrain_height_noise, _add_bush)
+	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, forest_noise, _add_bush)
 
-func _create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise):
+func _create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z):
 	var step = Globals.STEP_ROCKS
-	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, rocks_noise, terrain_height_noise, _add_rock)
+	_create_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, step, rocks_noise, _add_rock)
 
-func create_world_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise):
-	_create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise)
-	_create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise)
-	_create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z, terrain_height_noise)
+func create_world_objects(start_pos_x, start_pos_z, end_pos_x, end_pos_z):
+	_create_rocks(start_pos_x, start_pos_z, end_pos_x, end_pos_z)
+	_create_berrybushes(start_pos_x, start_pos_z, end_pos_x, end_pos_z)
+	_create_trees(start_pos_x, start_pos_z, end_pos_x, end_pos_z)
 
 func handle_tree_chop(collider) -> ChopResult:
 	var tree = _handle_chop(collider, trees)

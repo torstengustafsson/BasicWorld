@@ -25,9 +25,7 @@ const POINTS_AROUND: Array[Vector2i] = [
 	Vector2i(1, 1),
 ]
 
-var rng: RandomNumberGenerator
-var terrain_height_noise: TerrainNoise
-var space_state: PhysicsDirectSpaceState3D
+var world_state: WorldState
 
 var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
 var world_start_pos: Vector2
@@ -35,12 +33,10 @@ var world_end_pos: Vector2
 var grid_size: int = 0
 var max_weight: float = -1.0
 
-func _init(_rng: RandomNumberGenerator, _world_start_pos: Vector2, _world_end_pos: Vector2, _terrain_height_noise, _space_state) -> void:
-	rng = _rng
+func _init(_world_state: WorldState, _world_start_pos: Vector2, _world_end_pos: Vector2) -> void:
+	world_state = _world_state
 	world_start_pos = _world_start_pos
 	world_end_pos = _world_end_pos
-	terrain_height_noise = _terrain_height_noise
-	space_state = _space_state
 	var world_size = abs(world_start_pos.x - world_end_pos.x)
 	grid_size = int(world_size / Globals.WORLD_GRID_STEP)
 	if world_size != abs(world_start_pos.y - world_end_pos.y):
@@ -56,9 +52,9 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 		for z: int in grid_size:
 			var pos_x = world_start_pos.x + x * Globals.WORLD_GRID_STEP
 			var pos_z = world_start_pos.y + z * Globals.WORLD_GRID_STEP
-			var height = terrain_height_noise.get_height_at(pos_x, pos_z)
-			var rand_value_x = (-Globals.WORLD_GRID_STEP / 4.0 + rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
-			var rand_value_z = (-Globals.WORLD_GRID_STEP / 4.0 + rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
+			var height = world_state.terrain_height_noise.get_height_at(pos_x, pos_z)
+			var rand_value_x = (-Globals.WORLD_GRID_STEP / 4.0 + world_state.rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
+			var rand_value_z = (-Globals.WORLD_GRID_STEP / 4.0 + world_state.rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
 			var point = Vector3(pos_x + rand_value_x, height, pos_z + rand_value_z)
 			var current_point = PointWithEdges.new(point)
 			grid_point_edges[Vector2i(x, z)] = current_point
@@ -76,7 +72,7 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 				edge_too_steep = edge_angle > Globals.MAX_GRID_STEEPNESS
 			if not out_of_bounds and not edge_too_steep:
 				grid_point_edge.edges.append(GridPointEdge.new(neighbor))
-		var point_too_steep = MathFunctions.get_terrain_angle_at_position(grid_point_edge.point, space_state) > Globals.MAX_GRID_STEEPNESS
+		var point_too_steep = MathFunctions.get_terrain_angle_at_position(grid_point_edge.point, world_state.space_state) > Globals.MAX_GRID_STEEPNESS
 		if grid_point_edge.edges.size() == 0 or point_too_steep:
 			to_be_removed.append(grid_point)
 	for grid_point in to_be_removed:
@@ -94,7 +90,7 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 
 	return grid_point_edges
 
-func calculate_weights(qt: Quadtree):
+func calculate_weights():
 	for grid_point in grid_point_edges:
 		var grid_point_edge = grid_point_edges[grid_point]
 		for edge in grid_point_edge.edges:
@@ -109,7 +105,7 @@ func calculate_weights(qt: Quadtree):
 				min(from.z, to.z) - Globals.ROAD_WIDTH,
 				abs(from.x - to.x) + 2 * Globals.ROAD_WIDTH,
 				abs(from.z - to.z) + 2 * Globals.ROAD_WIDTH)
-			var objects = qt.query(query_rect)
+			var objects = world_state.static_objects_qt.query(query_rect)
 			var num_obstacles = get_num_objects_in_edge(from, to, objects, Globals.ROAD_WIDTH)
 			var distance = (from - to).length()
 			# Every object in the way adds weight 10, every flat meter adds weight 1, adding a multiplier of 1 more per meter, per 10 degrees steepness
@@ -146,7 +142,7 @@ func get_world_position(settlement: SettlementGenerator.SettlementData) -> Vecto
 # func render_grid():
 # 	for grid_point in grid_point_edges:
 # 		var point_with_edges = grid_point_edges[grid_point]
-# 		var point_height = terrain_height_noise.get_height_at(point_with_edges.point.x, point_with_edges.point.z)
+# 		var point_height = world_state.terrain_height_noise.get_height_at(point_with_edges.point.x, point_with_edges.point.z)
 # 		DebugDraw3D.draw_sphere(Vector3(point_with_edges.point.x, point_height + 0.5, point_with_edges.point.z))
 # 		for edge in point_with_edges.edges:
 # 			var neighbor = grid_point_edges.get(edge.grid_point, null)
@@ -154,7 +150,7 @@ func get_world_position(settlement: SettlementGenerator.SettlementData) -> Vecto
 # 				continue
 # 			var red = edge.weight / max_weight
 # 			var color = Color(red, 0.0, 0.0, 1.0)
-# 			var neighbor_height = terrain_height_noise.get_height_at(neighbor.point.x, neighbor.point.z)
+# 			var neighbor_height = world_state.terrain_height_noise.get_height_at(neighbor.point.x, neighbor.point.z)
 # 			DebugDraw3D.draw_line(
 # 				Vector3(point_with_edges.point.x, point_height + 0.5, point_with_edges.point.z),
 # 				Vector3(neighbor.point.x, neighbor_height + 0.5, neighbor.point.z), color

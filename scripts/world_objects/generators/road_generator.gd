@@ -11,14 +11,12 @@ class RoadEdge:
 		from = _from
 		to = _to
 
-# Treated as constants. Are vars due to gdscript.
-var world_grid: WorldGrid
-
+var world_state: WorldState
 var road_edges: Array[RoadEdge] = []
 var connected_settlements: Dictionary = {}  # Tracks which settlement pairs are already connected
 
-func _init(_world_grid: WorldGrid) -> void:
-	world_grid = _world_grid
+func _init(_world_state: WorldState) -> void:
+	world_state = _world_state
 
 func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) -> Array[RoadEdge]:
 	if settlement_data.size() <= 1:
@@ -86,7 +84,7 @@ func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i, max
 		var current = pq.pop()
 		if current == grid_destination:
 			break
-		for next in world_grid.grid_point_edges[current].edges:
+		for next in world_state.world_grid.grid_point_edges[current].edges:
 			var new_cost = cost_so_far[current] + next.weight
 			if (not cost_so_far.has(next.grid_point)) or new_cost < cost_so_far[next.grid_point]:
 				cost_so_far[next.grid_point] = new_cost
@@ -111,8 +109,8 @@ func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i, max
 			break
 		max_iterations += 1
 		var previous_step = came_from[current_step]
-		var a = world_grid.grid_point_edges[previous_step].point
-		var b = world_grid.grid_point_edges[current_step].point
+		var a = world_state.world_grid.grid_point_edges[previous_step].point
+		var b = world_state.world_grid.grid_point_edges[current_step].point
 		var new_road = RoadEdge.new(a, b)
 		result.append(new_road)
 		current_step = previous_step
@@ -121,14 +119,14 @@ func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i, max
 
 # NOTE: Does not use get_objects_in_road due to performance reasons
 # (it is more efficient to loop objects first and then roads)
-func remove_objects_from_roads(static_objects_qt: Quadtree, remove_callback: Callable):
+func remove_objects_from_roads(remove_callback: Callable):
 	for edge in road_edges:
 		var query_rect = Rect2(
 			min(edge.from.x, edge.to.x) - Globals.ROAD_WIDTH,
 			min(edge.from.z, edge.to.z) - Globals.ROAD_WIDTH,
 			abs(edge.from.x -edge.to.x) + 2 * Globals.ROAD_WIDTH,
 			abs(edge.from.z -edge.to.z) + 2 * Globals.ROAD_WIDTH)
-		var objects = static_objects_qt.query(query_rect)
+		var objects = world_state.static_objects_qt.query(query_rect)
 		for index in objects.size():
 			var object: WorldObject = objects[index]["data"]
 			var object_pos = Vector2(object.instance.position.x, object.instance.position.z)

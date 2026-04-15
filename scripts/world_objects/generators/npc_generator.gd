@@ -2,41 +2,50 @@ extends Node
 
 class_name NpcGenerator
 
+var world_state: WorldState
 var npcs: Array[NPC] = []
-var rng: RandomNumberGenerator
-var static_objects_qt: Quadtree
 
-func _init(_rng, qt: Quadtree) -> void:
-	rng = _rng
-	static_objects_qt = qt
+func _init(_world_state: WorldState) -> void:
+	world_state = _world_state
 	add_to_group("Persist")
 
 
-func create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount, terrain_height_noise):
+func create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount):
 	for i in amount:
-		var pos_x = rng.randf_range(start_pos_x, end_pos_x)
-		var pos_z = rng.randf_range(start_pos_z, end_pos_z)
-		var height = terrain_height_noise.get_height_at(pos_x, pos_z)
+		var pos_x = world_state.rng.randf_range(start_pos_x, end_pos_x)
+		var pos_z = world_state.rng.randf_range(start_pos_z, end_pos_z)
+		var height = world_state.terrain_height_noise.get_height_at(pos_x, pos_z)
 		var position = Vector3(pos_x, height, pos_z)
-		var rotation = Vector3(0.0, rng.randf() * 2 * PI, 0.0)
-		var rand_scale = rng.randf_range(1.0, 1.2)
+		var rotation = Vector3(0.0, world_state.rng.randf() * 2 * PI, 0.0)
+		var rand_scale = world_state.rng.randf_range(1.0, 1.2)
 		add_npc(position, rotation, rand_scale)
 
-func create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount, terrain_height_noise):
+func create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, amount):
 	for i in amount:
-		var pos_x = rng.randf_range(start_pos_x, end_pos_x)
-		var pos_z = rng.randf_range(start_pos_z, end_pos_z)
-		var height = terrain_height_noise.get_height_at(pos_x, pos_z)
+		var pos_x = world_state.rng.randf_range(start_pos_x, end_pos_x)
+		var pos_z = world_state.rng.randf_range(start_pos_z, end_pos_z)
+		var height = world_state.terrain_height_noise.get_height_at(pos_x, pos_z)
 		var position = Vector3(pos_x, height, pos_z)
-		var rotation = Vector3(0.0, rng.randf() * 2 * PI, 0.0)
-		var rand_scale = rng.randf_range(0.5, 0.6)
+		var rotation = Vector3(0.0, world_state.rng.randf() * 2 * PI, 0.0)
+		var rand_scale = world_state.rng.randf_range(0.5, 0.6)
 		add_npc(position, rotation, rand_scale)
+
+func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.SettlementData]):
+	for settlement in settlement_data:
+		var num_npcs = world_state.rng.randf_range(settlement.num_houses, settlement.num_houses * 2)
+		var square_in_circle_multiplier = 0.7 # sin(45degrees)
+		var start_pos_x = settlement.position.x - settlement.radius * square_in_circle_multiplier
+		var start_pos_z = settlement.position.z - settlement.radius * square_in_circle_multiplier
+		var end_pos_x = settlement.position.x + settlement.radius * square_in_circle_multiplier
+		var end_pos_z = settlement.position.z + settlement.radius * square_in_circle_multiplier
+		create_npcs(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
+		create_npc_children(start_pos_x, start_pos_z, end_pos_x, end_pos_z, num_npcs)
 
 
 func add_npc(position: Vector3, rotation: Vector3, scale: float) -> NPC:
-		var npc: NPC = NPC.new(rng, position, rotation, scale)
+		var npc: NPC = NPC.new(world_state.rng, position, rotation, scale)
 		npcs.append(npc)
-		static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": npc})
+		world_state.static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": npc})
 		return npc
 
 func interact(collider):
@@ -58,7 +67,7 @@ func handle_chop(collider):
 		if npc.instance == collider:
 			var died = npc.take_damage()
 			if died:
-				static_objects_qt.remove({"position": Vector2(npc.instance.position.x, npc.instance.position.z), "data": npc})
+				world_state.static_objects_qt.remove({"position": Vector2(npc.instance.position.x, npc.instance.position.z), "data": npc})
 				npcs.remove_at(i)
 			return
 
