@@ -20,6 +20,7 @@ func _init(_world_state: WorldState):
 	world_state = _world_state
 	terrain_generator = TerrainGenerator.new(world_state.terrain_height_noise)
 	object_generator = ObjectGenerator.new(world_state)
+	world_item_generator = WorldItemGenerator.new(world_state)
 	lod_last_player_pos = world_state.player.position
 	terrain_last_player_index = Vector2i(0, 0)
 
@@ -38,8 +39,13 @@ func _ready() -> void:
 	world_state.static_objects_qt.update_boundary(terrain_boundary)
 
 	settlements_generator = SettlementGenerator.new(world_state)
-	road_generator = RoadGenerator.new(world_state)
-	npcs_generator = NpcGenerator.new(world_state)
+	road_generator = RoadGenerator.new(world_state, settlements_generator)
+	npcs_generator = NpcGenerator.new(world_state, settlements_generator)
+	world_state.world_grid = WorldGrid.new(world_state)
+
+	add_child(object_generator)
+	add_child(world_item_generator)
+	add_child(world_state.world_grid)
 
 	generate_world(terrain_boundary)
 
@@ -47,16 +53,14 @@ func generate_world(boundary: Rect2):
 	# CREATE STATIC OBJECTS AND ITEMS
 
 	object_generator.create_world_objects(boundary)
-	add_child(object_generator)
-
-	world_item_generator = WorldItemGenerator.new(world_state)
-	add_child(world_item_generator)
 
 	var axe_position = Vector3(-1.0, 2.0, -4.0)
-	world_item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
+	if boundary.has_point(Vector2(axe_position.x, axe_position.z)):
+		world_item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
 
 	var pickaxe_position = Vector3(1.0, 2.0, -4.0)
-	world_item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
+	if boundary.has_point(Vector2(pickaxe_position.x, pickaxe_position.z)):
+		world_item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
 
 	var get_random_position = func() -> Vector3:
 		return Vector3(
@@ -76,34 +80,32 @@ func generate_world(boundary: Rect2):
 		var stone_position = get_random_position.call()
 		world_item_generator.spawn_item(stone_position, ItemProperties.Item.STONE)
 
-	# CREATE WORLD GRID
+	# UPDATE WORLD GRID
 
-	world_state.world_grid = WorldGrid.new(world_state, boundary)
-	world_state.world_grid.calculate_weights()
-	add_child(world_state.world_grid)
+	world_state.world_grid.add_points_and_edges(boundary)
+	world_state.world_grid.calculate_weights(boundary)
 
 	# CREATE SETTLEMENTS
 
-	var settlement_data = settlements_generator.create_settlements()
-
-	npcs_generator.create_npcs_in_settlements(settlement_data)
+	settlements_generator.create_settlements(boundary)
+	npcs_generator.create_npcs_in_settlements(boundary)
 
 	# Create some random NPCs out in the forest as well
 	var num_npcs = 25
 	npcs_generator.create_npcs(boundary, num_npcs)
 
-	settlements_generator.remove_objects_from_settlements(remove_object_callback)
+	settlements_generator.remove_objects_from_settlements(boundary, remove_object_callback)
 
 	# CREATE ROADS
 
-	var road_edges: Array[RoadGenerator.RoadEdge] = road_generator.generate_roads(settlement_data) # Type: Array[RoadGenerator.RoadEdge]
+	var road_edges: Array[RoadGenerator.RoadEdge] = road_generator.generate_roads(boundary) # Type: Array[RoadGenerator.RoadEdge]
 	add_child(road_generator)
 
 	road_generator.remove_objects_from_roads(remove_object_callback)
 
 	# FINAL TOUCHES
 
-	terrain_generator.update_shader_data(settlement_data, road_edges)
+	terrain_generator.update_shader_data(settlements_generator.settlements.query_all(), road_edges)
 	update_lods()
 
 

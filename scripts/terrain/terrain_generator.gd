@@ -23,7 +23,8 @@ func _init(_terrain_noise):
 	for res in range(Globals.NUM_CHUNK_RESOLUTIONS):
 		chunks[res] = {}
 
-func update_shader_data(settlement_data: Array[SettlementGenerator.SettlementData], road_edges: Array[RoadGenerator.RoadEdge]):
+# settlement_data: Array[SettlementGenerator.SettlementData]
+func update_shader_data(settlement_data: Array, road_edges: Array[RoadGenerator.RoadEdge]):
 	shader_parameters.settlement_data = settlement_data.duplicate()
 	shader_parameters.road_edges = road_edges.duplicate()
 

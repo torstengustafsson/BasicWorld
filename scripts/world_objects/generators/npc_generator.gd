@@ -3,10 +3,12 @@ extends Node
 class_name NpcGenerator
 
 var world_state: WorldState
+var settlement_generator: SettlementGenerator
 var npcs: Array[NPC] = []
 
-func _init(_world_state: WorldState) -> void:
+func _init(_world_state: WorldState, _settlement_generator: SettlementGenerator) -> void:
 	world_state = _world_state
+	settlement_generator = _settlement_generator
 	add_to_group("Persist")
 
 
@@ -30,17 +32,19 @@ func create_npc_children(boundary: Rect2, amount):
 		var rand_scale = world_state.rng.randf_range(0.5, 0.6)
 		add_npc(position, rotation, rand_scale)
 
-func create_npcs_in_settlements(settlement_data: Array[SettlementGenerator.SettlementData]):
-	for settlement in settlement_data:
-		var num_npcs = world_state.rng.randf_range(settlement.num_houses, settlement.num_houses * 2)
+func create_npcs_in_settlements(boundary: Rect2):
+	var settlements = settlement_generator.settlements.query(boundary)
+	for settlement in settlements:
+		var settlement_data = settlement["data"]
+		var num_npcs = world_state.rng.randf_range(settlement_data.num_houses, settlement_data.num_houses * 2)
 		var square_in_circle_multiplier = 0.7 # sin(45degrees)
-		var start_pos_x = settlement.position.x - settlement.radius * square_in_circle_multiplier
-		var start_pos_z = settlement.position.z - settlement.radius * square_in_circle_multiplier
-		var end_pos_x = settlement.position.x + settlement.radius * square_in_circle_multiplier
-		var end_pos_z = settlement.position.z + settlement.radius * square_in_circle_multiplier
-		var boundary = Rect2(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x - start_pos_x, end_pos_z - start_pos_z))
-		create_npcs(boundary, num_npcs)
-		create_npc_children(boundary, num_npcs)
+		var start_pos_x = settlement_data.position.x - settlement_data.radius * square_in_circle_multiplier
+		var start_pos_z = settlement_data.position.z - settlement_data.radius * square_in_circle_multiplier
+		var end_pos_x = settlement_data.position.x + settlement_data.radius * square_in_circle_multiplier
+		var end_pos_z = settlement_data.position.z + settlement_data.radius * square_in_circle_multiplier
+		var settlement_data_boundary = Rect2(Vector2(start_pos_x, start_pos_z), Vector2(end_pos_x - start_pos_x, end_pos_z - start_pos_z))
+		create_npcs(settlement_data_boundary, num_npcs)
+		create_npc_children(settlement_data_boundary, num_npcs)
 
 
 func add_npc(position: Vector3, rotation: Vector3, scale: float) -> NPC:

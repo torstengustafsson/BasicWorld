@@ -28,22 +28,25 @@ const POINTS_AROUND: Array[Vector2i] = [
 var world_state: WorldState
 
 var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
-var world_bounds: Rect2
 var max_weight: float = -1.0
 
-func _init(_world_state: WorldState, _world_bounds: Rect2) -> void:
+func _init(_world_state: WorldState) -> void:
 	world_state = _world_state
-	world_bounds = _world_bounds
-	create_points_and_edges()
 
-func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
+func add_grid_boundary(boundary: Rect2):
+	add_points_and_edges(boundary)
+
+func remove_grid_boundary(boundary: Rect2):
+	remove_points_and_edges(boundary)
+
+func add_points_and_edges(boundary: Rect2) -> Dictionary[Vector2i, PointWithEdges]:
 	grid_point_edges.clear()
 
 	# Add grid points
-	for x: int in world_bounds.size.x / Globals.WORLD_GRID_STEP:
-		for z: int in world_bounds.size.y / Globals.WORLD_GRID_STEP:
-			var pos_x = world_bounds.position.x + x * Globals.WORLD_GRID_STEP
-			var pos_z = world_bounds.position.y + z * Globals.WORLD_GRID_STEP
+	for x: int in boundary.size.x / Globals.WORLD_GRID_STEP:
+		for z: int in boundary.size.y / Globals.WORLD_GRID_STEP:
+			var pos_x = boundary.position.x + x * Globals.WORLD_GRID_STEP
+			var pos_z = boundary.position.y + z * Globals.WORLD_GRID_STEP
 			var height = world_state.terrain_height_noise.get_height_at(pos_x, pos_z)
 			var rand_value_x = (-Globals.WORLD_GRID_STEP / 4.0 + world_state.rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
 			var rand_value_z = (-Globals.WORLD_GRID_STEP / 4.0 + world_state.rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
@@ -58,7 +61,7 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 		for point_around: Vector2i in POINTS_AROUND:
 			var neighbor: Vector2i = grid_point + point_around
 			var edge_too_steep = _edge_too_steep(grid_point_edge.point, neighbor)
-			if world_bounds.has_point(neighbor) and not edge_too_steep:
+			if not edge_too_steep:
 				grid_point_edge.edges.append(GridPointEdge.new(neighbor))
 		var point_too_steep = MathFunctions.get_terrain_angle_at_position(grid_point_edge.point, world_state.space_state) > Globals.MAX_GRID_STEEPNESS
 		if grid_point_edge.edges.size() == 0 or point_too_steep:
@@ -67,7 +70,7 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 	for grid_point in to_be_removed:
 		grid_point_edges.erase(grid_point)
 
-	# Remove edges whose destination has been removed
+	# Remove edges whose destination does not exist
 	for grid_point in grid_point_edges:
 		var edges_to_be_removed = []
 		var grid_point_edge = grid_point_edges[grid_point]
@@ -79,8 +82,13 @@ func create_points_and_edges() -> Dictionary[Vector2i, PointWithEdges]:
 
 	return grid_point_edges
 
-func calculate_weights():
+func remove_points_and_edges(boundary: Rect2):
+	pass
+
+func calculate_weights(boundary: Rect2):
 	for grid_point in grid_point_edges:
+		if not boundary.has_point(grid_point):
+			continue
 		var grid_point_edge = grid_point_edges[grid_point]
 		for edge in grid_point_edge.edges:
 			var neighbor = grid_point_edges.get(edge.grid_point, null)

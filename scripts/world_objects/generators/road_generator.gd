@@ -12,28 +12,32 @@ class RoadEdge:
 		to = _to
 
 var world_state: WorldState
+var settlement_generator: SettlementGenerator
 var road_edges: Array[RoadEdge] = []
 var connected_settlements: Dictionary = {}  # Tracks which settlement pairs are already connected
 
-func _init(_world_state: WorldState) -> void:
+func _init(_world_state: WorldState, _settlement_generator: SettlementGenerator) -> void:
 	world_state = _world_state
+	settlement_generator = _settlement_generator
 
-func generate_roads(settlement_data: Array[SettlementGenerator.SettlementData]) -> Array[RoadEdge]:
-	if settlement_data.size() <= 1:
-		return []
+func generate_roads(boundary: Rect2) -> Array[RoadEdge]:
+	boundary.position -= Vector2(Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE)
+	boundary.size += Vector2(2 * Globals.TERRAIN_CHUNK_SIZE, 2 * Globals.TERRAIN_CHUNK_SIZE)
+	var settlements = settlement_generator.settlements.query(boundary)
 	var result: Array[RoadEdge] = []
-	for settlement in settlement_data:
-		var num_available_roads: int = max(1, min(min(3, settlement_data.size() - 1), ceil(settlement.num_houses / 2.0)))
-		var closest_settlements = get_closest_settlements(settlement, settlement_data, num_available_roads)
+	for settlement in settlements:
+		var settlement_data = settlement["data"]
+		var num_available_roads: int = max(1, min(min(3, settlements.size() - 1), ceil(settlement_data.num_houses / 2.0)))
+		var closest_settlements = get_closest_settlements(settlement_data, boundary, num_available_roads)
 
 		for other_index in closest_settlements.size():
 			var other_settlement = closest_settlements[other_index]
-			if connection_exists_between_settlements(settlement, other_settlement):
+			if connection_exists_between_settlements(settlement_data, other_settlement):
 				continue
-			var max_distance = Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD + settlement.num_houses * Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD * 0.1
-			var new_roads = generate_road_segments(settlement.grid_position, other_settlement.grid_position, max_distance)
+			var max_distance = Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD + settlement_data.num_houses * Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD * 0.1
+			var new_roads = generate_road_segments(settlement_data.grid_position, other_settlement.grid_position, max_distance)
 			if new_roads.size() > 0:
-				add_connection_between_settlements(settlement, other_settlement)
+				add_connection_between_settlements(settlement_data, other_settlement)
 			result.append_array(new_roads)
 
 	road_edges.append_array(result)
@@ -57,17 +61,17 @@ func add_connection_between_settlements(settlement: SettlementGenerator.Settleme
 
 
 # Return weighted closest settlements, where large settlements are more attrative, and are prioritized a bit further away
-func get_closest_settlements(settlement: SettlementGenerator.SettlementData, settlements: Array[SettlementGenerator.SettlementData], amount: int):
+func get_closest_settlements(settlement: SettlementGenerator.SettlementData, boundary: Rect2, amount: int):
 	var pq: PriorityQueue = PriorityQueue.new()
-	for other_index in settlements.size():
-		var other_settlement = settlements[other_index]
-		if other_settlement == settlement:
+	for other_settlement in settlement_generator.settlements.query(boundary):
+		var other_settlement_data = other_settlement["data"]
+		if not boundary.has_point(Vector2(settlement.position.x, settlement.position.z)) or other_settlement_data == settlement:
 			continue
 		var a = Vector2(settlement.position.x, settlement.position.z)
-		var b = Vector2(other_settlement.position.x, other_settlement.position.z)
+		var b = Vector2(other_settlement_data.position.x, other_settlement_data.position.z)
 		var distance = (a - b).length()
-		var weight = distance - other_settlement.num_houses * 20.0
-		pq.push(other_settlement, weight)
+		var weight = distance - other_settlement_data.num_houses * 20.0
+		pq.push(other_settlement_data, weight)
 	var result = []
 	for i in amount:
 		result.append(pq.pop())
@@ -139,25 +143,3 @@ func remove_objects_from_roads(remove_callback: Callable):
 			var road_dist: float = (object_pos - closest).length()
 			if road_dist < Globals.ROAD_WIDTH + 0.1:
 				remove_callback.call(object)
-
-
-
-
-	# var to_be_removed: Array[int] = []
-	# for index in objects.size():
-	# 	var object: Node3D = objects[index].instance
-	# 	var object_pos = Vector2(object.position.x, object.position.z)
-	# 	for edge in road_edges:
-	# 		var a = Vector2(edge.from.x, edge.from.z)
-	# 		var b = Vector2(edge.to.x, edge.to.z)
-	# 		var ab: Vector2 = b - a;
-	# 		var ap: Vector2 = object_pos - a;
-	# 		var t: float = clamp(ap.dot(ab) / ab.dot(ab), 0.0, 1.0);
-	# 		var closest: Vector2 = a + t * ab;
-	# 		var road_dist: float = (object_pos - closest).length()
-	# 		if road_dist < ROAD_WIDTH + 0.1:
-	# 			to_be_removed.append(index)
-	# to_be_removed.sort()
-	# to_be_removed.reverse()
-	# for index in to_be_removed:
-	# 	callback.call(index)

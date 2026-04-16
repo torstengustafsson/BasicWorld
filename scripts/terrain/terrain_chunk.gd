@@ -3,7 +3,8 @@ extends MeshInstance3D
 class_name TerrainChunk
 
 class ShaderParameters:
-	var settlement_data: Array[SettlementGenerator.SettlementData] = []
+	# Array[Dictionary[Vector2, SettlementGenerator.SettlementData]]
+	var settlement_data: Array = []
 	var road_edges: Array[RoadGenerator.RoadEdge] = []
 
 # Add this number of subdivisions to each side of the chunk. Will not be rendered.
@@ -91,7 +92,8 @@ func set_shader_data(params: ShaderParameters):
 	terrain_material.set_shader_parameter("settlement_count", params.settlement_data.size())
 	var shader_settlement_data: Array[Vector3] = []
 	for settlement in params.settlement_data:
-		shader_settlement_data.append(Vector3(settlement.position.x, settlement.position.z, settlement.radius))
+		var settlement_data = settlement["data"]
+		shader_settlement_data.append(Vector3(settlement_data.position.x, settlement_data.position.z, settlement_data.radius))
 	terrain_material.set_shader_parameter("settlement_data", shader_settlement_data)
 	terrain_material.set_shader_parameter("road_width", Globals.ROAD_WIDTH)
 	terrain_material.set_shader_parameter("road_edge_count", params.road_edges.size())
