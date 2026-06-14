@@ -11,6 +11,8 @@ class RoadEdge:
 		from = _from
 		to = _to
 
+var added_boundaries: Dictionary[Rect2, bool] = {}
+
 var world_state: WorldState
 var settlement_generator: SettlementGenerator
 var road_edges: Array[RoadEdge] = []
@@ -21,6 +23,10 @@ func _init(_world_state: WorldState, _settlement_generator: SettlementGenerator)
 	settlement_generator = _settlement_generator
 
 func generate_roads(boundary: Rect2) -> Array[RoadEdge]:
+	if added_boundaries.has(boundary):
+		return road_edges
+	added_boundaries[boundary] = true
+
 	boundary.position -= Vector2(Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE)
 	boundary.size += Vector2(2 * Globals.TERRAIN_CHUNK_SIZE, 2 * Globals.TERRAIN_CHUNK_SIZE)
 	var settlements = settlement_generator.settlements.query(boundary)

@@ -26,7 +26,11 @@ func _init(rect: Rect2 = Rect2(0.0, 0.0, 0.0, 0.0), p_capacity: int = MAX_CAPACI
 	capacity = p_capacity
 	depth = p_depth
 
+# Update the boundary of this node and remove any items that no longer fit
 func update_boundary(new_boundary: Rect2) -> void:
+	for item in items:
+		if not new_boundary.has_point(item["position"]):
+			items.erase(item)
 	boundary = new_boundary
 	if divided:
 		var x  := boundary.position.x

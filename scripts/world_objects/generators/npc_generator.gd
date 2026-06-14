@@ -4,12 +4,28 @@ class_name NpcGenerator
 
 var world_state: WorldState
 var settlement_generator: SettlementGenerator
-var npcs: Array[NPC] = []
 
 func _init(_world_state: WorldState, _settlement_generator: SettlementGenerator) -> void:
 	world_state = _world_state
 	settlement_generator = _settlement_generator
 	add_to_group("Persist")
+
+
+func get_all_npcs() -> Array[NPC]:
+	var objects = world_state.static_objects_qt.query_all()
+	var result: Array[NPC] = []
+	for object in objects:
+		if object["data"] is NPC:
+			result.append(object["data"])
+	return result
+
+func get_npcs_around_point(point: Vector3) -> Array[NPC]:
+	var nearby_objects = world_state.static_objects_qt.query_circle(Vector2(point.x, point.z), 1.0)
+	var result: Array[NPC] = []
+	for object in nearby_objects:
+		if object["data"] is NPC:
+			result.append(object["data"])
+	return result
 
 
 func create_npcs(boundary: Rect2, amount: int):
@@ -46,41 +62,36 @@ func create_npcs_in_settlements(boundary: Rect2):
 		create_npcs(settlement_data_boundary, num_npcs)
 		create_npc_children(settlement_data_boundary, num_npcs)
 
-
 func add_npc(position: Vector3, rotation: Vector3, scale: float) -> NPC:
-		var npc: NPC = NPC.new(world_state.rng, position, rotation, scale)
-		npcs.append(npc)
-		world_state.static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": npc})
-		return npc
+	var npc = WorldObject.add_npc(position, rotation, scale, world_state.static_objects_qt)
+	return npc
 
 func interact(collider):
-	for npc in npcs:
+	for npc in get_npcs_around_point(collider.position):
 		if npc.instance == collider:
 			npc.play_sound()
 
 
 func interact_equipped_item(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> bool:
-	for npc in npcs:
+	for npc in get_npcs_around_point(collider.position):
 		if npc.instance == collider:
 			return npc.interact_item(item)
 	return false
 
 
 func handle_chop(collider):
-	for i in npcs.size():
-		var npc: NPC = npcs[i]
+	for npc in get_npcs_around_point(collider.position):
 		if npc.instance == collider:
 			var died = npc.take_damage()
 			if died:
 				world_state.static_objects_qt.remove({"position": Vector2(npc.instance.position.x, npc.instance.position.z), "data": npc})
-				npcs.remove_at(i)
 			return
 
 
 func save() -> Dictionary:
 	var result: Dictionary = {}
 	var npc_data: Array = []
-	for npc in npcs:
+	for npc in get_all_npcs():
 		var data: Dictionary = {}
 		data["pos_x"] = snapped(npc.instance.position.x, 0.01)
 		data["pos_y"] = snapped(npc.instance.position.y, 0.01)
@@ -97,9 +108,9 @@ func save() -> Dictionary:
 
 
 func load(data: Dictionary):
-	for npc in npcs:
+	for npc in get_all_npcs():
 		npc.instance.queue_free()
-	npcs.clear()
+		world_state.static_objects_qt.remove({"position": Vector2(npc.instance.position.x, npc.instance.position.z), "data": npc})
 
 	for npc_data in data[str(SaveLoadState.StateType.NPCS)]:
 		var position = Vector3(npc_data["pos_x"], npc_data["pos_y"], npc_data["pos_z"])

@@ -13,6 +13,8 @@ class SettlementData:
 		radius = _radius
 		num_houses = _num_houses
 
+var added_boundaries: Dictionary[Rect2, bool] = {}
+
 var world_state: WorldState
 var settlements: Quadtree = Quadtree.new()
 
@@ -21,7 +23,11 @@ func _init(_world_state: WorldState):
 	add_to_group("Persist")
 
 func create_settlements(boundary: Rect2) -> void:
-	settlements.update_boundary(boundary)
+	if added_boundaries.has(boundary):
+		return
+	added_boundaries[boundary] = true
+	settlements.update_boundary(boundary) # TODO: Should add boundary, not overwrite
+
 
 	for grid_point_x in range(0, boundary.size.x, Globals.SETTLEMENT_GRID_STEP):
 		var rand_value_x = world_state.rng.randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
@@ -47,7 +53,8 @@ func try_add_settlement(grid_point: Vector2i, grid_position: WorldGrid.PointWith
 			if height_diff > Globals.MAX_SETTLEMENT_STEEPNESS:
 				not_too_steep = false
 				break
-		if current.edges.size() == 8 and not_too_steep:
+		var has_all_egdes = current.edges.size() == 8 # Non-flat areas lack edges
+		if has_all_egdes and not_too_steep:
 			return add_settlement(grid_point, grid_position.point)
 		else:
 			# Not ok. Test placing settlement on startpoints' edges instead
@@ -60,7 +67,6 @@ func try_add_settlement(grid_point: Vector2i, grid_position: WorldGrid.PointWith
 						pq.push(edge_grid_position, height_diff)
 	return null
 
-# Returns radius of settlement
 func add_settlement(grid_position: Vector2i, position: Vector3) -> SettlementData:
 	const MAX_NUM_HOUSES = 5
 	var num_houses = world_state.rng.randi_range(2, MAX_NUM_HOUSES)
@@ -85,13 +91,11 @@ func add_settlement(grid_position: Vector2i, position: Vector3) -> SettlementDat
 	return SettlementData.new(grid_position, position, settlement_radius, num_houses)
 
 func add_house(position: Vector3, rotation: Vector3) -> WorldObject:
-	var house = WorldObject.add_house(position, rotation)
-	world_state.static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": house})
+	var house = WorldObject.add_house(position, rotation, world_state.static_objects_qt)
 	return house
 
 func add_chest(position: Vector3, rotation: Vector3) -> WorldObject:
-	var chest = WorldObject.add_chest(position, rotation)
-	world_state.static_objects_qt.insert({"position": Vector2(position.x, position.z), "data": chest})
+	var chest = WorldObject.add_chest(position, rotation, world_state.static_objects_qt)
 	return chest
 
 func remove_objects_from_settlements(boundary: Rect2, remove_callback: Callable):
@@ -105,9 +109,9 @@ func remove_objects_from_settlements(boundary: Rect2, remove_callback: Callable)
 			var object_pos = Vector2(object.instance.position.x, object.instance.position.z)
 			var settlement_pos = Vector2(settlement_data.position.x, settlement_data.position.z)
 			var is_removable_type: bool = \
-				object.id == WorldObject.ObjectId.TREE or \
-				object.id == WorldObject.ObjectId.ROCK or \
-				object.id == WorldObject.ObjectId.BERRYBUSH
+				object.object_id == WorldObject.ObjectId.TREE or \
+				object.object_id == WorldObject.ObjectId.ROCK or \
+				object.object_id == WorldObject.ObjectId.BERRYBUSH
 			if is_removable_type and object_pos.distance_to(settlement_pos) < settlement_data.radius + 1.0:
 				remove_callback.call(object)
 

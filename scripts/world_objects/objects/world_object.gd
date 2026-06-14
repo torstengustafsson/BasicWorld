@@ -17,16 +17,18 @@ static var human_mesh = preload("res://assets/models/animated_human.glb")
 static var berrybush_empty_mesh = preload("res://assets/models/berrybush-empty.glb")
 static var berrybush_full_mesh = preload("res://assets/models/berrybush-full.glb")
 
+static var object_rng = RandomNumberGenerator.new()
+
 
 var instance: StaticBody3D
 var glb_mesh: Node3D # Imported glb scenes are Node3D and not MeshInstance3D
 var collider = CollisionShape3D
 var glb_mesh_no_collider: Node3D # TODO
 
-var id: ObjectId
+var object_id: ObjectId
 
 func _init(pos: Vector3, rot: Vector3, scale: Vector3, glb_mesh_scene: PackedScene, _collider: CollisionShape3D, _id: ObjectId):
-	id = _id
+	object_id = _id
 	instance = StaticBody3D.new()
 	glb_mesh = glb_mesh_scene.instantiate()
 	collider = _collider
@@ -60,21 +62,40 @@ func delete():
 	collider.queue_free()
 	glb_mesh_no_collider.queue_free()
 
-static func add_house(pos: Vector3, rot: Vector3) -> WorldObject:
+static func object_exists_at_position(position: Vector3, objects: Quadtree, objectId: WorldObject.ObjectId) -> bool:
+	var nearby_objects = objects.query_circle(Vector2(position.x, position.z), 0.1)
+	for object in nearby_objects:
+		if object["data"].object_id == objectId:
+			return true
+	return false
+
+static func add_house(pos: Vector3, rot: Vector3, objects: Quadtree) -> WorldObject:
+	if object_exists_at_position(pos, objects, WorldObject.ObjectId.HOUSE):
+		return
 	var scale = Vector3(1.0, 1.0, 1.0)
 	var col = CollisionShape3D.new()
 	col.shape = BoxShape3D.new()
 	col.shape.size = Vector3(4.5, 3.6, 6.0)
-	return WorldObject.new(pos, rot, scale, house_mesh, col, ObjectId.HOUSE)
+	var house = WorldObject.new(pos, rot, scale, house_mesh, col, ObjectId.HOUSE)
+	objects.insert({"position": Vector2(pos.x, pos.z), "data": house})
+	return house
 
-static func add_chest(pos: Vector3, rot: Vector3) -> WorldObject:
+static func add_chest(pos: Vector3, rot: Vector3, objects: Quadtree) -> WorldObject:
+	if object_exists_at_position(pos, objects, WorldObject.ObjectId.CHEST):
+		return
 	var scale = Vector3(1.0, 1.0, 1.0)
 	var col = CollisionShape3D.new()
 	col.shape = BoxShape3D.new()
 	col.shape.size = Vector3(1.0, 1.0, 1.55)
-	return WorldObject.new(pos, rot, scale, chest_mesh, col, ObjectId.CHEST)
+	var chest = WorldObject.new(pos, rot, scale, chest_mesh, col, ObjectId.CHEST)
+	objects.insert({"position": Vector2(pos.x, pos.z), "data": chest})
+	return chest
 
-static func add_tree(pos: Vector3, scale: float) -> WorldObject:
+static func add_tree(pos: Vector3, objects: Quadtree) -> WorldObject:
+	if object_exists_at_position(pos, objects, WorldObject.ObjectId.TREE):
+		return
+	object_rng.seed = hash(pos)
+	var scale = object_rng.randf_range(1.0, 2.0)
 	var rot = Vector3(0.0, 0.0, 0.0)
 	var col = CollisionShape3D.new()
 	col.shape = CylinderShape3D.new()
@@ -83,25 +104,43 @@ static func add_tree(pos: Vector3, scale: float) -> WorldObject:
 	var tree = BreakableObject.new(pos, rot, Vector3(scale, scale, scale), tree_mesh, col, ObjectId.TREE)
 	tree.max_health = round(scale * 2.0)
 	tree.health = tree.max_health
+	objects.insert({"position": Vector2(pos.x, pos.z), "data": tree})
 	return tree
 
-static func add_rock(rng: RandomNumberGenerator, pos: Vector3, scale: Vector3) -> WorldObject:
-	var rot = Vector3(0.0, rng.randf_range(0.0, 2 * PI), 0.0)
+static func add_rock(pos: Vector3, objects: Quadtree) -> WorldObject:
+	if object_exists_at_position(pos, objects, WorldObject.ObjectId.ROCK):
+		return
+	object_rng.seed = hash(pos)
+	var scale = Vector3(object_rng.randf_range(1.0, 3.0), object_rng.randf_range(1.2, 4.0), object_rng.randf_range(1.0, 3.0))
+	var rot = Vector3(0.0, object_rng.randf_range(0.0, 2 * PI), 0.0)
 	var col = CollisionShape3D.new()
 	col.shape = SphereShape3D.new()
 	col.shape.radius = 1.0
 	var rock = BreakableObject.new(pos, rot, scale, rock_mesh, col, ObjectId.ROCK)
 	rock.max_health = round(scale.x + scale.y + scale.z)
 	rock.health = rock.max_health
+	objects.insert({"position": Vector2(pos.x, pos.z), "data": rock})
 	return rock
 
-static func add_berrybush(rng: RandomNumberGenerator, pos: Vector3, scale: float) -> WorldObject:
+static func add_berrybush(pos: Vector3, objects: Quadtree) -> WorldObject:
+	if object_exists_at_position(pos, objects, WorldObject.ObjectId.BERRYBUSH):
+		return
+	object_rng.seed = hash(pos)
+	var scale = object_rng.randf_range(1.0, 1.25)
 	var rot = Vector3(0.0, 0.0, 0.0)
 	var col = CollisionShape3D.new()
 	col.shape = SphereShape3D.new()
 	col.shape.radius = 0.7
-	var berrybush = BerryBushObject.new(rng, pos, rot, Vector3(scale, scale, scale), col)
+	var berrybush = BerryBushObject.new(pos, rot, Vector3(scale, scale, scale), col)
+	objects.insert({"position": Vector2(pos.x, pos.z), "data": berrybush})
 	return berrybush
+
+static func add_npc(position: Vector3, rotation: Vector3, scale: float, objects: Quadtree) -> WorldObject:
+	if object_exists_at_position(position, objects, WorldObject.ObjectId.HUMAN):
+		return
+	var npc: NPC = NPC.new(position, rotation, scale)
+	objects.insert({"position": Vector2(position.x, position.z), "data": npc})
+	return npc
 
 
 class BreakableObject extends WorldObject:
@@ -114,9 +153,9 @@ class BerryBushObject extends WorldObject:
 	var is_filled: bool = false
 	var full_bush_glb_mesh = berrybush_full_mesh.instantiate()
 
-	func _init(rng: RandomNumberGenerator, pos: Vector3, rot: Vector3, scale: Vector3, col: CollisionShape3D):
+	func _init(pos: Vector3, rot: Vector3, scale: Vector3, col: CollisionShape3D):
 		super._init(pos, rot, scale, berrybush_empty_mesh, col, ObjectId.BERRYBUSH)
-		berries_fill_secs = rng.randf_range(0.0, BERRYBUSH_FULL_SECS)
+		berries_fill_secs = object_rng.randf_range(0.0, BERRYBUSH_FULL_SECS)
 
 	func update(delta: float):
 		if is_filled == true:

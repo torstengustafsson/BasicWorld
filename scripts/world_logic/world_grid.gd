@@ -29,19 +29,30 @@ var world_state: WorldState
 
 var grid_point_edges: Dictionary[Vector2i, PointWithEdges] = {}
 var max_weight: float = -1.0
+var grid_boundary: Rect2
 
 func _init(_world_state: WorldState) -> void:
 	world_state = _world_state
 
-func add_grid_boundary(boundary: Rect2):
-	add_points_and_edges(boundary)
+func add_rect_margins(rect: Rect2, margins: float) -> Rect2:
+	return Rect2(
+		rect.position - Vector2(margins, margins),
+		rect.size + Vector2(2 * margins, 2 * margins)
+	)
 
-func remove_grid_boundary(boundary: Rect2):
-	remove_points_and_edges(boundary)
+func add_grid_boundary(boundary: Rect2):
+	# TODO: At some point maybe clean up since now grid points will keep expanding?
+	if not grid_boundary.encloses(boundary):
+		if not grid_boundary:
+			grid_boundary = boundary
+		grid_boundary.merge(boundary)
+		add_points_and_edges(boundary)
+
+		var max_settlement_distance = (Globals.WORLD_GRID_STEP + Globals.SETTLEMENT_GRID_SPREAD) * Globals.WORLD_GRID_STEP
+		var boundary_with_margins = add_rect_margins(boundary, max_settlement_distance)
+		world_state.world_grid.calculate_weights(boundary_with_margins)
 
 func add_points_and_edges(boundary: Rect2) -> Dictionary[Vector2i, PointWithEdges]:
-	grid_point_edges.clear()
-
 	# Add grid points
 	for x: int in boundary.size.x / Globals.WORLD_GRID_STEP:
 		for z: int in boundary.size.y / Globals.WORLD_GRID_STEP:

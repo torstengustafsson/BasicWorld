@@ -37,8 +37,9 @@ var has_what_it_wants: bool = false
 var health = 3
 const DAMAGE_TAKEN_SECS = 0.5
 
-func _init(_rng: RandomNumberGenerator, pos: Vector3, rot: Vector3, scale: float):
-	rng = _rng
+func _init(pos: Vector3, rot: Vector3, scale: float):
+	rng = RandomNumberGenerator.new()
+	rng.seed = hash(pos)
 	default_sound_index = rng.randi() % sounds.size()
 	var col = CollisionShape3D.new()
 	col.shape = CylinderShape3D.new()

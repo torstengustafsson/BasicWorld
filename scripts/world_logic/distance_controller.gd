@@ -46,14 +46,58 @@ func _ready() -> void:
 	add_child(object_generator)
 	add_child(world_item_generator)
 	add_child(world_state.world_grid)
+	add_child(road_generator)
 
 	generate_world(terrain_boundary)
+	generate_starting_items(terrain_boundary)
 
 func generate_world(boundary: Rect2):
+	# Reset global world state seed
+	# TODO: Very fragile solution right now. Every calculation must be done in order,
+	#       and we want to skip recalculating same things over and over.
+	world_state.rng.seed = hash(Globals.RANDOM_SEED)
+
 	# CREATE STATIC OBJECTS AND ITEMS
 
+	object_generator.reset_noise_seeds()
 	object_generator.create_world_objects(boundary)
 
+	# Need to reset seed because some calculations above might be skipped for performance reasons
+	world_state.rng.seed = hash(Globals.RANDOM_SEED) + 1
+
+	# UPDATE WORLD GRID
+
+	world_state.world_grid.add_grid_boundary(boundary)
+
+	# CREATE SETTLEMENTS
+
+	settlements_generator.create_settlements(boundary)
+
+	# Need to reset seed because some calculations above might be skipped for performance reasons
+	world_state.rng.seed = hash(Globals.RANDOM_SEED) + 2
+
+	npcs_generator.create_npcs_in_settlements(boundary)
+
+	# Create some random NPCs out in the forest as well
+	var num_npcs = 25
+	npcs_generator.create_npcs(boundary, num_npcs)
+
+	settlements_generator.remove_objects_from_settlements(boundary, remove_object_callback)
+
+	# CREATE ROADS
+
+	var road_edges: Array[RoadGenerator.RoadEdge] = road_generator.generate_roads(boundary) # Type: Array[RoadGenerator.RoadEdge]
+	road_generator.remove_objects_from_roads(remove_object_callback)
+
+	# Need to reset seed because some calculations above might be skipped for performance reasons
+	world_state.rng.seed = hash(Globals.RANDOM_SEED) + 3
+
+	# FINAL TOUCHES
+
+	terrain_generator.update_shader_data(settlements_generator.settlements.query_all(), road_edges)
+	update_lods()
+
+func generate_starting_items(boundary):
 	var axe_position = Vector3(-1.0, 2.0, -4.0)
 	if boundary.has_point(Vector2(axe_position.x, axe_position.z)):
 		world_item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
@@ -79,34 +123,6 @@ func generate_world(boundary: Rect2):
 	for stone in 40:
 		var stone_position = get_random_position.call()
 		world_item_generator.spawn_item(stone_position, ItemProperties.Item.STONE)
-
-	# UPDATE WORLD GRID
-
-	world_state.world_grid.add_points_and_edges(boundary)
-	world_state.world_grid.calculate_weights(boundary)
-
-	# CREATE SETTLEMENTS
-
-	settlements_generator.create_settlements(boundary)
-	npcs_generator.create_npcs_in_settlements(boundary)
-
-	# Create some random NPCs out in the forest as well
-	var num_npcs = 25
-	npcs_generator.create_npcs(boundary, num_npcs)
-
-	settlements_generator.remove_objects_from_settlements(boundary, remove_object_callback)
-
-	# CREATE ROADS
-
-	var road_edges: Array[RoadGenerator.RoadEdge] = road_generator.generate_roads(boundary) # Type: Array[RoadGenerator.RoadEdge]
-	add_child(road_generator)
-
-	road_generator.remove_objects_from_roads(remove_object_callback)
-
-	# FINAL TOUCHES
-
-	terrain_generator.update_shader_data(settlements_generator.settlements.query_all(), road_edges)
-	update_lods()
 
 
 func _process(_delta: float) -> void:
@@ -152,6 +168,8 @@ func add_no_collider_children_batched(batch_size: int = 500):
 	while i < objects_no_collider.size():
 		for j in min(batch_size, objects_no_collider.size() - i):
 			var object: WorldObject = objects_no_collider[i + j]["data"]
+			if object == null or object.instance == null:
+				continue
 			# Need to verify distance again because batched updating means player may have moved since this loop started
 			var distance = object.instance.position.distance_to(world_state.player.position)
 			if distance > INNER_RADIUS and distance <= OUTER_RADIUS:
@@ -172,6 +190,8 @@ func remove_faraway_children_batched(batch_size: int = 500):
 	while i < faraway_objects.size():
 		for j in min(batch_size, faraway_objects.size() - i):
 			var object: WorldObject = faraway_objects[i + j]["data"]
+			if object == null or object.instance == null:
+				continue
 			# Need to verify distance again because batched updating means player may have moved since this loop started
 			# Outer radius is not checked because anything further away should still be removed
 			var distance = object.instance.position.distance_to(world_state.player.position)
