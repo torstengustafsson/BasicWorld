@@ -23,7 +23,7 @@ static var object_rng = RandomNumberGenerator.new()
 var instance: StaticBody3D
 var glb_mesh: Node3D # Imported glb scenes are Node3D and not MeshInstance3D
 var collider = CollisionShape3D
-var glb_mesh_no_collider: Node3D # TODO
+var glb_mesh_no_collider: Node3D # Use this as child to only get the mesh, instead of the whole instance
 
 var object_id: ObjectId
 
@@ -44,7 +44,7 @@ func _init(pos: Vector3, rot: Vector3, scale: Vector3, glb_mesh_scene: PackedSce
 		collider.scale = scale
 	else:
 		# Jolt physics engine does not allow non-uniform scale of colliders.
-		# So the collider instead get a uniform average of the scale values.
+		# So we set the collider to instead get a uniform average of the scale values.
 		var max_val = max(scale.x, scale.x, scale.x)
 		var min_val = min(scale.x, scale.x, scale.x)
 		var scale_val = min_val + max_val - min_val / 2.0

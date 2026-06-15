@@ -7,8 +7,7 @@ var shader_parameters: TerrainChunk.ShaderParameters = TerrainChunk.ShaderParame
 
 const NUM_CHUNKS_FULL_RES = 3 # 3 Mean 3x3 chunks around player at full res, with player expected to be in the middle chunk
 const GRID_SIZE = NUM_CHUNKS_FULL_RES + 2 * (Globals.NUM_CHUNK_RESOLUTIONS - 1)
-@warning_ignore("integer_division")
-var HALF_GRID_SIZE: int = floor(GRID_SIZE / 2) # Make constant to avoid handling the integer division warning each time
+var HALF_GRID_SIZE: int = floor(GRID_SIZE / floor(2)) # Make constant to avoid handling the integer division warning each time
 
 # Contains a Dictionary holding the chunks for each resolution size
 # resolution=1 means highest resolution, 2 means half of that, and so on.
@@ -34,21 +33,23 @@ func update_shader_data(settlement_data: Array, road_edges: Array[RoadGenerator.
 			var chunk: TerrainChunk = chunks_for_res[key]
 			chunk.set_shader_data(shader_parameters)
 
-func update_chunks_around_player(player_pos: Vector3, batch_size = 1000):
+func update_chunks_around_player(player_pos: Vector3, callback_function: Callable, batch_size = 1000):
 	cleanup_chunks(player_pos)
-	add_chunks_around_player(player_pos, batch_size)
+	add_chunks_around_player(player_pos, callback_function, batch_size)
 
-func add_chunks_around_player(player_pos: Vector3, batch_size = 1000):
+func add_chunks_around_player(player_pos: Vector3, callback_function: Callable, batch_size = 1000):
 	var i = 0
-	for x in range(0, GRID_SIZE):
-		for z in range(0, GRID_SIZE):
-			_add_chunk(x, z, player_pos)
-			i += 1
-			if i > batch_size:
-				i = 0
-				await get_tree().process_frame
+	for chunk_index in get_grid_loop_order():
+		var chunk = _add_chunk(chunk_index.x, chunk_index.y, player_pos)
+		if chunk.chunk_res == Globals.TERRAIN_RESOLUTION_MULTIPLIER:
+			var chunk_bounds = Rect2(chunk.x_pos, chunk.z_pos, chunk.chunk_size, chunk.chunk_size)
+			callback_function.call(chunk_bounds)
+		i += 1
+		if i > batch_size:
+			i = 0
+			await get_tree().process_frame
 
-func _add_chunk(grid_x_index: int, grid_z_index: int, player_pos: Vector3):
+func _add_chunk(grid_x_index: int, grid_z_index: int, player_pos: Vector3) -> TerrainChunk:
 	var x_index: int = floor(player_pos.x / Globals.TERRAIN_CHUNK_SIZE) + grid_x_index - HALF_GRID_SIZE
 	var z_index: int = floor(player_pos.z / Globals.TERRAIN_CHUNK_SIZE) + grid_z_index - HALF_GRID_SIZE
 	var chunk_x_pos: float = x_index * Globals.TERRAIN_CHUNK_SIZE
@@ -61,7 +62,7 @@ func _add_chunk(grid_x_index: int, grid_z_index: int, player_pos: Vector3):
 		if chunks[resolution_index].get(key).get_parent() != self:
 			hide_other_resolutions_at_index(resolution_index, key)
 			add_child(chunks[resolution_index].get(key))
-		return
+		return chunks[resolution_index].get(key)
 
 	# else, new chunk
 	hide_other_resolutions_at_index(resolution_index, key)
@@ -70,6 +71,7 @@ func _add_chunk(grid_x_index: int, grid_z_index: int, player_pos: Vector3):
 	chunk.set_shader_data(shader_parameters)
 	chunks[resolution_index][key] = chunk
 	add_child(chunk)
+	return chunk
 
 func get_player_chunk_index(player_pos: Vector3) -> Vector2i:
 	var player_fit_x = floor(player_pos.x) - (int(floor(player_pos.x)) % Globals.TERRAIN_CHUNK_SIZE)
@@ -126,6 +128,35 @@ func get_chunks() -> Array[TerrainChunk]:
 			result.append(chunk)
 	return result
 
+# Returns an array that starts from the middle and expands outwards from there
+func get_grid_loop_order() -> Array[Vector2i]:
+	var center = Vector2i(HALF_GRID_SIZE, HALF_GRID_SIZE)
+	var queue: Array[Vector2i] = [center]
+	var result: Array[Vector2i] = []
+	var visited = {}
+
+	# Directions: up, down, left, right
+	var directions = [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]
+
+	# Process cells in BFS order
+	while queue.size() > 0:
+		var current = queue.pop_front()
+		if current in visited:
+			continue
+		visited[current] = true
+
+		result.append(current)
+
+		# Add neighbors to the queue
+		for dir in directions:
+			var neighbor = current + dir
+			if (neighbor.x >= 0 and neighbor.x < GRID_SIZE and
+				neighbor.y >= 0 and neighbor.y < GRID_SIZE and
+				not neighbor in visited):
+				queue.append(neighbor)
+
+	return result
+
 func get_terrain_size() -> Rect2:
 	var min_x = INF
 	var max_x = -INF
@@ -140,3 +171,32 @@ func get_terrain_size() -> Rect2:
 			min_z = min(min_z, chunk.z_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0)
 			max_z = max(max_z, chunk.z_pos + Globals.TERRAIN_CHUNK_SIZE / 2.0)
 	return Rect2(min_x, min_z, max_x - min_x, max_z - min_z)
+
+func get_chunk_boundaries() -> Array[Rect2]:
+	var result: Array[Rect2] = []
+	for chunk_res in chunks:
+		var chunks_for_res = chunks[chunk_res]
+		for key in chunks_for_res:
+			var chunk: TerrainChunk = chunks_for_res[key]
+			result.append(Rect2(chunk.x_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0, chunk.z_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0, Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE))
+	return result
+
+# Uncomment to render terrain chunk boundaries
+# func _process(_delta):
+# 	render_chunk_boundaries()
+
+# func render_chunk_boundaries():
+# 	for boundary in get_chunk_boundaries():
+# 		var northwest_point = Vector3(boundary.position.x + 0.1, 10.0, boundary.position.y + 0.1)
+# 		var northeast_point = Vector3(boundary.position.x + boundary.size.x, 10.0, boundary.position.y + 0.1)
+# 		var southwest_point = Vector3(boundary.position.x + 0.1, 10.0, boundary.position.y + boundary.size.y)
+# 		var southeast_point = Vector3(boundary.position.x + boundary.size.x, 10.0, boundary.position.y + boundary.size.y)
+
+# 		var rng = RandomNumberGenerator.new()
+# 		rng.seed = hash(northwest_point)
+# 		var color = Color(rng.randf(), rng.randf(), rng.randf(), 0.5)
+
+# 		DebugDraw3D.draw_line(northwest_point, northeast_point, color)
+# 		DebugDraw3D.draw_line(northwest_point, southwest_point, color)
+# 		DebugDraw3D.draw_line(southwest_point, southeast_point, color)
+# 		DebugDraw3D.draw_line(northeast_point, southeast_point, color)

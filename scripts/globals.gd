@@ -5,7 +5,7 @@ class_name Globals
 static var RANDOM_SEED = MathFunctions.generate_random_seed()
 
 # Each terrain resolution halves the detail, and doubles the amount of chunks in the distance
-const NUM_CHUNK_RESOLUTIONS: int = 2
+const NUM_CHUNK_RESOLUTIONS: int = 3
 const TERRAIN_CHUNK_SIZE: int = 256
 const TERRAIN_RESOLUTION_MULTIPLIER: float = 0.25
 

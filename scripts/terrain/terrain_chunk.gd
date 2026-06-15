@@ -2,6 +2,8 @@ extends MeshInstance3D
 
 class_name TerrainChunk
 
+# Chunks are positioned so its origin is in the upper left corner of the chunk (x_pos and z_pos)
+
 class ShaderParameters:
 	# Array[Dictionary[Vector2, SettlementGenerator.SettlementData]]
 	var settlement_data: Array = []

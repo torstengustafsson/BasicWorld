@@ -16,19 +16,15 @@ class NoiseContainer:
 
 
 var noises: Array[NoiseContainer] = []
+var num_additive_noises = 0
 
 func _init(noises_array: Array[NoiseContainer]) -> void:
 	noises = noises_array
-
-func get_num_additive_noises() -> int:
-	var result = 0
 	for noise in noises:
-		result += int(noise.additive)
-	return result
+		num_additive_noises += int(noise.additive)
 
 func above_threshold(position: Vector3) -> bool:
 	var num_true: int = 0
-	var num_needed = get_num_additive_noises()
 	for noise_container in noises:
 		var noise_value = (noise_container.noise.get_noise_2d(position.x, position.z) + 1) / 2.0
 		if noise_value > noise_container.threshold:
@@ -36,7 +32,7 @@ func above_threshold(position: Vector3) -> bool:
 				num_true += 1
 			else:
 				return true # Non-additive noise cuts directly
-	return num_true == num_needed
+	return num_true == num_additive_noises
 
 static func create_forest_noise(rng: RandomNumberGenerator) -> NoiseFunctions:
 	var high_density_noise = NoiseContainer.new(rng.randi(), 0.006, 0.5)

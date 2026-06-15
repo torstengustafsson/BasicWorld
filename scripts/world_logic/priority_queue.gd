@@ -26,7 +26,7 @@ func size() -> int:
 
 func _bubble_up(i: int):
 	while i > 0:
-		var parent = (i - 1) / 2
+		var parent = (i - 1) / floor(2)
 		if _heap[parent].priority <= _heap[i].priority: break
 		var tmp = _heap[parent]
 		_heap[parent] = _heap[i]

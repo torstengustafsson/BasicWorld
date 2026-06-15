@@ -37,9 +37,8 @@ static func calculate_angle_between_points(point_a: Vector3, point_b: Vector3) -
 	return angle_deg - 90.0
 
 static func get_terrain_angle_at_position(position: Vector3, space_state: PhysicsDirectSpaceState3D) -> float:
-	# Set the raycast origin and direction
-	var origin = position + Vector3(0.0, 1.0, 0.0)
-	var end = position - Vector3(0.0, 1.0, 0.0)
+	var origin = position + Vector3(0.0, 10000.0, 0.0)
+	var end = position - Vector3(0.0, 10000.0, 0.0)
 
 	var query = PhysicsRayQueryParameters3D.create(origin, end)
 	query.collide_with_areas = true

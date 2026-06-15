@@ -93,7 +93,7 @@ func add_points_and_edges(boundary: Rect2) -> Dictionary[Vector2i, PointWithEdge
 
 	return grid_point_edges
 
-func remove_points_and_edges(boundary: Rect2):
+func remove_points_and_edges(_boundary: Rect2):
 	pass
 
 func calculate_weights(boundary: Rect2):

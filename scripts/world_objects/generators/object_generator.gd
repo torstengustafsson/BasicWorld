@@ -20,6 +20,8 @@ var world_state: WorldState
 
 var added_boundaries: Dictionary[Rect2, bool] = {}
 
+var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+
 var forest_noise: NoiseFunctions
 var rocks_noise: NoiseFunctions
 
@@ -32,28 +34,23 @@ const TREE_SHAKE_SECS = 0.3
 var shake_timer = INF # INF means not shaking
 var shake_direction: Vector3 = Vector3(0.0, 0.0, 0.0)
 
-
 func _init(_world_state: WorldState):
 	world_state = _world_state
 	forest_noise = NoiseFunctions.create_forest_noise(world_state.rng)
 	rocks_noise = NoiseFunctions.create_rocks_noise(world_state.rng)
 
-func reset_noise_seeds():
-	for noise in forest_noise.noises:
-		noise.noise.seed = noise.random_seed
-	for noise in rocks_noise.noises:
-		noise.noise.seed = noise.random_seed
-
 func _create_objects(boundary: Rect2, step: int, noise_function: NoiseFunctions, add_callback: Callable):
-	for x in boundary.size.x / step:
-		for z in boundary.size.y / step:
-			@warning_ignore("integer_division")
-			var rand_value_x = -step / 2 + world_state.rng.randf_range(0.0, step)
-			@warning_ignore("integer_division")
-			var rand_value_z = -step / 2 + world_state.rng.randf_range(0.0, step)
-			var rand_value_height = world_state.rng.randf_range(0.0, 0.5)
-			var pos_x = boundary.position.x + x * step + rand_value_x
-			var pos_z = boundary.position.y + z * step + rand_value_z
+	for x_step in boundary.size.x / step:
+		var x = boundary.position.x + x_step * step
+		for z_step in boundary.size.y / step:
+			var z = boundary.position.y + z_step * step
+
+			var rand_value_x = -step / floor(2) + rng.randf_range(0.0, step)
+			var rand_value_z = -step / floor(2) + rng.randf_range(0.0, step)
+			var rand_value_max_height = rng.randf_range(0.0, 0.5)
+
+			var pos_x = x + rand_value_x
+			var pos_z = z + rand_value_z
 			var height = min(world_state.terrain_height_noise.get_height_at(pos_x, pos_z), MAX_ALLOWED_HEIGHT)
 			var position = Vector3(pos_x, height, pos_z)
 
@@ -72,7 +69,7 @@ func _create_objects(boundary: Rect2, step: int, noise_function: NoiseFunctions,
 
 			# Skip if at too high elevation (use some randomness to reduce chance closer to max)
 			var height_value = MathFunctions.taper(height / MAX_ALLOWED_HEIGHT, 0.5)
-			if height_value < rand_value_height:
+			if height_value < rand_value_max_height:
 				continue
 
 			add_callback.call(position)
@@ -119,6 +116,9 @@ func create_world_objects(boundary: Rect2):
 	if added_boundaries.has(boundary):
 		return
 	added_boundaries[boundary] = true
+	# Need a way to reproduce the same result every time for random values, position is used since we always know it
+	# will be the same for the same generation. This only works because we always set bounds to one terrain chunk at a time.
+	rng.seed = hash(boundary.position)
 	_create_rocks(boundary)
 	_create_berrybushes(boundary)
 	_create_trees(boundary)
@@ -170,7 +170,7 @@ func _process(delta):
 	var to_be_removed: Array[int] = []
 	for index in berrybushes.size():
 		var berrybush = berrybushes[index]
-		if berrybush.instance == null: # Only happens when bush has been removed by the world state
+		if berrybush == null or berrybush.instance == null: # Only happens when bush has been removed by the world state
 			to_be_removed.append(index)
 			continue
 		berrybush.update(delta)
@@ -180,3 +180,10 @@ func _process(delta):
 	to_be_removed.reverse()
 	for index in to_be_removed:
 		berrybushes.remove_at(index)
+
+# Uncomment below to render circles where objects have been created, reardless of if they are added to the scene or not yet
+# 	render_objects_debug()
+
+# func render_objects_debug():
+# 	for object in world_state.static_objects_qt.query_all():
+# 		DebugDraw3D.draw_sphere(object["data"].instance.position, 0.5, Color(1.0, 0.0, 0.0, 1.0))

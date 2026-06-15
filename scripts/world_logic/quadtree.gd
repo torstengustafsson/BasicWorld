@@ -26,22 +26,43 @@ func _init(rect: Rect2 = Rect2(0.0, 0.0, 0.0, 0.0), p_capacity: int = MAX_CAPACI
 	capacity = p_capacity
 	depth = p_depth
 
-# Update the boundary of this node and remove any items that no longer fit
-func update_boundary(new_boundary: Rect2) -> void:
-	for item in items:
-		if not new_boundary.has_point(item["position"]):
-			items.erase(item)
-	boundary = new_boundary
-	if divided:
-		var x  := boundary.position.x
-		var y  := boundary.position.y
-		var hw := boundary.size.x * 0.5
-		var hh := boundary.size.y * 0.5
+# TODO: It would be good to be able to dynamically update the boundary, but it would require updating all the items
+# in the subdivisions as well. For now, there is no solution for that, so we are limited to a set boundary at start.
+# Below is an attempt to add dynamic boundary, but since it does not handle updating the items in the subdivisions,
+# it will break the whole tree.
+# func add_to_boundary(new_boundary: Rect2) -> void:
+# 	if boundary.encloses(new_boundary):
+# 		return
 
-		northwest.update_boundary(Rect2(x,      y,      hw, hh))
-		northeast.update_boundary(Rect2(x + hw, y,      hw, hh))
-		southwest.update_boundary(Rect2(x,      y + hh, hw, hh))
-		southeast.update_boundary(Rect2(x + hw, y + hh, hw, hh))
+# 	var x_min = min(boundary.position.x, new_boundary.position.x)
+# 	var y_min = min(boundary.position.y, new_boundary.position.y)
+# 	var x_max = max(boundary.end.x, new_boundary.end.x)
+# 	var y_max = max(boundary.end.y, new_boundary.end.y)
+# 	boundary = Rect2(Vector2(x_min, y_min), Vector2(x_max - x_min, y_max - y_min))
+
+# 	if divided:
+# 		var x  := boundary.position.x
+# 		var y  := boundary.position.y
+# 		var hw := boundary.size.x * 0.5
+# 		var hh := boundary.size.y * 0.5
+
+# 		northwest._update_boundary(Rect2(x,      y,      hw, hh))
+# 		northeast._update_boundary(Rect2(x + hw, y,      hw, hh))
+# 		southwest._update_boundary(Rect2(x,      y + hh, hw, hh))
+# 		southeast._update_boundary(Rect2(x + hw, y + hh, hw, hh))
+
+# func _update_boundary(new_boundary: Rect2) -> void:
+# 	boundary = new_boundary
+# 	if divided:
+# 		var x  := boundary.position.x
+# 		var y  := boundary.position.y
+# 		var hw := boundary.size.x * 0.5
+# 		var hh := boundary.size.y * 0.5
+
+# 		northwest._update_boundary(Rect2(x,      y,      hw, hh))
+# 		northeast._update_boundary(Rect2(x + hw, y,      hw, hh))
+# 		southwest._update_boundary(Rect2(x,      y + hh, hw, hh))
+# 		southeast._update_boundary(Rect2(x + hw, y + hh, hw, hh))
 
 # Insert an item dict with at least a "position" key (Vector2).
 # Returns true if inserted successfully.
