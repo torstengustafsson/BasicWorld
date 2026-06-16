@@ -10,7 +10,7 @@ func _init(_world_state: WorldState):
 	world_state = _world_state
 
 func remove_object_callback(object: WorldObject):
-	world_state.static_objects_qt.remove({"position": Vector2(object.instance.position.x, object.instance.position.z), "data": object})
+	world_state.static_objects_qt.remove(object)
 	object.delete()
 	object = null
 
@@ -30,7 +30,7 @@ func generate_world(boundary: Rect2):
 
 	# CREATE SETTLEMENTS
 
-	world_state.settlements_generator.create_settlements(boundary)
+	var new_settlements = world_state.settlements_generator.create_settlements(boundary)
 
 	world_state.npcs_generator.create_npcs_in_settlements(boundary)
 
@@ -38,18 +38,18 @@ func generate_world(boundary: Rect2):
 	var num_npcs = 25
 	world_state.npcs_generator.create_npcs(boundary, num_npcs)
 
-	world_state.settlements_generator.remove_objects_from_settlements(boundary, remove_object_callback)
+	world_state.settlements_generator.remove_objects_from_settlements(new_settlements, remove_object_callback)
 
 	# CREATE ROADS
 
-	var road_edges: Array[RoadGenerator.RoadEdge] = []
-
-	# var road_edges: Array[RoadGenerator.RoadEdge] = world_state.road_generator.generate_roads(boundary) # Type: Array[RoadGenerator.RoadEdge]
-	# world_state.road_generator.remove_objects_from_roads(remove_object_callback)
+	world_state.road_generator.generate_roads(boundary)
+	world_state.road_generator.remove_objects_from_roads(remove_object_callback)
 
 	# FINAL TOUCHES
 
-	world_state.terrain_generator.update_shader_data(world_state.settlements_generator.settlements.query_all(), road_edges)
+	var closest_settlements = world_state.settlements_generator.settlements.query_circle(Vector2(world_state.player.position.x, world_state.player.position.z), Globals.TERRAIN_CHUNK_SIZE * 2)
+	var road_edges = world_state.road_generator.road_edges
+	world_state.terrain_generator.update_shader_data(closest_settlements, road_edges)
 
 func generate_starting_items(boundary):
 	var axe_position = Vector3(-1.0, 2.0, -4.0)

@@ -20,7 +20,7 @@ var z_index : int
 var x_pos : float
 var z_pos : float
 var chunk_size : int
-var chunk_res : float
+var resolution_index : int
 var terrain_material : ShaderMaterial
 var terrain_noise
 
@@ -28,13 +28,14 @@ var terrain_noise
 var subdivisions: int
 var chunk_size_with_margins: float # Chunk size + margins
 
-func _init(_x_pos, _z_pos, _chunk_size, _chunk_res, _terrain_noise):
+func _init(_x_pos, _z_pos, _chunk_size, _resolution_index, _terrain_noise):
 	x_index = int(_x_pos / _chunk_size)
 	z_index = int(_z_pos / _chunk_size)
 	x_pos = _x_pos
 	z_pos = _z_pos
 	chunk_size = _chunk_size
-	chunk_res = _chunk_res
+	resolution_index = _resolution_index
+
 	terrain_material = ShaderMaterial.new()
 	terrain_noise = _terrain_noise
 	generate_chunk()
@@ -43,6 +44,7 @@ func _init(_x_pos, _z_pos, _chunk_size, _chunk_res, _terrain_noise):
 func generate_chunk():
 	var plane_mesh = PlaneMesh.new()
 	# NOTE: Subdivisions is number of cuts in plane. So 1 subdivision means 4 total cells, 2 means 9 total cells, etc.
+	var chunk_res = 1.0 / pow(2.0, resolution_index) * Globals.TERRAIN_RESOLUTION_MULTIPLIER
 	subdivisions = floor((chunk_size * chunk_res) + 2 * MARGIN)
 	var cell_size = 1.0 / (subdivisions - 1) * chunk_size
 	chunk_size_with_margins = chunk_size + 2 * cell_size

@@ -180,23 +180,42 @@ func _query_circle_holed(center: Vector2, inner_radius: float, outer_radius: flo
 
 	return result
 
+func get_item(position: Vector2):
+	if not boundary.has_point(position):
+		return false
+
+	for item in items:
+		if item["position"] == position:
+			return item["data"]
+
+	if divided:
+		var result = northwest.get_item(position)
+		if result != null:
+			return result
+		result = northeast.get_item(position)
+		if result != null:
+			return result
+		result = southwest.get_item(position)
+		if result != null:
+			return result
+		result = southeast.get_item(position)
+		if result != null:
+			return result
+	return null
 
 # Remove a specific item by reference equality of its "data" field.
 # Returns true if the item was found and removed.
-func remove(item: Dictionary) -> bool:
-	if not boundary.has_point(item["position"]):
-		return false
-
+func remove(item_data) -> bool:
 	for i in items.size():
-		if items[i] == item:
+		if items[i]["data"] == item_data:
 			items.remove_at(i)
 			return true
 
 	if divided:
-		return (northwest.remove(item)
-			or northeast.remove(item)
-			or southwest.remove(item)
-			or southeast.remove(item))
+		return (northwest.remove(item_data)
+			or northeast.remove(item_data)
+			or southwest.remove(item_data)
+			or southeast.remove(item_data))
 
 	return false
 

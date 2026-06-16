@@ -41,9 +41,8 @@ func add_chunks_around_player(player_pos: Vector3, callback_function: Callable, 
 	var i = 0
 	for chunk_index in get_grid_loop_order():
 		var chunk = _add_chunk(chunk_index.x, chunk_index.y, player_pos)
-		if chunk.chunk_res == Globals.TERRAIN_RESOLUTION_MULTIPLIER:
-			var chunk_bounds = Rect2(chunk.x_pos, chunk.z_pos, chunk.chunk_size, chunk.chunk_size)
-			callback_function.call(chunk_bounds)
+		if chunk.resolution_index == 0:
+			callback_function.call(get_chunk_boundary(chunk))
 		i += 1
 		if i > batch_size:
 			i = 0
@@ -66,8 +65,7 @@ func _add_chunk(grid_x_index: int, grid_z_index: int, player_pos: Vector3) -> Te
 
 	# else, new chunk
 	hide_other_resolutions_at_index(resolution_index, key)
-	var chunk_resolution = 1.0 / pow(2.0, resolution_index) * Globals.TERRAIN_RESOLUTION_MULTIPLIER
-	var chunk = TerrainChunk.new(chunk_x_pos, chunk_z_pos, Globals.TERRAIN_CHUNK_SIZE, chunk_resolution, terrain_noise)
+	var chunk = TerrainChunk.new(chunk_x_pos, chunk_z_pos, Globals.TERRAIN_CHUNK_SIZE, resolution_index, terrain_noise)
 	chunk.set_shader_data(shader_parameters)
 	chunks[resolution_index][key] = chunk
 	add_child(chunk)
@@ -94,6 +92,7 @@ func cleanup_chunks(player_pos: Vector3):
 	for item in to_be_removed:
 		remove_chunk(item["chunks_for_res"], item["key"])
 
+# Return 0 for center chunk, and increases by 1 for each step outward
 func calculate_resolution(x_index: int, z_index: int) -> int:
 	var center = (GRID_SIZE - 1) / 2.0
 	var distance_from_center_x = abs(x_index - center)
@@ -172,31 +171,31 @@ func get_terrain_size() -> Rect2:
 			max_z = max(max_z, chunk.z_pos + Globals.TERRAIN_CHUNK_SIZE / 2.0)
 	return Rect2(min_x, min_z, max_x - min_x, max_z - min_z)
 
-func get_chunk_boundaries() -> Array[Rect2]:
-	var result: Array[Rect2] = []
-	for chunk_res in chunks:
-		var chunks_for_res = chunks[chunk_res]
-		for key in chunks_for_res:
-			var chunk: TerrainChunk = chunks_for_res[key]
-			result.append(Rect2(chunk.x_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0, chunk.z_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0, Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE))
-	return result
+func get_chunk_boundary(chunk) -> Rect2:
+	return Rect2(chunk.x_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0, chunk.z_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0, Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE)
 
 # Uncomment to render terrain chunk boundaries
 # func _process(_delta):
 # 	render_chunk_boundaries()
 
 # func render_chunk_boundaries():
-# 	for boundary in get_chunk_boundaries():
-# 		var northwest_point = Vector3(boundary.position.x + 0.1, 10.0, boundary.position.y + 0.1)
-# 		var northeast_point = Vector3(boundary.position.x + boundary.size.x, 10.0, boundary.position.y + 0.1)
-# 		var southwest_point = Vector3(boundary.position.x + 0.1, 10.0, boundary.position.y + boundary.size.y)
-# 		var southeast_point = Vector3(boundary.position.x + boundary.size.x, 10.0, boundary.position.y + boundary.size.y)
 
-# 		var rng = RandomNumberGenerator.new()
-# 		rng.seed = hash(northwest_point)
-# 		var color = Color(rng.randf(), rng.randf(), rng.randf(), 0.5)
+# 	for chunk_res in chunks:
+# 		var chunks_for_res = chunks[chunk_res]
+# 		for key in chunks_for_res:
+# 			var chunk: TerrainChunk = chunks_for_res[key]
+# 			if chunk.get_parent() != self:
+# 				continue
+# 			var boundary = get_chunk_boundary(chunk)
 
-# 		DebugDraw3D.draw_line(northwest_point, northeast_point, color)
-# 		DebugDraw3D.draw_line(northwest_point, southwest_point, color)
-# 		DebugDraw3D.draw_line(southwest_point, southeast_point, color)
-# 		DebugDraw3D.draw_line(northeast_point, southeast_point, color)
+# 			var northwest_point = Vector3(boundary.position.x + 0.25, 10.0, boundary.position.y + 0.25)
+# 			var northeast_point = Vector3(boundary.position.x + boundary.size.x, 10.0, boundary.position.y + 0.25)
+# 			var southwest_point = Vector3(boundary.position.x + 0.25, 10.0, boundary.position.y + boundary.size.y)
+# 			var southeast_point = Vector3(boundary.position.x + boundary.size.x, 10.0, boundary.position.y + boundary.size.y)
+
+# 			var color = Color(chunk.resolution_index == 0, chunk.resolution_index == 1, chunk.resolution_index == 2, 0.5)
+
+# 			DebugDraw3D.draw_line(northwest_point, northeast_point, color)
+# 			DebugDraw3D.draw_line(northwest_point, southwest_point, color)
+# 			DebugDraw3D.draw_line(southwest_point, southeast_point, color)
+# 			DebugDraw3D.draw_line(northeast_point, southeast_point, color)

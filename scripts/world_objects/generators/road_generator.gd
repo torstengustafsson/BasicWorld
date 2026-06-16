@@ -36,8 +36,7 @@ func generate_roads(boundary: Rect2) -> Array[RoadEdge]:
 		var num_available_roads: int = max(1, min(min(3, settlements.size() - 1), ceil(settlement_data.num_houses / 2.0)))
 		var closest_settlements = get_closest_settlements(settlement_data, boundary, num_available_roads)
 
-		for other_index in closest_settlements.size():
-			var other_settlement = closest_settlements[other_index]
+		for other_settlement in closest_settlements:
 			if connection_exists_between_settlements(settlement_data, other_settlement):
 				continue
 			var max_distance = Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD + settlement_data.num_houses * Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD * 0.1
@@ -69,18 +68,22 @@ func add_connection_between_settlements(settlement: SettlementGenerator.Settleme
 # Return weighted closest settlements, where large settlements are more attrative, and are prioritized a bit further away
 func get_closest_settlements(settlement: SettlementGenerator.SettlementData, boundary: Rect2, amount: int):
 	var pq: PriorityQueue = PriorityQueue.new()
-	for other_settlement in settlement_generator.settlements.query(boundary):
-		var other_settlement_data = other_settlement["data"]
-		if not boundary.has_point(Vector2(settlement.position.x, settlement.position.z)) or other_settlement_data == settlement:
+	for other_settlement_data in settlement_generator.settlements.query(boundary):
+		var other_settlement = other_settlement_data["data"]
+		if not other_settlement:
+			continue
+		if not boundary.has_point(Vector2(settlement.position.x, settlement.position.z)) or other_settlement == settlement:
 			continue
 		var a = Vector2(settlement.position.x, settlement.position.z)
-		var b = Vector2(other_settlement_data.position.x, other_settlement_data.position.z)
+		var b = Vector2(other_settlement.position.x, other_settlement.position.z)
 		var distance = (a - b).length()
-		var weight = distance - other_settlement_data.num_houses * 20.0
-		pq.push(other_settlement_data, weight)
+		var weight = distance - other_settlement.num_houses * 20.0
+		pq.push(other_settlement, weight)
 	var result = []
 	for i in amount:
-		result.append(pq.pop())
+		var next = pq.pop()
+		if next:
+			result.append(next)
 	return result
 
 
@@ -94,7 +97,10 @@ func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i, max
 		var current = pq.pop()
 		if current == grid_destination:
 			break
-		for next in world_state.world_grid.grid_point_edges[current].edges:
+		var current_grid_point = world_state.world_grid.grid_point_edges.get_item(current)
+		if not current_grid_point:
+			continue
+		for next in current_grid_point.edges:
 			var new_cost = cost_so_far[current] + next.weight
 			if (not cost_so_far.has(next.grid_point)) or new_cost < cost_so_far[next.grid_point]:
 				cost_so_far[next.grid_point] = new_cost
@@ -119,9 +125,11 @@ func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i, max
 			break
 		max_iterations += 1
 		var previous_step = came_from[current_step]
-		var a = world_state.world_grid.grid_point_edges[previous_step].point
-		var b = world_state.world_grid.grid_point_edges[current_step].point
-		var new_road = RoadEdge.new(a, b)
+		var a = world_state.world_grid.grid_point_edges.get_item(previous_step)
+		var b = world_state.world_grid.grid_point_edges.get_item(current_step)
+		if not (a or b):
+			continue
+		var new_road = RoadEdge.new(a.point, b.point)
 		result.append(new_road)
 		current_step = previous_step
 

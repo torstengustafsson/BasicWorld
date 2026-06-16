@@ -41,17 +41,17 @@ func _init(rng: RandomNumberGenerator):
 	noise_terraintype3.fractal_gain = 0.5
 
 func get_height_at(x, z):
-		# Determine size of the noise
-		# get_noise_2d function returns a value between -1.0 and 1.0. We add 1 to those we only want positive range.
-		var type_val = (noise_terraintype.get_noise_2d(x, z) + 1.0) / 2.0
-		var noise1 = (noise_terraintype1.get_noise_2d(x, z) + 1.0) * 100.0
-		var noise2 = noise_terraintype2.get_noise_2d(x, z) / 2.0 * 25.0
-		var noise3 = noise_terraintype3.get_noise_2d(x, z) / 2.0 * 25.0
+	# Determine size of the noise
+	# get_noise_2d function returns a value between -1.0 and 1.0. We add 1 to those we only want positive range.
+	var type_val = (noise_terraintype.get_noise_2d(x, z) + 1.0) / 2.0
+	var noise1 = (noise_terraintype1.get_noise_2d(x, z) + 1.0) * 100.0
+	var noise2 = noise_terraintype2.get_noise_2d(x, z) / 2.0 * 25.0
+	var noise3 = noise_terraintype3.get_noise_2d(x, z) / 2.0 * 25.0
 
-		# Determine position of the noise.
-		#  Use a hill function on type_val. If 2 noise values are "positioned" (meaning hill center)
-		# at around the same area around type_val, they will overlap in those areas.
-		var noise1_val = MathFunctions.hill(type_val, 0.1, 0.1) * noise1
-		var noise2_val = MathFunctions.hill(type_val, 0.25, 0.2) * noise2
-		var noise3_val = MathFunctions.hill(type_val, 0.5, 0.3) * noise3
-		return noise1_val + noise2_val + noise3_val
+	# Determine position of the noise.
+	#  Use a hill function on type_val. If 2 noise values are "positioned" (meaning hill center)
+	# at around the same area around type_val, they will overlap in those areas.
+	var noise1_val = MathFunctions.hill(type_val, 0.1, 0.1) * noise1
+	var noise2_val = MathFunctions.hill(type_val, 0.25, 0.2) * noise2
+	var noise3_val = MathFunctions.hill(type_val, 0.5, 0.3) * noise3
+	return noise1_val + noise2_val + noise3_val

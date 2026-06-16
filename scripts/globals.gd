@@ -5,29 +5,30 @@ class_name Globals
 static var RANDOM_SEED = MathFunctions.generate_random_seed()
 
 # Each terrain resolution halves the detail, and doubles the amount of chunks in the distance
+# Must be minimum 1, since that is the max resolution.
 const NUM_CHUNK_RESOLUTIONS: int = 3
 const TERRAIN_CHUNK_SIZE: int = 256
 const TERRAIN_RESOLUTION_MULTIPLIER: float = 0.25
 
 # Average distance between each object on generation.
 # Lower values means more clumped up. So Low value for STEP_TREES means dense forests.
-const STEP_TREES = 4
-const STEP_BERRYBUSHES = 10
-const STEP_ROCKS = 10
+const STEP_TREES = 12
+const STEP_BERRYBUSHES = 30
+const STEP_ROCKS = 30
 
 # World grid is used for determining pathfinding and road generation.
 # Step is average distance between grid points. Lower value means more detailed pathfinding, but
 # takes longer to generate.
-const WORLD_GRID_STEP: float = 10.0
+const WORLD_GRID_STEP: float = 25.0
 
 # The max height-angle in degrees that two gridpoints can be connected by
 const MAX_GRID_STEEPNESS = 15.0
 
 # Settlement spread must be less than half of settlement grid step to avoid overlap
 const SETTLEMENT_GRID_STEP = 20
-const SETTLEMENT_GRID_SPREAD = 8
+const SETTLEMENT_GRID_SPREAD = 6
 
-const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 600.0
+const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 1000.0
 
 # The max height-angle in degrees that a settlements gridpoint and its edges can be connected by
 # This gives an approximation of even terrain for the settlement. It assumes the radius of the

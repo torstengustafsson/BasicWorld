@@ -25,27 +25,31 @@ func _init(_world_state: WorldState):
 	settlements.boundary = Rect2(Vector2(-INF, -INF), Vector2(INF, INF))
 	add_to_group("Persist")
 
-func create_settlements(boundary: Rect2) -> void:
+func create_settlements(boundary: Rect2) -> Array[SettlementData]:
+	var new_settlements: Array[SettlementData] = []
 	# Need a way to reproduce the same result every time for random values, position is used since we always know it
 	# will be the same for the same generation. This only works because we always set bounds to one terrain chunk at a time.
 	rng.seed = hash(boundary.position)
 
 	if added_boundaries.has(boundary):
-		return
+		return []
 	added_boundaries[boundary] = true
 
-	var start_pos: int = int(boundary.position.x) + int(boundary.position.x) % Globals.SETTLEMENT_GRID_STEP
-	for grid_point_x in range(start_pos, boundary.size.x, Globals.SETTLEMENT_GRID_STEP):
-		var rand_value_x = rng.randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
-		for grid_point_z in range(0, boundary.size.y, Globals.SETTLEMENT_GRID_STEP):
+	var start_pos_x: int = int(boundary.position.x) + int(boundary.position.x) % Globals.SETTLEMENT_GRID_STEP
+	var start_pos_z: int = int(boundary.position.y) + int(boundary.position.y) % Globals.SETTLEMENT_GRID_STEP
+	for grid_point_x in range(start_pos_x, boundary.size.x, Globals.SETTLEMENT_GRID_STEP):
+		for grid_point_z in range(start_pos_z, boundary.size.y, Globals.SETTLEMENT_GRID_STEP):
+			var rand_value_x = rng.randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
 			var rand_value_z = rng.randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
 			var grid_point = Vector2i(grid_point_x + rand_value_x, grid_point_z + rand_value_z)
-			var grid_position: WorldGrid.PointWithEdges = world_state.world_grid.grid_point_edges.get(grid_point, null)
+			var grid_position = world_state.world_grid.grid_point_edges.get_item(grid_point)
 			if not grid_position:
 				continue
 			var settlement_data = try_add_settlement(grid_point, grid_position)
 			if settlement_data:
 				settlements.insert({"position": Vector2(settlement_data.position.x, settlement_data.position.z), "data": settlement_data})
+				new_settlements.append(settlement_data)
+	return new_settlements
 
 func try_add_settlement(grid_point: Vector2i, grid_position: WorldGrid.PointWithEdges) -> SettlementData:
 	var has_tested_neighbors = false
@@ -55,7 +59,10 @@ func try_add_settlement(grid_point: Vector2i, grid_position: WorldGrid.PointWith
 		var current = pq.pop()
 		var not_too_steep = true
 		for edge in current.edges:
-			var height_diff = abs(current.point.y - world_state.world_grid.grid_point_edges[edge.grid_point].point.y)
+			var edge_grid_point = world_state.world_grid.grid_point_edges.get_item(edge.grid_point)
+			if not edge_grid_point:
+				continue
+			var height_diff = abs(current.point.y - edge_grid_point.point.y)
 			if height_diff > Globals.MAX_SETTLEMENT_STEEPNESS:
 				not_too_steep = false
 				break
@@ -67,10 +74,10 @@ func try_add_settlement(grid_point: Vector2i, grid_position: WorldGrid.PointWith
 			if not has_tested_neighbors:
 				has_tested_neighbors = true
 				for edge in current.edges:
-					var edge_grid_position = world_state.world_grid.grid_point_edges[edge.grid_point]
-					var height_diff = abs(current.point.y - world_state.world_grid.grid_point_edges[edge.grid_point].point.y)
+					var edge_grid_point = world_state.world_grid.grid_point_edges.get_item(edge.grid_point)
+					var height_diff = abs(current.point.y - edge_grid_point.point.y)
 					if height_diff < Globals.MAX_SETTLEMENT_STEEPNESS:
-						pq.push(edge_grid_position, height_diff)
+						pq.push(edge_grid_point, height_diff)
 	return null
 
 func add_settlement(grid_position: Vector2i, position: Vector3) -> SettlementData:
@@ -104,21 +111,16 @@ func add_chest(position: Vector3, rotation: Vector3) -> WorldObject:
 	var chest = WorldObject.add_chest(position, rotation, world_state.static_objects_qt)
 	return chest
 
-func remove_objects_from_settlements(boundary: Rect2, remove_callback: Callable):
-	for settlement in settlements.query(boundary):
-		var settlement_data = settlement["data"]
-		if not boundary.has_point(Vector2(settlement_data.position.x, settlement_data.position.z)):
-			continue
-		var objects = world_state.static_objects_qt.query_circle(Vector2(settlement_data.position.x, settlement_data.position.z), settlement_data.radius)
-		for index in objects.size():
-			var object: WorldObject = objects[index]["data"]
-			var object_pos = Vector2(object.instance.position.x, object.instance.position.z)
-			var settlement_pos = Vector2(settlement_data.position.x, settlement_data.position.z)
+func remove_objects_from_settlements(settlements_to_check: Array[SettlementData], remove_callback: Callable):
+	for settlement in settlements_to_check:
+		var objects = world_state.static_objects_qt.query_circle(Vector2(settlement.position.x, settlement.position.z), settlement.radius + 1.0)
+		for object_data in objects:
+			var object: WorldObject = object_data["data"]
 			var is_removable_type: bool = \
 				object.object_id == WorldObject.ObjectId.TREE or \
 				object.object_id == WorldObject.ObjectId.ROCK or \
 				object.object_id == WorldObject.ObjectId.BERRYBUSH
-			if is_removable_type and object_pos.distance_to(settlement_pos) < settlement_data.radius + 1.0:
+			if is_removable_type:
 				remove_callback.call(object)
 
 
