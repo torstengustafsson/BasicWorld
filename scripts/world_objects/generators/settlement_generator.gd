@@ -26,19 +26,19 @@ func _init(_world_state: WorldState):
 	add_to_group("Persist")
 
 func create_settlements(boundary: Rect2) -> Array[SettlementData]:
+	if added_boundaries.has(boundary):
+		return []
+	added_boundaries[boundary] = true
+
 	var new_settlements: Array[SettlementData] = []
 	# Need a way to reproduce the same result every time for random values, position is used since we always know it
 	# will be the same for the same generation. This only works because we always set bounds to one terrain chunk at a time.
 	rng.seed = hash(boundary.position)
 
-	if added_boundaries.has(boundary):
-		return []
-	added_boundaries[boundary] = true
-
-	var start_pos_x: int = int(boundary.position.x) + int(boundary.position.x) % Globals.SETTLEMENT_GRID_STEP
-	var start_pos_z: int = int(boundary.position.y) + int(boundary.position.y) % Globals.SETTLEMENT_GRID_STEP
-	for grid_point_x in range(start_pos_x, boundary.size.x, Globals.SETTLEMENT_GRID_STEP):
-		for grid_point_z in range(start_pos_z, boundary.size.y, Globals.SETTLEMENT_GRID_STEP):
+	var start_pos_x: int = ceil(boundary.position.x / Globals.SETTLEMENT_GRID_STEP) * Globals.SETTLEMENT_GRID_STEP
+	var start_pos_z: int = ceil(boundary.position.y / Globals.SETTLEMENT_GRID_STEP) * Globals.SETTLEMENT_GRID_STEP
+	for grid_point_x in range(start_pos_x, boundary.position.x + boundary.size.x, Globals.SETTLEMENT_GRID_STEP):
+		for grid_point_z in range(start_pos_z, boundary.position.y + boundary.size.y, Globals.SETTLEMENT_GRID_STEP):
 			var rand_value_x = rng.randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
 			var rand_value_z = rng.randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
 			var grid_point = Vector2i(grid_point_x + rand_value_x, grid_point_z + rand_value_z)

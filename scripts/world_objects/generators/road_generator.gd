@@ -137,8 +137,8 @@ func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i, max
 
 # NOTE: Does not use get_objects_in_road due to performance reasons
 # (it is more efficient to loop objects first and then roads)
-func remove_objects_from_roads(remove_callback: Callable):
-	for edge in road_edges:
+func remove_objects_from_roads(roads: Array[RoadEdge], remove_callback: Callable):
+	for edge in roads:
 		var query_rect = Rect2(
 			min(edge.from.x, edge.to.x) - Globals.ROAD_WIDTH,
 			min(edge.from.z, edge.to.z) - Globals.ROAD_WIDTH,

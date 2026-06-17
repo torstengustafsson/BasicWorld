@@ -12,23 +12,23 @@ const TERRAIN_RESOLUTION_MULTIPLIER: float = 0.25
 
 # Average distance between each object on generation.
 # Lower values means more clumped up. So Low value for STEP_TREES means dense forests.
-const STEP_TREES = 12
-const STEP_BERRYBUSHES = 30
-const STEP_ROCKS = 30
+const STEP_TREES = 8
+const STEP_BERRYBUSHES = 32
+const STEP_ROCKS = 32
 
 # World grid is used for determining pathfinding and road generation.
 # Step is average distance between grid points. Lower value means more detailed pathfinding, but
 # takes longer to generate.
-const WORLD_GRID_STEP: float = 25.0
+const WORLD_GRID_STEP: float = 32.0
 
 # The max height-angle in degrees that two gridpoints can be connected by
 const MAX_GRID_STEEPNESS = 15.0
 
 # Settlement spread must be less than half of settlement grid step to avoid overlap
 const SETTLEMENT_GRID_STEP = 20
-const SETTLEMENT_GRID_SPREAD = 6
+const SETTLEMENT_GRID_SPREAD = 8
 
-const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 1000.0
+const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 2048.0
 
 # The max height-angle in degrees that a settlements gridpoint and its edges can be connected by
 # This gives an approximation of even terrain for the settlement. It assumes the radius of the
@@ -44,6 +44,6 @@ const ROAD_WIDTH: float = 1.5
 # Level of detail is set up so that objects within LOD_DISTANCE_FULL get a collider, and objects
 # outside of LOD_DISTANCE_NO_COLLIDER are removed from the scene. The check is made whenever the
 # player moves beyond LOD_UPDATE_DISTANCE from its position at the last update.
-const LOD_DISTANCE_FULL = 50.0
-const LOD_DISTANCE_NO_COLLIDER = 300.0
-const LOD_UPDATE_DISTANCE = 25.0 # Objects will spawn and despawn whenever player moves this distance
+const LOD_DISTANCE_FULL = 32.0
+const LOD_DISTANCE_NO_COLLIDER = 512.0
+const LOD_UPDATE_DISTANCE = 32.0 # Objects will spawn and despawn whenever player moves this distance

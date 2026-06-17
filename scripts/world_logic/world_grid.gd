@@ -32,7 +32,8 @@ var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var grid_point_edges: Quadtree = Quadtree.new() # Data type: Dictionary[Vector2i, PointWithEdges]
 
 var max_weight: float = -1.0
-var grid_boundary: Rect2 = Rect2(Vector2(0.0, 0.0), Vector2(0.0, 0.0))
+
+var added_boundaries: Dictionary[Rect2, bool] = {}
 
 func _init(_world_state: WorldState) -> void:
 	world_state = _world_state
@@ -45,8 +46,9 @@ func add_rect_margins(rect: Rect2, margins: float) -> Rect2:
 	)
 
 func add_grid_boundary(boundary: Rect2):
-	# TODO: At some point maybe clean up since now grid points will keep expanding?
-	grid_boundary = grid_boundary.merge(boundary)
+	if added_boundaries.has(boundary):
+		return []
+	added_boundaries[boundary] = true
 
 	# Need a way to reproduce the same result every time for random values, position is used since we always know it
 	# will be the same for the same generation. This only works because we always set bounds to one terrain chunk at a time.
