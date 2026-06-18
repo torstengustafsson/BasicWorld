@@ -4,6 +4,9 @@ class_name WorldGenerator
 
 var world_state: WorldState
 
+# Uncomment "generation_times" lines below to debug wich parts takes most time to generate
+# var generation_times: Dictionary[String, float] = {}
+
 func _init(_world_state: WorldState):
 	world_state = _world_state
 
@@ -18,12 +21,14 @@ func generate_world(boundary: Rect2):
 	# var start_time = Time.get_ticks_msec()
 
 	# CREATE STATIC OBJECTS AND ITEMS
+	# var objects_start_time = Time.get_ticks_msec()
 
 	world_state.object_generator.create_world_objects(boundary)
 
-	# var objects_time = Time.get_ticks_msec() - start_time
+	# generation_times["Objects"] = generation_times.get("Objects", 0.0) + Time.get_ticks_msec() - objects_start_time
 
 	# CREATE SETTLEMENTS
+	# var settlements_start_time = Time.get_ticks_msec()
 
 	var new_settlements = world_state.settlements_generator.create_settlements(boundary)
 
@@ -33,27 +38,28 @@ func generate_world(boundary: Rect2):
 	var num_npcs = 5
 	world_state.npcs_generator.create_npcs(boundary, num_npcs)
 
-	# var settlements_npcs_time = Time.get_ticks_msec() - objects_time - start_time
-
 	world_state.settlements_generator.remove_objects_from_settlements(new_settlements, remove_object_callback)
 
+	# generation_times["Settlements"] = generation_times.get("Settlements", 0.0) + Time.get_ticks_msec() - settlements_start_time
+
 	# CREATE ROADS
+	# var roads_start_time = Time.get_ticks_msec()
 
 	var new_roads = world_state.road_generator.generate_roads(boundary)
 	world_state.road_generator.remove_objects_from_roads(new_roads, remove_object_callback)
 
-	# var roads_time = Time.get_ticks_msec() - settlements_npcs_time - objects_time - start_time
+	# generation_times["Roads"] = generation_times.get("Roads", 0.0) + Time.get_ticks_msec() - roads_start_time
 
 	# FINAL TOUCHES
 
 	var closest_settlements = world_state.settlements_generator.settlements.query_circle(Vector2(world_state.player.position.x, world_state.player.position.z), Globals.TERRAIN_CHUNK_SIZE * 2)
 	world_state.terrain_generator.update_shader_data(closest_settlements, world_state.road_generator.road_edges)
 
-	# var elapsed = Time.get_ticks_msec() - start_time
-	# print("Time to generate ", boundary, "  = ", str(elapsed / 1000.0), " seconds")
-	# print("  objects = ", str(objects_time / 1000.0))
-	# print("  settlements+npcs = ", str(settlements_npcs_time / 1000.0))
-	# print("  roads = ", str(roads_time / 1000.0))
+	# generation_times["Total"] = generation_times.get("Total", 0.0) + Time.get_ticks_msec() - start_time
+
+	# print("Generate world")
+	# for time in generation_times.keys():
+	# 	print("Total generation time for ", time, " = ", generation_times[time] / 1000.0)
 
 func generate_starting_items(boundary):
 	var axe_position = Vector3(-1.0, 2.0, -4.0)

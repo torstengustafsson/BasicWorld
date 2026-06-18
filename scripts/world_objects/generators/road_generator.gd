@@ -37,9 +37,9 @@ func generate_roads(boundary: Rect2) -> Array[RoadEdge]:
 		var num_available_roads: int = max(1, min(min(3, settlements.size() - 1), ceil(settlement_data.num_houses / 2.0)))
 		var closest_settlements = get_closest_settlements(settlement_data, boundary, num_available_roads)
 		for other_settlement in closest_settlements:
-			if connection_exists_between_settlements(settlement_data, other_settlement):
-				continue
 			var max_distance = Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD + settlement_data.num_houses * Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD * 0.1
+			if connection_exists_between_settlements(settlement_data, other_settlement) or (settlement_data.position - other_settlement.position).length() > max_distance:
+				continue
 			var new_roads = generate_road_segments(settlement_data.grid_index, other_settlement.grid_index, max_distance)
 			if new_roads.size() > 0:
 				add_connection_between_settlements(settlement_data, other_settlement)
