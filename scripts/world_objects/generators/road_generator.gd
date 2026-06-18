@@ -24,27 +24,26 @@ func _init(_world_state: WorldState, _settlement_generator: SettlementGenerator)
 
 func generate_roads(boundary: Rect2) -> Array[RoadEdge]:
 	if added_boundaries.has(boundary):
-		return road_edges
+		return []
 	added_boundaries[boundary] = true
 
-	boundary.position -= Vector2(Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE)
-	boundary.size += Vector2(2 * Globals.TERRAIN_CHUNK_SIZE, 2 * Globals.TERRAIN_CHUNK_SIZE)
+	var neighbor_max_distance = Globals.WORLD_GRID_STEP * (Globals.SETTLEMENT_GRID_STEP + 2 * Globals.SETTLEMENT_GRID_SPREAD)
+	boundary.position -= Vector2(neighbor_max_distance, neighbor_max_distance)
+	boundary.size += Vector2(2 * neighbor_max_distance, 2 * neighbor_max_distance)
 	var settlements = settlement_generator.settlements.query(boundary)
 	var result: Array[RoadEdge] = []
 	for settlement in settlements:
 		var settlement_data = settlement["data"]
 		var num_available_roads: int = max(1, min(min(3, settlements.size() - 1), ceil(settlement_data.num_houses / 2.0)))
 		var closest_settlements = get_closest_settlements(settlement_data, boundary, num_available_roads)
-
 		for other_settlement in closest_settlements:
 			if connection_exists_between_settlements(settlement_data, other_settlement):
 				continue
 			var max_distance = Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD + settlement_data.num_houses * Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD * 0.1
-			var new_roads = generate_road_segments(settlement_data.grid_position, other_settlement.grid_position, max_distance)
+			var new_roads = generate_road_segments(settlement_data.grid_index, other_settlement.grid_index, max_distance)
 			if new_roads.size() > 0:
 				add_connection_between_settlements(settlement_data, other_settlement)
 			result.append_array(new_roads)
-
 	road_edges.append_array(result)
 	return result
 
@@ -57,11 +56,11 @@ func get_settlement_connection_key(pos_a: Vector2i, pos_b: Vector2i) -> String:
 			return str(pos_b) + "|" + str(pos_a)
 
 func connection_exists_between_settlements(settlement: SettlementGenerator.SettlementData, other_settlement: SettlementGenerator.SettlementData) -> bool:
-	var connection_key = get_settlement_connection_key(settlement.grid_position, other_settlement.grid_position)
+	var connection_key = get_settlement_connection_key(settlement.grid_index, other_settlement.grid_index)
 	return connection_key in connected_settlements
 
 func add_connection_between_settlements(settlement: SettlementGenerator.SettlementData, other_settlement: SettlementGenerator.SettlementData):
-	var connection_key = get_settlement_connection_key(settlement.grid_position, other_settlement.grid_position)
+	var connection_key = get_settlement_connection_key(settlement.grid_index, other_settlement.grid_index)
 	connected_settlements[connection_key] = true
 
 
@@ -89,54 +88,15 @@ func get_closest_settlements(settlement: SettlementGenerator.SettlementData, bou
 
 # Uses A* to find shortest weighted path to destination
 func generate_road_segments(grid_from: Vector2i, grid_destination: Vector2i, max_distance: float) -> Array:
-	var pq: PriorityQueue = PriorityQueue.new()
-	pq.push(grid_from, 0.0)
-	var came_from: Dictionary[Vector2i, Vector2i] = { grid_from: NO_GRID_POINT }
-	var cost_so_far: Dictionary[Vector2i, float] = { grid_from: 0.0 }
-	while not pq.is_empty():
-		var current = pq.pop()
-		if current == grid_destination:
-			break
-		var current_grid_point = world_state.world_grid.grid_point_edges.get_item(current)
-		if not current_grid_point:
-			continue
-		for next in current_grid_point.edges:
-			var new_cost = cost_so_far[current] + next.weight
-			if (not cost_so_far.has(next.grid_point)) or new_cost < cost_so_far[next.grid_point]:
-				cost_so_far[next.grid_point] = new_cost
-				pq.push(next.grid_point, new_cost)
-				came_from[next.grid_point] = current
-
-	if not cost_so_far.has(grid_destination):
-		# No path found
-		return []
-
-	if cost_so_far[grid_destination] > max_distance:
-		# Shortest path is too long
-		return []
-
-	# Step backwards to find the shortest path
 	var result = []
-	var current_step = grid_destination
-	var max_iterations = 0
-	while current_step != grid_from:
-		if max_iterations > 100:
-			print("No road found between " + str(grid_from) + " and " + str(grid_destination))
-			break
-		max_iterations += 1
-		var previous_step = came_from[current_step]
-		var a = world_state.world_grid.grid_point_edges.get_item(previous_step)
-		var b = world_state.world_grid.grid_point_edges.get_item(current_step)
-		if not (a or b):
-			continue
-		var new_road = RoadEdge.new(a.point, b.point)
+	var points = world_state.world_grid.generate_shortest_distance_between_grid_points(grid_from, grid_destination, max_distance)
+	if points.size() == 0:
+		return []
+	for i in range(1, points.size()):
+		var new_road = RoadEdge.new(points[i-1], points[i])
 		result.append(new_road)
-		current_step = previous_step
-
 	return result
 
-# NOTE: Does not use get_objects_in_road due to performance reasons
-# (it is more efficient to loop objects first and then roads)
 func remove_objects_from_roads(roads: Array[RoadEdge], remove_callback: Callable):
 	for edge in roads:
 		var query_rect = Rect2(

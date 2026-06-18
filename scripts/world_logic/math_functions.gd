@@ -36,6 +36,8 @@ static func calculate_angle_between_points(point_a: Vector3, point_b: Vector3) -
 	# that amount to get 0 for flat ground.
 	return angle_deg - 90.0
 
+# TODO: This function need to use collision mask so it only collides with terrain.
+# Now, if it first collides with a tree or something the calculations will break.
 static func get_terrain_angle_at_position(position: Vector3, space_state: PhysicsDirectSpaceState3D) -> float:
 	var origin = position + Vector3(0.0, 10000.0, 0.0)
 	var end = position - Vector3(0.0, 10000.0, 0.0)
@@ -59,3 +61,7 @@ static func get_terrain_angle_at_position(position: Vector3, space_state: Physic
 	var normal: Vector3 = result["normal"]
 	var angle: float = calculate_slope_angle.call(normal)
 	return angle
+
+# Godots built-in modulus function does not work as expected for negative values
+static func mod(n: int, m: int) -> int:
+	return ((n % m) + m) % m;

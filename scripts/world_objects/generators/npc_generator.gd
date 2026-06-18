@@ -5,6 +5,8 @@ class_name NpcGenerator
 var world_state: WorldState
 var settlement_generator: SettlementGenerator
 
+var added_boundaries: Dictionary[Rect2, bool] = {}
+
 func _init(_world_state: WorldState, _settlement_generator: SettlementGenerator) -> void:
 	world_state = _world_state
 	settlement_generator = _settlement_generator
@@ -28,7 +30,10 @@ func get_npcs_around_point(point: Vector3) -> Array[NPC]:
 	return result
 
 
-func create_npcs(boundary: Rect2, amount: int):
+func create_npcs(boundary: Rect2, amount: int) -> void:
+	if added_boundaries.has(boundary):
+		return
+	added_boundaries[boundary] = true
 	for i in amount:
 		var pos_x = world_state.rng.randf_range(boundary.position.x, boundary.end.x)
 		var pos_z = world_state.rng.randf_range(boundary.position.y, boundary.end.y)

@@ -6,7 +6,7 @@ static var RANDOM_SEED = MathFunctions.generate_random_seed()
 
 # Each terrain resolution halves the detail, and doubles the amount of chunks in the distance
 # Must be minimum 1, since that is the max resolution.
-const NUM_CHUNK_RESOLUTIONS: int = 3
+const NUM_CHUNK_RESOLUTIONS: int = 4
 const TERRAIN_CHUNK_SIZE: int = 256
 const TERRAIN_RESOLUTION_MULTIPLIER: float = 0.25
 
@@ -25,10 +25,10 @@ const WORLD_GRID_STEP: float = 32.0
 const MAX_GRID_STEEPNESS = 15.0
 
 # Settlement spread must be less than half of settlement grid step to avoid overlap
-const SETTLEMENT_GRID_STEP = 20
-const SETTLEMENT_GRID_SPREAD = 8
+const SETTLEMENT_GRID_STEP = 12
+const SETTLEMENT_GRID_SPREAD = 4
 
-const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 2048.0
+const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 768.0
 
 # The max height-angle in degrees that a settlements gridpoint and its edges can be connected by
 # This gives an approximation of even terrain for the settlement. It assumes the radius of the
