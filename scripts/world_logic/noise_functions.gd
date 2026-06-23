@@ -41,6 +41,6 @@ static func create_forest_noise(rng: RandomNumberGenerator) -> NoiseFunctions:
 	return NoiseFunctions.new([high_density_noise, low_density_noise, no_forest_noise])
 
 static func create_rocks_noise(rng: RandomNumberGenerator) -> NoiseFunctions:
-	var rocks_noise = NoiseContainer.new(rng.randi(), 0.8, 0.3)
-	var no_rocks_noise = NoiseContainer.new(rng.randi(), 0.001, 0.6, false)
+	var rocks_noise = NoiseContainer.new(rng.randi(), 0.01, 0.3)
+	var no_rocks_noise = NoiseContainer.new(rng.randi(), 0.001, 0.5, false)
 	return NoiseFunctions.new([rocks_noise, no_rocks_noise])

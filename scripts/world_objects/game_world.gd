@@ -4,6 +4,8 @@ class_name GameWorld
 
 enum InteractResults { NoResult, GainItem, DeleteEquippedItem }
 
+const ITEM_SPAWN_OFFSET = Vector3(0.0, 1.0, 0.0)
+
 class InteractResult:
 	var result: InteractResults
 	var item: ItemProperties.Item
@@ -12,18 +14,17 @@ class InteractResult:
 		result = _result
 		item = _item
 
-var world_state: WorldState
 var distance_controller: DistanceController
 
 func _init(_player: Node3D) -> void:
-	world_state = WorldState.new(_player)
+	WorldState.state = WorldState.new(_player)
 
 func _ready() -> void:
 	var start_time = Time.get_ticks_msec()
 
-	world_state.space_state = get_world_3d().direct_space_state
-	distance_controller = DistanceController.new(world_state)
-	add_child(world_state)
+	WorldState.state.space_state = get_world_3d().direct_space_state
+	distance_controller = DistanceController.new()
+	add_child(WorldState.state)
 	add_child(distance_controller)
 	await get_tree().process_frame
 
@@ -42,48 +43,50 @@ func count_all_children(node: Node) -> int:
 	return count
 
 func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> InteractResult:
-	var berries_picked = world_state.object_generator.interact(collider)
+	var berries_picked = WorldState.state.object_manager.interact(collider)
 	if berries_picked > 0:
 		return InteractResult.new(InteractResults.GainItem, ItemProperties.Item.BERRY)
 
-	var item_picked = world_state.item_generator.interact(collider)
+	var item_picked = WorldState.state.item_generator.interact(collider)
 	if item_picked != ItemProperties.Item.NO_ITEM:
 		return InteractResult.new(InteractResults.GainItem, item_picked)
 
 	if item != ItemProperties.Item.NO_ITEM:
-		var npc_took_item: bool = world_state.npcs_generator.interact_equipped_item(collider, item)
+		var npc_took_item: bool = WorldState.state.npc_manager.interact_equipped_item(collider, item)
 		if npc_took_item:
 			return InteractResult.new(InteractResults.DeleteEquippedItem)
 	else:
-		world_state.npcs_generator.interact(collider)
+		WorldState.state.npc_manager.interact(collider)
 	return InteractResult.new()
 
 func handle_use_item(collider, item: ItemProperties.Item) -> void:
-	var berries_picked = world_state.object_generator.interact(collider)
+	var collision_position = collider.position
+	var berries_picked = WorldState.state.object_manager.interact(collider)
 	if berries_picked > 0:
 		return InteractResult.new(InteractResults.GainItem, ItemProperties.Item.BERRY)
 
-	var item_picked = world_state.item_generator.interact(collider)
+	var item_picked = WorldState.state.item_generator.interact(collider)
 	if item_picked != ItemProperties.Item.NO_ITEM:
 		return InteractResult.new(InteractResults.GainItem, item_picked)
 
 	if item != ItemProperties.Item.NO_ITEM:
-		var npc_took_item: bool = world_state.npcs_generator.interact_equipped_item(collider, item)
+		var npc_took_item: bool = WorldState.state.npc_manager.interact_equipped_item(collider, item)
 		if npc_took_item:
 			return InteractResult.new(InteractResults.DeleteEquippedItem)
 	else:
-		world_state.npcs_generator.interact(collider)
+		WorldState.state.npc_manager.interact(collider)
 
 	if item == ItemProperties.Item.AXE:
-		var tree_chopped_down: ObjectGenerator.ChopResult = world_state.object_generator.handle_tree_chop(collider)
-		if tree_chopped_down.result == ObjectGenerator.ChopResults.ChoppedDown:
-			world_state.item_generator.spawn_item(tree_chopped_down.position, ItemProperties.Item.WOOD)
-		world_state.npcs_generator.handle_chop(collider)
+		var tree_chopped_down: ObjectManager.ChopResult = WorldState.state.object_manager.handle_tree_chop(collider)
+		if tree_chopped_down.result == ObjectManager.ChopResults.ChoppedDown:
+			for i in tree_chopped_down.amount_gained:
+				WorldState.state.item_generator.spawn_item(collision_position + ITEM_SPAWN_OFFSET, ItemProperties.Item.WOOD)
+		WorldState.state.npc_manager.handle_chop(collider)
 
 	if item == ItemProperties.Item.PICKAXE:
-		var rock_chopped_down: ObjectGenerator.ChopResult = world_state.object_generator.handle_rock_chop(collider)
-		if rock_chopped_down.result == ObjectGenerator.ChopResults.ChoppedDown:
+		var rock_chopped_down: ObjectManager.ChopResult = WorldState.state.object_manager.handle_rock_chop(collider)
+		if rock_chopped_down.result == ObjectManager.ChopResults.ChoppedDown:
 			for i in rock_chopped_down.amount_gained:
-				world_state.item_generator.spawn_item(rock_chopped_down.position, ItemProperties.Item.STONE)
+				WorldState.state.item_generator.spawn_item(collision_position + ITEM_SPAWN_OFFSET, ItemProperties.Item.STONE)
 
 	return InteractResult.new()

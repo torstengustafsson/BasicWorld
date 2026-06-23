@@ -22,10 +22,10 @@ func _init(_terrain_noise):
 	for res in range(Globals.NUM_CHUNK_RESOLUTIONS):
 		chunks[res] = {}
 
-# settlement_data: Array[SettlementGenerator.SettlementData]
-func update_shader_data(settlement_data: Array, road_edges: Array[RoadGenerator.RoadEdge]):
+# settlement_data: Array[SettlementManager.SettlementData]
+func update_shader_data(settlement_data: Array, road_segments: Array):
 	shader_parameters.settlement_data = settlement_data.duplicate()
-	shader_parameters.road_edges = road_edges.duplicate()
+	shader_parameters.road_segments = road_segments.duplicate()
 
 	for chunk_res in chunks:
 		var chunks_for_res = chunks[chunk_res]
@@ -33,16 +33,14 @@ func update_shader_data(settlement_data: Array, road_edges: Array[RoadGenerator.
 			var chunk: TerrainChunk = chunks_for_res[key]
 			chunk.set_shader_data(shader_parameters)
 
-func update_chunks_around_player(player_pos: Vector3, callback_function: Callable, batch_size = 1000):
+func update_chunks_around_player(player_pos: Vector3, batch_size = 1000):
 	cleanup_chunks(player_pos)
-	add_chunks_around_player(player_pos, callback_function, batch_size)
+	add_chunks_around_player(player_pos, batch_size)
 
-func add_chunks_around_player(player_pos: Vector3, callback_function: Callable, batch_size = 1000):
+func add_chunks_around_player(player_pos: Vector3, batch_size = 1000):
 	var i = 0
 	for chunk_index in get_grid_loop_order():
-		var chunk = _add_chunk(chunk_index.x, chunk_index.y, player_pos)
-		if chunk.resolution_index == 0:
-			callback_function.call(get_chunk_boundary(chunk))
+		_add_chunk(chunk_index.x, chunk_index.y, player_pos)
 		i += 1
 		if i > batch_size:
 			i = 0

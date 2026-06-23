@@ -2,10 +2,7 @@ extends Node3D
 
 class_name DistanceController
 
-var world_state: WorldState
-var world_generator: WorldGenerator
-
-var lod_last_player_pos: Vector3
+var lod_last_player_pos: Vector2
 var terrain_last_player_index: Vector2i
 
 var update_close_objects_time = 0
@@ -15,124 +12,100 @@ var cleanup_faraway_objects_time = 0
 const FORCE_CLEANUP_FARAWAY_OBJECTS_INTERVAL_SECONDS = 10.0
 
 
-func _init(_world_state: WorldState):
-	world_generator = WorldGenerator.new(_world_state)
-	world_state = _world_state
-	lod_last_player_pos = world_state.player.position
+func _init():
+	lod_last_player_pos = Vector2(WorldState.state.player.position.x, WorldState.state.player.position.z)
 	terrain_last_player_index = Vector2i(0, 0)
 
 func _ready() -> void:
-	# CREATE TERRAIN
-
-	world_state.terrain_generator.add_chunks_around_player(world_state.player.position, world_generator.generate_world)
+	WorldState.state.terrain_generator.add_chunks_around_player(WorldState.state.player.position)
 
 	# TODO: Find out why we need to wait here.
 	# Without the wait, ground collisions will not be available at start outside of player immediate area.
 	# This make below ground-based calculations like removing trees on steep terrain not possible.
 	await get_tree().process_frame
 
-	var terrain_boundary = world_state.terrain_generator.get_terrain_size()
+	var terrain_boundary = WorldState.state.terrain_generator.get_terrain_size()
 
-	world_generator.generate_starting_items(terrain_boundary)
+	generate_starting_items(terrain_boundary)
 
 	update_lods()
 
 func _process(_delta: float) -> void:
-	var player_chunk_index = world_state.terrain_generator.get_player_chunk_index(world_state.player.position)
+	var player_chunk_index = WorldState.state.terrain_generator.get_player_chunk_index(WorldState.state.player.position)
 	if player_chunk_index != terrain_last_player_index:
-		world_state.terrain_generator.update_chunks_around_player(world_state.player.position, world_generator.generate_world, 3)
+		WorldState.state.terrain_generator.update_chunks_around_player(WorldState.state.player.position, 1)
 		terrain_last_player_index = player_chunk_index
 
-	if (world_state.player.position - lod_last_player_pos).length() > Globals.LOD_UPDATE_DISTANCE:
+	var distance_traveled = (Vector2(WorldState.state.player.position.x, WorldState.state.player.position.z) - lod_last_player_pos).length()
+	if distance_traveled > Globals.LOD_UPDATE_DISTANCE:
 		update_lods()
-		lod_last_player_pos = world_state.player.position
+		lod_last_player_pos = Vector2(WorldState.state.player.position.x, WorldState.state.player.position.z)
 		update_close_objects_time = 0
-
-	if update_close_objects_time > FORCE_UPDATE_CLOSE_OBJECTS_INTERVAL_SECONDS:
-		add_nearby_children_full()
-		update_close_objects_time = 0
-	update_close_objects_time += _delta
-
-	if cleanup_faraway_objects_time > FORCE_CLEANUP_FARAWAY_OBJECTS_INTERVAL_SECONDS:
-		# remove_all_faraway_children_batched()
-		cleanup_faraway_objects_time = 0
-	cleanup_faraway_objects_time += _delta
-
 
 func update_lods():
-	add_no_collider_children_batched()
-	remove_faraway_children_batched()
-	add_nearby_children_full()
+	remove_faraway_meshes()
+	remove_faraway_objects()
+	add_outer_bounds_meshes()
+	add_nearby_objects()
 
-func add_nearby_children_full():
-	var objects_full = world_state.static_objects_qt.query_circle(Vector2(world_state.player.position.x, world_state.player.position.z), Globals.LOD_DISTANCE_FULL)
-	for object in objects_full:
-		object = object["data"]
-		if object.collider.disabled:
-			object.collider.disabled = false
-			if object.glb_mesh_no_collider.get_parent() == self:
-				remove_child(object.glb_mesh_no_collider)
-			add_child(object.instance)
+func remove_faraway_meshes():
+	const OUTER_BOUNDS = Globals.LOD_DISTANCE_NO_COLLIDER * Globals.LOD_REMOVE_DISTANCE_MULTIPLIER
+	var start_pos = Vector2(WorldState.state.player.position.x - OUTER_BOUNDS, WorldState.state.player.position.z - OUTER_BOUNDS)
+	var size = Vector2(OUTER_BOUNDS * 2, OUTER_BOUNDS * 2)
+	var boundary_to_keep: Rect2 = Rect2(start_pos, size)
+	WorldState.state.pool_manager.remove_faraway_world_meshes(boundary_to_keep)
 
-func add_no_collider_children_batched(batch_size: int = 500):
-	const INNER_RADIUS = Globals.LOD_DISTANCE_FULL
-	const OUTER_RADIUS = Globals.LOD_DISTANCE_NO_COLLIDER
-	var objects_no_collider = world_state.static_objects_qt.query_circle_holed(Vector2(world_state.player.position.x, world_state.player.position.z), INNER_RADIUS, OUTER_RADIUS)
-	var i = 0
-	while i < objects_no_collider.size():
-		for j in min(batch_size, objects_no_collider.size() - i):
-			var object: WorldObject = objects_no_collider[i + j]["data"]
-			if object == null or object.instance == null:
-				continue
-			# Need to verify distance again because batched updating means player may have moved since this loop started
-			var distance = object.instance.position.distance_to(world_state.player.position)
-			if distance > INNER_RADIUS and distance <= OUTER_RADIUS:
-				object.collider.disabled = true
-				if object.instance.get_parent() == self:
-					remove_child(object.instance)
-				if object.glb_mesh_no_collider.get_parent() != self:
-					add_child(object.glb_mesh_no_collider)
-		i += batch_size
-		await get_tree().process_frame
+func remove_faraway_objects():
+	const INNER_BOUNDS = Globals.LOD_DISTANCE_FULL * Globals.LOD_REMOVE_DISTANCE_MULTIPLIER
+	var start_pos = Vector2(WorldState.state.player.position.x - INNER_BOUNDS, WorldState.state.player.position.z - INNER_BOUNDS)
+	var size = Vector2(INNER_BOUNDS * 2, INNER_BOUNDS * 2)
+	var boundary_to_keep: Rect2 = Rect2(start_pos, size)
+	WorldState.state.pool_manager.remove_faraway_world_objects(boundary_to_keep)
 
-func remove_faraway_children_batched(batch_size: int = 500):
-	const MARGIN = 10.0 # Add a small extra margin to ensure no outer radius-objects are missed
-	const INNER_RADIUS = Globals.LOD_DISTANCE_NO_COLLIDER
-	const OUTER_RADIUS = Globals.LOD_DISTANCE_NO_COLLIDER + Globals.LOD_UPDATE_DISTANCE + MARGIN
-	var faraway_objects = world_state.static_objects_qt.query_circle_holed(Vector2(world_state.player.position.x, world_state.player.position.z), INNER_RADIUS, OUTER_RADIUS)
-	var i = 0
-	while i < faraway_objects.size():
-		for j in min(batch_size, faraway_objects.size() - i):
-			var object: WorldObject = faraway_objects[i + j]["data"]
-			if object == null or object.instance == null:
-				continue
-			# Need to verify distance again because batched updating means player may have moved since this loop started
-			# Outer radius is not checked because anything further away should still be removed
-			var distance = object.instance.position.distance_to(world_state.player.position)
-			if distance > INNER_RADIUS:
-				if object.glb_mesh_no_collider.get_parent() == self:
-					remove_child(object.glb_mesh_no_collider)
-				if object.instance.get_parent() == self:
-					remove_child(object.instance)
-		i += batch_size
-		await get_tree().process_frame
+func add_outer_bounds_meshes():
+	const OUTER_BOUNDS = Globals.LOD_DISTANCE_NO_COLLIDER
+	var start_pos = Vector2(WorldState.state.player.position.x - OUTER_BOUNDS, WorldState.state.player.position.z - OUTER_BOUNDS)
+	var size = Vector2(OUTER_BOUNDS * 2, OUTER_BOUNDS * 2)
+	var boundary: Rect2 = Rect2(start_pos, size)
+	WorldState.state.object_manager.add_world_meshes(boundary)
+	var nearby_settlements: Array[SettlementManager.SettlementData] = WorldState.state.settlement_manager.create_settlements(boundary)
+	WorldState.state.npc_manager.create_npcs_meshes_in_settlements(nearby_settlements)
+	WorldState.state.settlement_manager.remove_objects_from_settlements(nearby_settlements)
+	WorldState.state.road_generator.generate_roads(boundary)
+	var quarter_boundary = MathFunctions.resize_rect(boundary, 0.25)
+	WorldState.state.road_generator.remove_objects_from_roads(quarter_boundary) # Dont remove until close, to save performance
+	var nearby_road_segments = WorldState.state.road_generator.road_segments.query_circle(Vector2(WorldState.state.player.position.x, WorldState.state.player.position.z), OUTER_BOUNDS)
+	WorldState.state.terrain_generator.update_shader_data(nearby_settlements, nearby_road_segments)
 
-func remove_all_faraway_children_batched(batch_size: int = 500):
-	const INNER_RADIUS = Globals.LOD_DISTANCE_NO_COLLIDER * 1.5
-	var all_faraway_objects = world_state.static_objects_qt.query_circle_holed(Vector2(world_state.player.position.x, world_state.player.position.z), INNER_RADIUS, INF)
-	var i = 0
-	while i < all_faraway_objects.size():
-		for j in min(batch_size, all_faraway_objects.size() - i):
-			var object: WorldObject = all_faraway_objects[i + j]["data"]
-			if object == null or object.instance == null:
-				continue
-			# Need to verify distance again because batched updating means player may have moved since this loop started
-			# Outer radius is not checked because anything further away should still be removed
-			var distance = object.instance.position.distance_to(world_state.player.position)
-			if distance > INNER_RADIUS:
-				if object.glb_mesh_no_collider.get_parent() == self:
-					remove_child(object.glb_mesh_no_collider)
-				if object.instance.get_parent() == self:
-					remove_child(object.instance)
-		i += batch_size
-		await get_tree().process_frame
+func add_nearby_objects():
+	var nearby_meshes = WorldState.state.pool_manager.get_meshes_in_range(WorldState.state.player.position, Globals.LOD_DISTANCE_FULL)
+	for mesh in nearby_meshes:
+		WorldState.state.pool_manager.get_object(mesh)
+
+# TODO: Add object pool for items
+func generate_starting_items(boundary):
+	var axe_position = Vector3(-1.0, 2.0, -4.0)
+	if boundary.has_point(Vector2(axe_position.x, axe_position.z)):
+		WorldState.state.item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
+
+	var pickaxe_position = Vector3(1.0, 2.0, -4.0)
+	if boundary.has_point(Vector2(pickaxe_position.x, pickaxe_position.z)):
+		WorldState.state.item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
+
+	var get_random_position = func() -> Vector3:
+		return Vector3(
+			WorldState.state.rng.randf_range(boundary.position.x, boundary.end.x),
+			5.0,
+			WorldState.state.rng.randf_range(boundary.position.y, boundary.end.y))
+
+	for berry in 40:
+		var berry_position = get_random_position.call()
+		WorldState.state.item_generator.spawn_item(berry_position, ItemProperties.Item.BERRY)
+
+	for wood in 40:
+		var wood_position = get_random_position.call()
+		WorldState.state.item_generator.spawn_item(wood_position, ItemProperties.Item.WOOD)
+
+	for stone in 40:
+		var stone_position = get_random_position.call()
+		WorldState.state.item_generator.spawn_item(stone_position, ItemProperties.Item.STONE)
