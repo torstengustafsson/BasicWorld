@@ -65,3 +65,19 @@ static func get_terrain_angle_at_position(position: Vector3, space_state: Physic
 # Godots built-in modulus function does not work as expected for negative values
 static func mod(n: int, m: int) -> int:
 	return ((n % m) + m) % m;
+
+static func resize_rect(rect: Rect2, scale: float) -> Rect2:
+	var center = rect.get_center()
+	var new_size = rect.size * scale
+	return Rect2(
+		center.x - new_size.x / 2,
+		center.y - new_size.y / 2,
+		new_size.x,
+		new_size.y
+	)
+
+static func get_middle_point_vec2(a: Vector2, b: Vector2):
+	return (a + b) * 0.5
+
+static func get_middle_point_vec3(a: Vector3, b: Vector3):
+	return (a + b) * 0.5

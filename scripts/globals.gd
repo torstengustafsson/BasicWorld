@@ -7,14 +7,14 @@ static var RANDOM_SEED = MathFunctions.generate_random_seed()
 # Each terrain resolution halves the detail, and doubles the amount of chunks in the distance
 # Must be minimum 1, since that is the max resolution.
 const NUM_CHUNK_RESOLUTIONS: int = 4
-const TERRAIN_CHUNK_SIZE: int = 256
+const TERRAIN_CHUNK_SIZE: int = 512
 const TERRAIN_RESOLUTION_MULTIPLIER: float = 0.25
 
 # Average distance between each object on generation.
 # Lower values means more clumped up. So Low value for STEP_TREES means dense forests.
-const STEP_TREES = 8
-const STEP_BERRYBUSHES = 32
-const STEP_ROCKS = 32
+const STEP_TREES: int = 6
+const STEP_BERRYBUSHES: int = 32
+const STEP_ROCKS: int = 16
 
 # World grid is used for determining pathfinding and road generation.
 # Step is average distance between grid points. Lower value means more detailed pathfinding, but
@@ -22,7 +22,7 @@ const STEP_ROCKS = 32
 const WORLD_GRID_STEP: float = 32.0
 
 # The max height-angle in degrees that two gridpoints can be connected by
-const MAX_GRID_STEEPNESS = 15.0
+const MAX_GRID_STEEPNESS = 10.0
 
 # Settlement spread must be less than half of settlement grid step to avoid overlap
 const SETTLEMENT_GRID_STEP = 12
@@ -38,12 +38,15 @@ const MAX_SETTLEMENT_STEEPNESS = 5.0
 # The max height-angle in degrees that objects can be generated on
 const MAX_OBJECT_STEEPNESS = 25.0
 
-# All roads will have this width
+# All roads will have this width, and objects will be removed from the road with extra margin.
 const ROAD_WIDTH: float = 1.5
+const ROAD_MARGIN: float = 0.5
 
 # Level of detail is set up so that objects within LOD_DISTANCE_FULL get a collider, and objects
 # outside of LOD_DISTANCE_NO_COLLIDER are removed from the scene. The check is made whenever the
 # player moves beyond LOD_UPDATE_DISTANCE from its position at the last update.
-const LOD_DISTANCE_FULL = 32.0
-const LOD_DISTANCE_NO_COLLIDER = 512.0
-const LOD_UPDATE_DISTANCE = 32.0 # Objects will spawn and despawn whenever player moves this distance
+# NOTE: LOD_DISTANCE_FULL must be >= LOD_UPDATE_DISTANCE.
+const LOD_DISTANCE_FULL = 64.0
+const LOD_DISTANCE_NO_COLLIDER = 256.0
+const LOD_UPDATE_DISTANCE = LOD_DISTANCE_FULL * 0.5 # Objects will spawn and despawn whenever player moves this distance
+const LOD_REMOVE_DISTANCE_MULTIPLIER = 1.2 # A value of 1.2 means wait to remove faraway objects until 20% more distance than LOD_DISTANCE_NO_COLLIDER away

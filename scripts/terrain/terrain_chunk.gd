@@ -5,9 +5,8 @@ class_name TerrainChunk
 # Chunks are positioned so its origin is in the upper left corner of the chunk (x_pos and z_pos)
 
 class ShaderParameters:
-	# Array[Dictionary[Vector2, SettlementGenerator.SettlementData]]
-	var settlement_data: Array = []
-	var road_edges: Array[RoadGenerator.RoadEdge] = []
+	var settlement_data: Array = [] # Array[SettlementManager.SettlementData]
+	var road_segments: Array = [] # Array[RoadGenerator.RoadSegment]
 
 # Add this number of subdivisions to each side of the chunk. Will not be rendered.
 # Used to avoid visible seams between terrain chunks
@@ -95,15 +94,14 @@ func set_shader_data(params: ShaderParameters):
 	terrain_material.set_shader_parameter("snow_albedo_texture", Color(0.9, 0.9, 0.9, 1.0))
 	terrain_material.set_shader_parameter("settlement_count", params.settlement_data.size())
 	var shader_settlement_data: Array[Vector3] = []
-	for settlement in params.settlement_data:
-		var settlement_data = settlement["data"]
+	for settlement_data in params.settlement_data:
 		shader_settlement_data.append(Vector3(settlement_data.position.x, settlement_data.position.z, settlement_data.radius))
 	terrain_material.set_shader_parameter("settlement_data", shader_settlement_data)
 	terrain_material.set_shader_parameter("road_width", Globals.ROAD_WIDTH)
-	terrain_material.set_shader_parameter("road_edge_count", params.road_edges.size())
+	terrain_material.set_shader_parameter("road_edge_count", params.road_segments.size())
 
 	# TODO: Only give the road edges that are in each chunk, instead of all to everyone.
-	var shader_road_edges_data: Array[Vector4] = []
-	for edge in params.road_edges:
-		shader_road_edges_data.append(Vector4(edge.from.x, edge.from.z, edge.to.x, edge.to.z))
-	terrain_material.set_shader_parameter("road_edges", shader_road_edges_data)
+	var shader_road_segments_data: Array[Vector4] = []
+	for road_segment in params.road_segments:
+		shader_road_segments_data.append(Vector4(road_segment.from.x, road_segment.from.y, road_segment.to.x, road_segment.to.y))
+	terrain_material.set_shader_parameter("road_segments", shader_road_segments_data)

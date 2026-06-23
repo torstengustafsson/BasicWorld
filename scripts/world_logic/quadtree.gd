@@ -88,7 +88,7 @@ func insert(item: Dictionary) -> bool:
 # Query all items
 func query_all(result: Array = []) -> Array:
 	for item in items:
-		result.append(item)
+		result.append(item["data"])
 
 	if divided:
 		northwest.query_all(result)
@@ -110,7 +110,7 @@ func _query(area: Rect2, result: Array = []) -> Array:
 
 	for item in items:
 		if area.has_point(item["position"]):
-			result.append(item)
+			result.append(item["data"])
 
 	if divided:
 		northwest._query(area, result)
@@ -139,7 +139,7 @@ func _query_circle(center: Vector2, radius: float, result: Array = []) -> Array:
 
 	for item in items:
 		if item["position"].distance_squared_to(center) <= r2:
-			result.append(item)
+			result.append(item["data"])
 
 	if divided:
 		northwest._query_circle(center, radius, result)
@@ -170,7 +170,7 @@ func _query_circle_holed(center: Vector2, inner_radius: float, outer_radius: flo
 	for item in items:
 		var dist = item["position"].distance_squared_to(center)
 		if dist <= outer_r2 and dist > inner_r2:
-			result.append(item)
+			result.append(item["data"])
 
 	if divided:
 		northwest._query_circle_holed(center, inner_radius, outer_radius, result)
@@ -182,7 +182,7 @@ func _query_circle_holed(center: Vector2, inner_radius: float, outer_radius: flo
 
 func get_item(position: Vector2):
 	if not boundary.has_point(position):
-		return false
+		return null
 
 	for item in items:
 		if item["position"] == position:
@@ -231,13 +231,13 @@ func clear() -> void:
 
 
 # Returns total item count across the whole tree.
-func count() -> int:
+func size() -> int:
 	var total := items.size()
 	if divided:
-		total += northwest.count()
-		total += northeast.count()
-		total += southwest.count()
-		total += southeast.count()
+		total += northwest.size()
+		total += northeast.size()
+		total += southwest.size()
+		total += southeast.size()
 	return total
 
 

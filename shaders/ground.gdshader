@@ -31,7 +31,7 @@ uniform vec2 uv_offset = vec2(0.0, 0.0);
 
 uniform vec3 settlement_data[128]; // [pos_x, pos,z, radius]
 uniform int settlement_count = 0;
-uniform vec4 road_edges[1024]; // Two vec2:s of (from, to) points
+uniform vec4 road_segments[1024]; // Two vec2:s of (from, to) points
 uniform int road_edge_count = 0;
 uniform float road_width = 0.0;
 uniform vec4 grass_albedo_texture;
@@ -118,7 +118,7 @@ void fragment() {
 
         // Create roads between road edges
         for (int i = 0; i < road_edge_count; i++) {
-            float road_dist = point_to_segment_dist(world_uv, road_edges[i].xy, road_edges[i].zw);
+            float road_dist = point_to_segment_dist(world_uv, road_segments[i].xy, road_segments[i].zw);
             in_road = max(in_road, step(road_dist, road_width));
         }
 

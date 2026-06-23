@@ -27,8 +27,6 @@ const POINTS_AROUND: Array[Vector2i] = [
 	Vector2i(1, 1),
 ]
 
-var world_state: WorldState
-
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 var max_weight: float = -1.0
@@ -49,11 +47,8 @@ var added_boundaries: Dictionary[Rect2, bool] = {}
 # 		DebugDraw3D.draw_line(point + Vector3(0.0, 1.0, 0.0), added_points[point].came_from + Vector3(0.0, 1.0, 0.0), Color(1.0, 0.0, 0.0, 1.0))
 
 
-func _init(_world_state: WorldState) -> void:
-	world_state = _world_state
-
 func is_grid_position_ok(grid_position: Vector3) -> bool:
-	return MathFunctions.get_terrain_angle_at_position(grid_position, world_state.space_state) <= Globals.MAX_GRID_STEEPNESS
+	return MathFunctions.get_terrain_angle_at_position(grid_position, WorldState.state.space_state) <= Globals.MAX_GRID_STEEPNESS
 
 func is_grid_index_ok(grid_index: Vector2i) -> bool:
 	return is_grid_position_ok(get_grid_position(grid_index))
@@ -65,7 +60,7 @@ func get_grid_position(grid_index: Vector2i) -> Vector3:
 	var rand_value_z = (-Globals.WORLD_GRID_STEP / 4.0 + rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
 	var grid_position_x = grid_index.x * Globals.WORLD_GRID_STEP
 	var grid_position_z = grid_index.y * Globals.WORLD_GRID_STEP
-	var height = world_state.terrain_height_noise.get_height_at(grid_position_x, grid_position_z)
+	var height = WorldState.state.terrain_height_noise.get_height_at(grid_position_x, grid_position_z)
 	var grid_position = Vector3(grid_position_x + rand_value_x, height, grid_position_z + rand_value_z)
 	return grid_position
 
@@ -80,6 +75,14 @@ func get_grid_index_edges(grid_index: Vector2i) -> Array[Vector2i]:
 # This will return its result backwards, meaning from destination to start position. Use reverse sort if order is
 # important (array.reverse()). This is not done here for performance reasons, and because it is not always needed.
 func generate_shortest_distance_between_grid_points(grid_from: Vector2i, grid_destination: Vector2i, max_distance: float) -> Array[Vector3]:
+	# TODO: Take existing roads into consideration
+	# var a = get_grid_position(grid_from)
+	# var b = get_grid_position(grid_destination)
+	# var query_rect = Rect2(
+	# 	Vector2(min(a.x, b.x), min(a.z, b.z)),
+	# 	Vector2(abs(a.x - b.x), abs(a.z - b.z)))
+
+
 	const MAX_ITERATIONS = 100
 	var pq: PriorityQueue = PriorityQueue.new()
 	pq.push(grid_from, 0.0)
@@ -93,12 +96,21 @@ func generate_shortest_distance_between_grid_points(grid_from: Vector2i, grid_de
 		var current_position = get_grid_position(current_index)
 		for edge_index in get_grid_index_edges(current_index):
 			var next_position = get_grid_position(edge_index)
-			var new_cost = cost_so_far[current_index] + _calculate_weight(current_position, next_position)
+
+			# var existing_road_cost_multiplier = 1.0
+			# for road_segment in WorldState.state.road_generator.road_segments.query(query_rect):
+			# 	if (road_segment.from == Vector2(current_position.x, current_position.z) and road_segment.to == Vector2(next_position.x, next_position.z)) \
+			# 		or (road_segment.from == Vector2(next_position.x, next_position.z) and road_segment.to == Vector2(current_position.x, current_position.z)):
+			# 		existing_road_cost_multiplier = 0.1
+			# 		break
+
+			var new_cost = cost_so_far[current_index] + _calculate_weight(current_position, next_position) # * existing_road_cost_multiplier
+
 			if new_cost > max_distance:
 				continue
 			if not cost_so_far.has(edge_index) or new_cost < cost_so_far[edge_index]:
 				cost_so_far[edge_index] = new_cost
-				var priority = new_cost + _distance_heuristic(grid_destination, edge_index)
+				var priority = new_cost + _distance_heuristic(grid_destination, edge_index) # * existing_road_cost_multiplier
 				pq.push(edge_index, priority)
 				# Uncomment together with _process function for debugging
 				# added_points[next_position] = PointData.new()
@@ -148,12 +160,11 @@ func _get_num_objects_in_edge(grid_position: Vector3, neighbor_position: Vector3
 	var b = Vector2(neighbor_position.x, neighbor_position.z)
 	var ab: Vector2 = b - a
 	for object in objects:
-		var instance: Node3D = object["data"].instance
-		var instance_pos = Vector2(instance.position.x, instance.position.z)
-		var ap: Vector2 = instance_pos - a;
+		var object_position = Vector2(object.position.x, object.position.z)
+		var ap: Vector2 = object_position - a;
 		var t: float = clamp(ap.dot(ab) / ab.dot(ab), 0.0, 1.0);
 		var closest: Vector2 = a + t * ab;
-		var road_dist: float = (instance_pos - closest).length()
+		var road_dist: float = (object_position - closest).length()
 		if road_dist < width_to_check:
 			result += 1
 	return result
@@ -165,11 +176,11 @@ func _calculate_weight(grid_position: Vector3, neighbor_position: Vector3) -> fl
 		min(grid_position.z, neighbor_position.z) - Globals.ROAD_WIDTH,
 		abs(grid_position.x - neighbor_position.x) + 2 * Globals.ROAD_WIDTH,
 		abs(grid_position.z - neighbor_position.z) + 2 * Globals.ROAD_WIDTH)
-	var objects = world_state.static_objects_qt.query(query_rect)
+	var objects = WorldState.state.pool_manager.used_meshes_quadtree.query(query_rect)
 	var num_obstacles = 0 if objects.size() == 0 else _get_num_objects_in_edge(grid_position, neighbor_position, objects, Globals.ROAD_WIDTH)
 	var distance = (grid_position - neighbor_position).length()
-	# Every object in the way adds weight 10, every flat meter adds weight 1, adding a multiplier of 1 more per meter, per 10 degrees steepness
-	var weight = num_obstacles * 10.0 + distance * (1 + edge_angle * 0.1)
+	# Every object in the way adds weight 20, every flat meter adds weight 1, adding a multiplier of 1 more per meter, per 10 degrees steepness
+	var weight = num_obstacles * 20.0 + distance * (1 + edge_angle * 0.1)
 	if max_weight < weight:
 		max_weight = weight
 	return weight

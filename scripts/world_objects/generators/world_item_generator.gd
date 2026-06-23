@@ -5,19 +5,16 @@ class_name WorldItemGenerator
 # Contains all items in the world
 var world_items: Array[WorldItem]
 
-var world_state: WorldState
-
-func _init(_world_state: WorldState):
+func _init():
 	add_to_group("Persist")
-	world_state = _world_state
 
 func spawn_item(pos: Vector3, item_id: ItemProperties.Item) -> WorldItem:
 	var item = WorldItem.create_item(item_id)
 	item.object.position = pos
 	item.object.rotation = Vector3(
-		world_state.rng.randf_range(0.0, PI / 4),
-		world_state.rng.randf_range(0.0, PI / 4),
-		world_state.rng.randf_range(0.0, PI / 4))
+		WorldState.state.rng.randf_range(0.0, PI / 4),
+		WorldState.state.rng.randf_range(0.0, PI / 4),
+		WorldState.state.rng.randf_range(0.0, PI / 4))
 	add_item_to_world(item)
 	return item
 
