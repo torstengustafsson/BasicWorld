@@ -2,7 +2,7 @@ extends Node
 
 class_name ObjectManager
 
-enum ChopResults { StillStanding, ChoppedDown }
+enum ChopResults { NoHit, StillStanding, ChoppedDown }
 
 class ChopResult:
 	var result: ChopResults
@@ -83,7 +83,7 @@ func add_world_meshes(boundary: Rect2) -> void:
 func handle_tree_chop(collider) -> ChopResult:
 	var tree = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.TREE, collider.position)
 	if not tree:
-		return ChopResult.new(ChopResults.StillStanding)
+		return ChopResult.new(ChopResults.NoHit)
 	tree.health -= 1
 	if tree.health <= 0:
 		WorldState.state.pool_manager.remove_object(tree)
@@ -96,7 +96,7 @@ func handle_tree_chop(collider) -> ChopResult:
 func handle_rock_chop(collider) -> ChopResult:
 	var rock = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.ROCK, collider.position)
 	if not rock:
-		return ChopResult.new(ChopResults.StillStanding)
+		return ChopResult.new(ChopResults.NoHit)
 	rock.health -= 1
 	if rock.health <= 0:
 		WorldState.state.pool_manager.remove_object(rock)

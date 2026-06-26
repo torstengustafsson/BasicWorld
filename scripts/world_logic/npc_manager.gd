@@ -16,7 +16,7 @@ static func set_npc_child_scale(npc: NPC) -> void:
 	object_rng.seed = hash(npc.glb_mesh.position)
 	var scale = object_rng.randf_range(0.5, 0.65)
 	npc.set_scale(Vector3(scale, scale, scale))
-	npc.default_sound = npc.child_sounds[randi() % npc.child_sounds.size()]
+	npc.default_sound = AudioManager.SoundID.LAUGH
 	npc.wants = NPC.WantsOptions.NONE
 
 func _init(_settlement_manager: SettlementManager) -> void:
@@ -70,7 +70,7 @@ func _create_npc_children_meshes(boundary: Rect2, amount) -> void:
 func interact(collider) -> void:
 	var object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.NPC, collider.position)
 	if object and object.collider_body == collider and object.npc:
-		object.npc.play_sound()
+		WorldState.state.audio_manager.play_sound(object.npc.default_sound, object.glb_mesh.global_position)
 
 func interact_equipped_item(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> bool:
 	var object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.NPC, collider.position)
@@ -78,14 +78,16 @@ func interact_equipped_item(collider, item: ItemProperties.Item = ItemProperties
 		return object.npc.interact_item(item)
 	return false
 
-func handle_chop(collider) -> void:
+func handle_chop(collider) -> ObjectManager.ChopResult:
 	var object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.NPC, collider.position)
 	if object and object.collider_body == collider and object.npc:
 		object.npc.trigger_damage()
 		object.health -= 1
 		if object.health <= 0:
 			WorldState.state.pool_manager.remove_object(object)
-		return
+			return ObjectManager.ChopResult.new(ObjectManager.ChopResults.ChoppedDown)
+		return ObjectManager.ChopResult.new(ObjectManager.ChopResults.StillStanding)
+	return ObjectManager.ChopResult.new(ObjectManager.ChopResults.NoHit)
 
 func save() -> Dictionary:
 	# TODO

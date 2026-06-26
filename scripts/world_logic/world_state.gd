@@ -12,6 +12,7 @@ var settlement_manager: SettlementManager
 var road_generator: RoadGenerator
 var npc_manager: NpcManager
 var world_grid: WorldGrid
+var audio_manager: AudioManager
 
 # NOTE: Must use this generator for all random values, in order for world generation to be deterministic based on the seed.
 var rng: RandomNumberGenerator
@@ -34,6 +35,7 @@ func _ready() -> void:
 	road_generator = RoadGenerator.new(settlement_manager)
 	npc_manager = NpcManager.new(settlement_manager)
 	world_grid = WorldGrid.new()
+	audio_manager = AudioManager.new()
 
 	add_child(terrain_generator)
 	add_child(pool_manager)
@@ -43,3 +45,4 @@ func _ready() -> void:
 	add_child(npc_manager)
 	add_child(world_grid)
 	add_child(road_generator)
+	add_child(audio_manager)

@@ -67,6 +67,7 @@ func interact(collider) -> ItemProperties.Item:
 	var item_index = 0
 	for item in world_items:
 		if item.object.get_node("PickableArea") == collider:
+			WorldState.state.audio_manager.play_sound(AudioManager.SoundID.PICK_UP_ITEM, item.object.position)
 			item.object.queue_free()
 			world_items.remove_at(item_index)
 			return item.item_id
