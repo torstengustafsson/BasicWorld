@@ -36,10 +36,10 @@ func _ready() -> void:
 func _initialize_pool() -> void:
 	unused_meshes.clear()
 	for _i in range(initial_pool_size):
-		var object: Node3D = mesh_scene.instantiate()
-		object.set_meta("object_id", object_id)
-		_set_mesh_disabled(object)
-		add_child(object)
+		var mesh: Node3D = mesh_scene.instantiate()
+		mesh.set_meta("object_id", object_id)
+		_set_mesh_disabled(mesh)
+		add_child(mesh)
 
 func get_mesh(position: Vector3, scale: Vector3) -> Node3D:
 	var existing_mesh = used_meshes.get(position)

@@ -79,10 +79,16 @@ func remove_objects_from_roads(boundary: Rect2):
 			min(road_segment.from.y, road_segment.to.y) - Globals.ROAD_WIDTH - Globals.ROAD_MARGIN,
 			abs(road_segment.from.x -road_segment.to.x) + 2 * (Globals.ROAD_WIDTH + Globals.ROAD_MARGIN),
 			abs(road_segment.from.y -road_segment.to.y) + 2 * (Globals.ROAD_WIDTH + Globals.ROAD_MARGIN))
-		var objects = WorldState.state.pool_manager.used_meshes_quadtree.query(query_rect)
-		for object in objects:
-			if is_in_road_segment(object.position, road_segment):
-				WorldState.state.pool_manager.remove_mesh(object)
+		var meshes = WorldState.state.pool_manager.used_meshes_quadtree.query(query_rect)
+		for mesh in meshes:
+			if is_in_road_segment(mesh.position, road_segment):
+				var is_removable_type: bool = \
+					mesh.get_meta("object_id") == WorldObject.ObjectId.TREE or \
+					mesh.get_meta("object_id") == WorldObject.ObjectId.ROCK or \
+					mesh.get_meta("object_id") == WorldObject.ObjectId.BERRYBUSH_EMPTY or \
+					mesh.get_meta("object_id") == WorldObject.ObjectId.BERRYBUSH_FULL
+				if is_removable_type:
+					WorldState.state.pool_manager.remove_mesh(mesh)
 
 func is_in_road(position: Vector3) -> bool:
 	for road_segment in road_segments.query_circle(Vector2(position.x, position.z), Globals.WORLD_GRID_STEP / 2):

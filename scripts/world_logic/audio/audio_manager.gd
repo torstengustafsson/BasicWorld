@@ -30,7 +30,6 @@ static var sounds: Dictionary[SoundID, Resource]= {
 	SoundID.PICK_UP_ITEM: load("res://assets/sounds/freesound_community-pick-92276.mp3"),
 	SoundID.AXE_HIT: load("res://assets/sounds/yodguard-giant-axe-strike-hitting-solid-wood-3-450247.mp3"),
 	SoundID.PICKAXE_HIT: load("res://assets/sounds/creatorshome-pickaxe-blow-333695.mp3"),
-
 }
 
 var audio_pool: AudioPool = AudioPool.new()
