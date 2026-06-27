@@ -39,9 +39,6 @@ var added_boundaries: Dictionary[Rect2, bool] = {}
 # 	var came_from: Vector3
 # var added_points: Dictionary[Vector3, PointData] = {}
 # func _process(_delta):
-# 	render_grid_points()
-
-# func render_grid_points():
 # 	for point in added_points.keys():
 # 		DebugDraw3D.draw_sphere(point + Vector3(0.0, 1.0, 0.0), 2.5, Color(added_points[point].color, 1.0))
 # 		DebugDraw3D.draw_line(point + Vector3(0.0, 1.0, 0.0), added_points[point].came_from + Vector3(0.0, 1.0, 0.0), Color(1.0, 0.0, 0.0, 1.0))
@@ -75,12 +72,12 @@ func get_grid_index_edges(grid_index: Vector2i) -> Array[Vector2i]:
 # This will return its result backwards, meaning from destination to start position. Use reverse sort if order is
 # important (array.reverse()). This is not done here for performance reasons, and because it is not always needed.
 func generate_shortest_distance_between_grid_points(grid_from: Vector2i, grid_destination: Vector2i, max_distance: float) -> Array[Vector3]:
-	# TODO: Take existing roads into consideration
-	# var a = get_grid_position(grid_from)
-	# var b = get_grid_position(grid_destination)
-	# var query_rect = Rect2(
-	# 	Vector2(min(a.x, b.x), min(a.z, b.z)),
-	# 	Vector2(abs(a.x - b.x), abs(a.z - b.z)))
+	# var debug_color = Color(randf_range(0.0, 1.0), randf_range(0.0, 1.0), randf_range(0.0, 1.0))
+	var a = get_grid_position(grid_from)
+	var b = get_grid_position(grid_destination)
+	var query_rect = Rect2(
+		Vector2(min(a.x, b.x) - Globals.WORLD_GRID_STEP * 3, min(a.z, b.z) - Globals.WORLD_GRID_STEP * 3),
+		Vector2(abs(a.x - b.x) + 2 * Globals.WORLD_GRID_STEP * 3, abs(a.z - b.z) + 2 * Globals.WORLD_GRID_STEP * 3))
 
 
 	const MAX_ITERATIONS = 100
@@ -97,24 +94,28 @@ func generate_shortest_distance_between_grid_points(grid_from: Vector2i, grid_de
 		for edge_index in get_grid_index_edges(current_index):
 			var next_position = get_grid_position(edge_index)
 
-			# var existing_road_cost_multiplier = 1.0
-			# for road_segment in WorldState.state.road_generator.road_segments.query(query_rect):
-			# 	if (road_segment.from == Vector2(current_position.x, current_position.z) and road_segment.to == Vector2(next_position.x, next_position.z)) \
-			# 		or (road_segment.from == Vector2(next_position.x, next_position.z) and road_segment.to == Vector2(current_position.x, current_position.z)):
-			# 		existing_road_cost_multiplier = 0.1
-			# 		break
+			var existing_road_cost_multiplier = 1.0
+			for road_segment in WorldState.state.road_generator.road_segments.query(query_rect):
+				if (road_segment.from == Vector2(current_position.x, current_position.z) and road_segment.to == Vector2(next_position.x, next_position.z)) \
+					or (road_segment.from == Vector2(next_position.x, next_position.z) and road_segment.to == Vector2(current_position.x, current_position.z)):
+					# Following existing road
+					existing_road_cost_multiplier = 0.1
+					break
+				if road_segment.to == Vector2(next_position.x, next_position.z) or road_segment.from == Vector2(next_position.x, next_position.z):
+					# Found existing road, but do not yet follow it
+					existing_road_cost_multiplier = 0.9
 
-			var new_cost = cost_so_far[current_index] + _calculate_weight(current_position, next_position) # * existing_road_cost_multiplier
+			var new_cost = cost_so_far[current_index] + _calculate_weight(current_position, next_position) * existing_road_cost_multiplier
 
 			if new_cost > max_distance:
 				continue
 			if not cost_so_far.has(edge_index) or new_cost < cost_so_far[edge_index]:
 				cost_so_far[edge_index] = new_cost
-				var priority = new_cost + _distance_heuristic(grid_destination, edge_index) # * existing_road_cost_multiplier
+				var priority = new_cost + _distance_heuristic(grid_destination, edge_index) * existing_road_cost_multiplier
 				pq.push(edge_index, priority)
 				# Uncomment together with _process function for debugging
 				# added_points[next_position] = PointData.new()
-				# added_points[next_position].color = Color(1.0, 0.0, 0.0) if cost_so_far.size() < 50 else Color(0.0, 1.0, 0.0) if cost_so_far.size() < 100 else Color(0.0, 0.0, 1.0)
+				# added_points[next_position].color = debug_color
 				# added_points[next_position].came_from = current_position
 				came_from[edge_index] = current_index
 		iterations += 1

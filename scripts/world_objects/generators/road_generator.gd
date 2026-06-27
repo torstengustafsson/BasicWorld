@@ -122,3 +122,9 @@ func _connection_exists_between_settlements(settlement: SettlementManager.Settle
 func _add_connection_between_settlements(settlement: SettlementManager.SettlementData, other_settlement: SettlementManager.SettlementData):
 	var connection_key = _get_settlement_connection_key(settlement.grid_index, other_settlement.grid_index)
 	connected_settlements[connection_key] = true
+
+# Can be used for debugging road generation
+# func _generate_road(from: Vector2i, to: Vector2i) -> void:
+# 	var road_generated = try_generate_road_segments(from, to, Globals.MAX_SETTLEMENT_DISTANCE_FOR_ROAD * 2.0)
+# 	if not road_generated:
+# 		print("_generate_road error: No road possible")
