@@ -28,10 +28,10 @@ func _init(glb_mesh: Node3D):
 	model.set_surface_override_material(0, model_material)
 	default_color = model_material.albedo_color
 
-	# Start jogging animation
+	# Start animation
 	var animationplayer: AnimationPlayer = glb_mesh.get_node("AnimationPlayer")
-	animationplayer.get_animation("Armature|Armature|ArmatureAction").loop_mode = Animation.LOOP_LINEAR
-	animationplayer.play("Armature|Armature|ArmatureAction")
+	animationplayer.get_animation("ArmatureAction").loop_mode = Animation.LOOP_LINEAR
+	animationplayer.play("ArmatureAction")
 
 	if default_sound == AudioManager.SoundID.FOOD_PLEASE:
 		wants = WantsOptions.FOOD

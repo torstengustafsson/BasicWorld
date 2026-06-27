@@ -6,7 +6,8 @@ static var house_mesh: PackedScene = preload("res://assets/models/house.glb")
 static var chest_mesh: PackedScene = preload("res://assets/models/chest.glb")
 static var tree_mesh: PackedScene = preload("res://assets/models/tree.glb")
 static var rock_mesh: PackedScene = preload("res://assets/models/rock.glb")
-static var human_mesh: PackedScene = preload("res://assets/models/animated_human.glb")
+static var human_walking_mesh: PackedScene = preload("res://assets/models/human_walking.glb")
+static var human_waving_mesh: PackedScene = preload("res://assets/models/human_waving.glb")
 static var berrybush_empty_mesh: PackedScene = preload("res://assets/models/berrybush-empty.glb")
 static var berrybush_full_mesh: PackedScene = preload("res://assets/models/berrybush-full.glb")
 
@@ -25,7 +26,7 @@ var mesh_pools: Dictionary[WorldObject.ObjectId, MeshPool] = {
 	WorldObject.ObjectId.BERRYBUSH_FULL: MeshPool.new(berrybush_full_mesh, WorldObject.ObjectId.BERRYBUSH_FULL, used_meshes_quadtree, BERRYBUSH_POOL_INITIAL_SIZE),
 	WorldObject.ObjectId.HOUSE: MeshPool.new(house_mesh, WorldObject.ObjectId.HOUSE, used_meshes_quadtree, 100),
 	WorldObject.ObjectId.CHEST: MeshPool.new(chest_mesh, WorldObject.ObjectId.CHEST, used_meshes_quadtree, 30),
-	WorldObject.ObjectId.NPC: MeshPool.new(human_mesh, WorldObject.ObjectId.NPC, used_meshes_quadtree, 100),
+	WorldObject.ObjectId.NPC: MeshPool.new(human_walking_mesh, WorldObject.ObjectId.NPC, used_meshes_quadtree, 100),
 }
 # Contains the full objects, with colliders and custom behavior. Each object correspond to one mesh in the scene. It
 # contains a reference to its corresponding mesh, that is managed by the MeshPools.

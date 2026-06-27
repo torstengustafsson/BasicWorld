@@ -81,6 +81,9 @@ func add_nearby_objects():
 	var nearby_meshes = WorldState.state.pool_manager.get_meshes_in_range(WorldState.state.player.position, Globals.LOD_DISTANCE_FULL)
 	for mesh in nearby_meshes:
 		WorldState.state.pool_manager.get_object(mesh)
+	if WorldState.state.npc_manager.tutorial_npc and (WorldState.state.npc_manager.tutorial_npc.glb_mesh.position - WorldState.state.player.position).length() < Globals.LOD_DISTANCE_FULL:
+		WorldState.state.npc_manager.add_tutorial_npc()
+
 
 # TODO: Add object pool for items
 func generate_starting_items(boundary):

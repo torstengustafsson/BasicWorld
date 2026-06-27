@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://c3gltnj830o7r"
-path="res://.godot/imported/animated_human.glb-7ffb38d620444882d4cfdd3d8ce70dc9.scn"
+path="res://.godot/imported/human_walking.glb-aa4b4e3fe2299be27819ca775ddf3a9d.scn"
 
 [deps]
 
-source_file="res://assets/models/animated_human.glb"
-dest_files=["res://.godot/imported/animated_human.glb-7ffb38d620444882d4cfdd3d8ce70dc9.scn"]
+source_file="res://assets/models/human_walking.glb"
+dest_files=["res://.godot/imported/human_walking.glb-aa4b4e3fe2299be27819ca775ddf3a9d.scn"]
 
 [params]
 
