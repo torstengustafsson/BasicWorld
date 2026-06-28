@@ -71,11 +71,18 @@ func _create_npc_children_meshes(boundary: Rect2, amount) -> void:
 
 # One NPC will spawn close to player spawn. It is possible to open dialogue with this NPC to get explanations of the game
 func create_tutorial_npc(player_pos: Vector3):
-	var pos_x = rng.randf_range(player_pos.x - 10.0, player_pos.x + 10.0)
-	var pos_z = rng.randf_range(player_pos.z - 10.0, player_pos.z + 10.0)
+	var pos_x = rng.randf_range(player_pos.x - 5.0, player_pos.x + 5.0)
+	var pos_z = rng.randf_range(player_pos.z - 5.0, player_pos.z + 5.0)
+	# If position collides with other objects, keep testing new positions until it does not
+	var iterations = 0
+	while WorldState.state.pool_manager.used_objects_quadtree.query_circle(Vector2(pos_x, pos_z), 3.0).size() > 0 and iterations < 100:
+		iterations += 1
+		pos_x = rng.randf_range(player_pos.x - 5.0, player_pos.x + 5.0)
+		pos_z = rng.randf_range(player_pos.z - 5.0, player_pos.z + 5.0)
 	var height = WorldState.state.terrain_height_noise.get_height_at(pos_x, pos_z)
+	var position = Vector3(pos_x, height, pos_z)
 	tutorial_npc_mesh = PoolManager.human_waving_mesh.instantiate()
-	tutorial_npc_mesh.position = Vector3(pos_x, height, pos_z)
+	tutorial_npc_mesh.position = position
 	tutorial_npc_mesh.scale = Vector3(1.0, 1.0, 1.0)
 	tutorial_npc_mesh.set_meta("object_id", WorldObject.ObjectId.NPC)
 	tutorial_npc_mesh.set_meta("tutorial", true)

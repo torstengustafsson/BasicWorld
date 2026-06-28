@@ -32,8 +32,7 @@ func _ready() -> void:
 	var settlements = WorldState.state.settlement_manager.settlements.query_all()
 	if settlements.size() > 0:
 		var pos = settlements[0].position
-		var height = WorldState.state.terrain_height_noise.get_height_at(pos.x, pos.z)
-		WorldState.state.player.position = pos + Vector3(-2.0, height + 3.0, 0.0)
+		WorldState.state.player.position = pos + Vector3(-2.0, 0.0, 0.0)
 
 	WorldState.state.npc_manager.create_tutorial_npc(WorldState.state.player.position)
 
