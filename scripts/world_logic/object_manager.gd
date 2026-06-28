@@ -86,7 +86,7 @@ func handle_tree_chop(collider) -> ChopResult:
 		return ChopResult.new(ChopResults.NoHit)
 	tree.health -= 1
 	if tree.health <= 0:
-		WorldState.state.pool_manager.remove_object(tree)
+		WorldState.state.pool_manager.delete_object(tree)
 		var amount_gained = floor(tree.max_health / 3)
 		return ChopResult.new(ChopResults.ChoppedDown, tree.glb_mesh.position + Vector3(0.0, 1.0, 0.0), amount_gained)
 	shaking_tree = tree.glb_mesh
@@ -99,7 +99,7 @@ func handle_rock_chop(collider) -> ChopResult:
 		return ChopResult.new(ChopResults.NoHit)
 	rock.health -= 1
 	if rock.health <= 0:
-		WorldState.state.pool_manager.remove_object(rock)
+		WorldState.state.pool_manager.delete_object(rock)
 		var amount_gained = floor(rock.max_health / 3)
 		return ChopResult.new(ChopResults.ChoppedDown, rock.glb_mesh.position + Vector3(0.0, 1.0, 0.0), amount_gained)
 	return ChopResult.new(ChopResults.StillStanding)

@@ -36,6 +36,12 @@ func _ready() -> void:
 
 	WorldState.state.npc_manager.create_tutorial_npc(WorldState.state.player.position)
 
+	var axe_position = WorldState.state.player.position + Vector3(-1.0, 2.0, -4.0)
+	WorldState.state.item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
+
+	var pickaxe_position = WorldState.state.player.position + Vector3(1.0, 2.0, -4.0)
+	WorldState.state.item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
+
 	var elapsed = Time.get_ticks_msec() - start_time
 
 	print("")

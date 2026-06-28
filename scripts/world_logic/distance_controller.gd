@@ -87,14 +87,6 @@ func add_nearby_objects():
 
 # TODO: Add object pool for items
 func generate_starting_items(boundary):
-	var axe_position = Vector3(-1.0, 2.0, -4.0)
-	if boundary.has_point(Vector2(axe_position.x, axe_position.z)):
-		WorldState.state.item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
-
-	var pickaxe_position = Vector3(1.0, 2.0, -4.0)
-	if boundary.has_point(Vector2(pickaxe_position.x, pickaxe_position.z)):
-		WorldState.state.item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
-
 	var get_random_position = func() -> Vector3:
 		return Vector3(
 			WorldState.state.rng.randf_range(boundary.position.x, boundary.end.x),

@@ -21,7 +21,7 @@ var southwest: Quadtree
 var southeast: Quadtree
 
 
-func _init(rect: Rect2 = Rect2(0.0, 0.0, 0.0, 0.0), p_capacity: int = MAX_CAPACITY, p_depth: int = 0) -> void:
+func _init(rect: Rect2 = Rect2(-INF, -INF, INF, INF), p_capacity: int = MAX_CAPACITY, p_depth: int = 0) -> void:
 	boundary = rect
 	capacity = p_capacity
 	depth = p_depth

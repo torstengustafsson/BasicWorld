@@ -20,7 +20,6 @@ var road_segments: Quadtree = Quadtree.new()
 
 func _init(_settlement_manager: SettlementManager) -> void:
 	settlement_manager = _settlement_manager
-	road_segments.boundary = Rect2(-INF, -INF, INF, INF)
 
 func generate_roads(boundary: Rect2) -> void:
 	var neighbor_max_distance = Globals.WORLD_GRID_STEP * (Globals.SETTLEMENT_GRID_STEP + 2 * Globals.SETTLEMENT_GRID_SPREAD)

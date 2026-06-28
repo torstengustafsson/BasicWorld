@@ -2,6 +2,13 @@ extends Node
 
 class_name PoolManager
 
+class DeletedObject:
+	var position: Vector3
+	var object_id: WorldObject.ObjectId
+	func _init(_position, _object_id) -> void:
+		position = _position
+		object_id = _object_id
+
 static var house_mesh: PackedScene = preload("res://assets/models/house.glb")
 static var chest_mesh: PackedScene = preload("res://assets/models/chest.glb")
 static var tree_mesh: PackedScene = preload("res://assets/models/tree.glb")
@@ -33,6 +40,9 @@ var mesh_pools: Dictionary[WorldObject.ObjectId, MeshPool] = {
 var used_objects_quadtree: Quadtree = Quadtree.new()
 var object_pool: ObjectPool = ObjectPool.new(used_objects_quadtree, CLOSE_OBJECT_INITAL_SIZE)
 
+# All objects that are removed by the player will be stored here, to ensure they are not placed again on later re-generation
+var deleted_objects_quadtree: Quadtree = Quadtree.new()
+
 func _init() -> void:
 	used_meshes_quadtree.boundary = Rect2(Vector2(-INF, -INF), Vector2(INF, INF))
 	for pool in mesh_pools.values():
@@ -41,6 +51,8 @@ func _init() -> void:
 	add_child(object_pool)
 
 func get_mesh(type: WorldObject.ObjectId, position: Vector3, scale: Vector3) -> Node3D:
+	if is_deleted(type, position):
+		return null
 	return mesh_pools[type].get_mesh(position, scale)
 
 func get_mesh_at_position(type: WorldObject.ObjectId, position: Vector3) -> Node3D:
@@ -60,8 +72,13 @@ func remove_mesh(mesh: Node3D) -> void:
 func remove_mesh_with_id(mesh: Node3D, object_id: WorldObject.ObjectId) -> void:
 	mesh_pools[object_id]._set_mesh_disabled(mesh)
 
+func is_deleted(type: WorldObject.ObjectId, position: Vector3) -> bool:
+	var deleted_object = deleted_objects_quadtree.get_item(Vector2(position.x, position.z))
+	return deleted_object and deleted_object.object_id == type
 
 func get_object(glb_mesh: Node3D) -> WorldObject:
+	if is_deleted(glb_mesh.get_meta("object_id"), glb_mesh.position):
+		return null
 	return object_pool.get_object(glb_mesh)
 
 func get_object_at_position(type: WorldObject.ObjectId, position: Vector3) -> WorldObject:
@@ -76,6 +93,12 @@ func remove_faraway_world_objects(boundary_to_keep: Rect2) -> void:
 func remove_object(object: WorldObject) -> void:
 	mesh_pools[object.object_id]._set_mesh_disabled(object.glb_mesh)
 	object_pool._set_object_disabled(object)
+
+# Compared to remove_object, this function also makes sure the removed object will stay removed on later re-generation
+func delete_object(object: WorldObject) -> void:
+	var object_to_delete = DeletedObject.new(object.glb_mesh.position, object.object_id)
+	deleted_objects_quadtree.insert({"position": Vector2(object.glb_mesh.position.x, object.glb_mesh.position.z), "data": object_to_delete})
+	remove_object(object)
 
 # TODO
 # func get_collider(shape: CollisionShape3D, position: Vector3, scale: Vector3) -> CollisionObject3D:

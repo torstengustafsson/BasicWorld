@@ -56,7 +56,8 @@ func _create_npc_meshes(boundary: Rect2, amount: int) -> void:
 		var rotation = Vector3(0.0, rng.randf() * 2 * PI, 0.0)
 		var scale = Vector3(1,1,1)
 		var npc_mesh = WorldState.state.pool_manager.get_mesh(WorldObject.ObjectId.NPC, position, scale)
-		npc_mesh.set_rotation(rotation)
+		if npc_mesh:
+			npc_mesh.set_rotation(rotation)
 
 func _create_npc_children_meshes(boundary: Rect2, amount) -> void:
 	for i in amount:
@@ -67,7 +68,8 @@ func _create_npc_children_meshes(boundary: Rect2, amount) -> void:
 		var rotation = Vector3(0.0, rng.randf() * 2 * PI, 0.0)
 		var scale = Vector3(1,1,1)
 		var npc_mesh = WorldState.state.pool_manager.get_mesh(WorldObject.ObjectId.NPC, position, scale)
-		npc_mesh.set_rotation(rotation)
+		if npc_mesh:
+			npc_mesh.set_rotation(rotation)
 
 # One NPC will spawn close to player spawn. It is possible to open dialogue with this NPC to get explanations of the game
 func create_tutorial_npc(player_pos: Vector3):
@@ -111,7 +113,7 @@ func handle_chop(collider) -> ObjectManager.ChopResult:
 		object.npc.trigger_damage()
 		object.health -= 1
 		if object.health <= 0:
-			WorldState.state.pool_manager.remove_object(object)
+			WorldState.state.pool_manager.delete_object(object)
 			return ObjectManager.ChopResult.new(ObjectManager.ChopResults.ChoppedDown)
 		return ObjectManager.ChopResult.new(ObjectManager.ChopResults.StillStanding)
 	return ObjectManager.ChopResult.new(ObjectManager.ChopResults.NoHit)

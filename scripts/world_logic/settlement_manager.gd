@@ -134,10 +134,12 @@ func _add_chest(position: Vector3, rotation: Vector3) -> Transform:
 func _add_settlement_to_scene(settlement_data: SettlementData):
 	for transform in settlement_data.house_transforms:
 		var house = WorldState.state.pool_manager.get_mesh(WorldObject.ObjectId.HOUSE, transform.position, transform.scale)
-		house.set_rotation(transform.rotation)
+		if house:
+			house.set_rotation(transform.rotation)
 	var transform = settlement_data.chest_transform
 	var chest = WorldState.state.pool_manager.get_mesh(WorldObject.ObjectId.CHEST, transform.position, transform.scale)
-	chest.set_rotation(transform.rotation)
+	if chest:
+		chest.set_rotation(transform.rotation)
 
 # Removes meshes, which in turn will nesure no object are created there as well
 func remove_objects_from_settlements(settlements_to_check: Array[SettlementData]):
