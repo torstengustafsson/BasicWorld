@@ -2,8 +2,6 @@ extends Node
 
 class_name ObjectPool
 
-const OUT_OF_SIGHT = Vector3(-1000000.0, -1000000.0, -1000000.0)
-
 # Pool configuration
 var initial_pool_size: int # Size of pool at creation. Pool may later grow beyond this, but a good initial value may save some initialization time.
 var growth_threshold_percent: float # A value of 0.8 means grow when used objects are >= 80% of pool size.
@@ -34,41 +32,40 @@ func _initialize_pool() -> void:
 	unused_objects.clear()
 	for _i in range(initial_pool_size):
 		var object: WorldObject = WorldObject.new()
-		_set_object_disabled(object)
-		add_child(object.collider_body)
+		set_object_disabled(object)
+		call_deferred("add_child", object.collider_body)
 
-func get_object(glb_mesh: Node3D) -> WorldObject:
-	var position = glb_mesh.position
-	var existing_object = used_objects.get(position)
+func get_object(mesh_object: MeshObject) -> WorldObject:
+	var existing_object = used_objects.get(mesh_object.position)
 	if existing_object:
+		existing_object.initialize_object(mesh_object)
 		return existing_object
 	if used_objects.size() >= growth_threshold_value:
 		_grow_pool()
 	var object = unused_objects.pop_back()
 	if not object:
 		return null
-	var object_id = glb_mesh.get_meta("object_id")
-	object.initialize_object(object_id, glb_mesh)
-	object.collider_body.process_mode = Node.PROCESS_MODE_PAUSABLE
-	used_objects[position] = object
-	if not used_objects_by_type.get(object.object_id):
-		used_objects_by_type[object.object_id] = []
-	used_objects_by_type[object.object_id].append(object)
-	used_objects_quadtree.insert({"position": Vector2(position.x, position.z), "data": object})
+	object.initialize_object(mesh_object)
+	object.collider_body.call_deferred("set_process_mode", Node.PROCESS_MODE_PAUSABLE)
+	used_objects[mesh_object.position] = object
+	if not used_objects_by_type.get(mesh_object.object_id):
+		used_objects_by_type[mesh_object.object_id] = []
+	used_objects_by_type[mesh_object.object_id].append(object)
+	used_objects_quadtree.insert({"position": Vector2(mesh_object.position.x, mesh_object.position.z), "data": object})
 	return object
 
-func _set_object_disabled(object: WorldObject) -> void:
+func set_object_disabled(object: WorldObject) -> void:
 	used_objects_quadtree.remove(object)
-	used_objects.erase(object.collider_body.position)
-	used_objects_by_type.get(object.object_id, []).erase(object)
+	used_objects.erase(object.mesh_object.position)
+	used_objects_by_type.get(object.mesh_object.object_id, []).erase(object)
 	object.reset_object()
-	object.collider_body.process_mode = Node.PROCESS_MODE_DISABLED
-	object.collider_body.position = OUT_OF_SIGHT
+	object.collider_body.call_deferred("set_process_mode", Node.PROCESS_MODE_DISABLED)
+	object.collider_body.call_deferred("set_position", Globals.OUT_OF_SIGHT)
 	unused_objects.append(object)
 
-func get_object_at_position(type: WorldObject.ObjectId, position: Vector3) -> WorldObject:
+func get_object_at_position(object_id: WorldObject.ObjectId, position: Vector3) -> WorldObject:
 	var object: WorldObject = used_objects.get(position)
-	if object and object.object_id == type:
+	if object and object.mesh_object.object_id == object_id:
 		return object
 	return null
 
@@ -79,15 +76,21 @@ func get_active_objects_of_type(type: WorldObject.ObjectId) -> Array:
 	return used_objects_by_type.get(type, [])
 
 func remove_objects_outside_bounds(boundary: Rect2) -> void:
+	var to_be_removed: Array[WorldObject]
 	for position in used_objects.keys():
 		if not boundary.has_point(Vector2(position.x, position.z)):
-			_set_object_disabled(used_objects[position])
+			if not used_objects.get(position):
+				print("Error: Tried to remove ", position, " but was no longer in the scene. This should not happen.")
+				continue
+			to_be_removed.append(used_objects[position])
+	for object in to_be_removed:
+		set_object_disabled(object)
 
 func _grow_pool() -> void:
 	var total_pool_objects: int = unused_objects.size() + used_objects.size()
-	var new_objects: int = floor(total_pool_objects * growth_factor_percent)
+	var new_objects: int = min(floor(total_pool_objects * growth_factor_percent), 1000)
 	growth_threshold_value = floor((total_pool_objects + new_objects) * growth_threshold_percent)
 	for _i in new_objects:
 		var object: WorldObject = WorldObject.new()
-		_set_object_disabled(object)
-		add_child(object.collider_body)
+		set_object_disabled(object)
+		call_deferred("add_child", object.collider_body)

@@ -28,20 +28,6 @@ func _ready() -> void:
 	add_child(distance_controller)
 	await get_tree().process_frame
 
-	# Make player spawn in a settlement if possible
-	var settlements = WorldState.state.settlement_manager.settlements.query_all()
-	if settlements.size() > 0:
-		var pos = settlements[0].position
-		WorldState.state.player.position = pos + Vector3(-2.0, 0.0, 0.0)
-
-	WorldState.state.npc_manager.create_tutorial_npc(WorldState.state.player.position)
-
-	var axe_position = WorldState.state.player.position + Vector3(-1.0, 2.0, -4.0)
-	WorldState.state.item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
-
-	var pickaxe_position = WorldState.state.player.position + Vector3(1.0, 2.0, -4.0)
-	WorldState.state.item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
-
 	var elapsed = Time.get_ticks_msec() - start_time
 
 	print("")

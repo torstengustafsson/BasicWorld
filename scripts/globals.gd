@@ -27,7 +27,7 @@ const MAX_GRID_STEEPNESS = 10.0
 # Settlement spread must be less than half of settlement grid step to avoid overlap
 const SETTLEMENT_GRID_STEP = 12
 const SETTLEMENT_GRID_SPREAD = 4
-
+const MAX_SETTLEMENT_RADIUS = 16.0
 const MAX_SETTLEMENT_DISTANCE_FOR_ROAD: float = 768.0
 
 # The max height-angle in degrees that a settlements gridpoint and its edges can be connected by
@@ -46,7 +46,11 @@ const ROAD_MARGIN: float = 0.5
 # outside of LOD_DISTANCE_NO_COLLIDER are removed from the scene. The check is made whenever the
 # player moves beyond LOD_UPDATE_DISTANCE from its position at the last update.
 # NOTE: LOD_DISTANCE_FULL must be >= LOD_UPDATE_DISTANCE.
-const LOD_DISTANCE_FULL = 64.0
-const LOD_DISTANCE_NO_COLLIDER = 256.0
+const LOD_DISTANCE_FULL = 16.0
+const LOD_DISTANCE_NO_COLLIDER = 384.0
 const LOD_UPDATE_DISTANCE = LOD_DISTANCE_FULL * 0.5 # Objects will spawn and despawn whenever player moves this distance
 const LOD_REMOVE_DISTANCE_MULTIPLIER = 1.2 # A value of 1.2 means wait to remove faraway objects until 20% more distance than LOD_DISTANCE_NO_COLLIDER away
+
+# Internal values, should generally not be touched
+const OUT_OF_SIGHT = Vector3(-1000000.0, -1000000.0, -1000000.0)
+const NOT_A_NUMBER: float = INF

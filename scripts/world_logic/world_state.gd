@@ -26,17 +26,18 @@ func _init(_player: Node3D) -> void:
 	terrain_height_noise = TerrainNoise.new(rng)
 	player = _player
 
-func _ready() -> void:
 	terrain_generator = TerrainGenerator.new(terrain_height_noise)
 	pool_manager = PoolManager.new()
-	object_manager = ObjectManager.new()
+	object_manager = ObjectManager.new(rng)
 	item_generator = WorldItemGenerator.new()
 	settlement_manager = SettlementManager.new()
-	road_generator = RoadGenerator.new(settlement_manager)
+	road_generator = RoadGenerator.new()
 	npc_manager = NpcManager.new(settlement_manager)
 	world_grid = WorldGrid.new()
 	audio_manager = AudioManager.new()
 
+
+func _ready() -> void:
 	add_child(terrain_generator)
 	add_child(pool_manager)
 	add_child(object_manager)

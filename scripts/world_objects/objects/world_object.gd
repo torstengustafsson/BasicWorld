@@ -1,3 +1,5 @@
+extends RefCounted
+
 class_name WorldObject
 
 enum ObjectId {
@@ -14,8 +16,7 @@ enum ObjectId {
 # NOTE: Here we are only interested in collider, but Godot requires it to be StaticBody3D to enable physics collisions
 var collider_body: StaticBody3D = StaticBody3D.new()
 var collider: CollisionShape3D = CollisionShape3D.new()
-var object_id: ObjectId = ObjectId.NO_OBJECT
-var glb_mesh: Node3D # Reference to a mesh managed by a MeshPool
+var mesh_object: MeshObject = MeshObject.new()
 
 var max_health: int = 1
 var health: int = 1
@@ -26,6 +27,10 @@ var npc: NPC = null
 
 func _init():
 	collider_body.add_child(collider)
+
+func set_mesh_object(_mesh_object: MeshObject):
+	mesh_object = _mesh_object
+
 
 func set_scale(scale: Vector3):
 	var uniform_scale: bool = scale.x == scale.y and scale.y == scale.z
@@ -39,100 +44,91 @@ func set_scale(scale: Vector3):
 		var scale_val = min_val + max_val - min_val / 2.0
 		var averaged_scale = Vector3(scale_val, scale_val, scale_val) * 0.8
 		collider_body.scale = averaged_scale
-	glb_mesh.scale = scale
+	mesh_object.mesh.scale = scale
 
-func set_rotation(rotation: Vector3):
-	collider_body.rotation = rotation
-	glb_mesh.rotation = rotation
-
-func initialize_object(_object_id: ObjectId, _glb_mesh: Node3D) -> void:
-	match _object_id:
+func initialize_object(_mesh_object: MeshObject) -> void:
+	mesh_object = _mesh_object
+	match _mesh_object.object_id:
 		ObjectId.HOUSE:
-			set_to_house(_glb_mesh)
+			set_to_house()
 		ObjectId.CHEST:
-			set_to_chest(_glb_mesh)
+			set_to_chest()
 		ObjectId.TREE:
-			set_to_tree(_glb_mesh)
+			set_to_tree()
 		ObjectId.ROCK:
-			set_to_rock(_glb_mesh)
+			set_to_rock()
 		ObjectId.BERRYBUSH_EMPTY:
-			set_to_berrybush(_glb_mesh, ObjectId.BERRYBUSH_EMPTY)
+			set_to_berrybush(ObjectId.BERRYBUSH_EMPTY)
 		ObjectId.BERRYBUSH_FULL:
-			set_to_berrybush(_glb_mesh, ObjectId.BERRYBUSH_FULL)
+			set_to_berrybush(ObjectId.BERRYBUSH_FULL)
 		ObjectId.NPC:
-			set_to_npc(_glb_mesh)
-	set_scale(_glb_mesh.scale)
-	set_rotation(glb_mesh.rotation)
-	collider_body.position = glb_mesh.position
+			set_to_npc()
+	set_scale(mesh_object.scale)
+	collider_body.rotation = mesh_object.rotation
+	collider_body.position = mesh_object.position
 
 
-func set_to_house(_glb_mesh: Node3D) -> void:
+func set_to_house() -> void:
 	collider.shape = BoxShape3D.new()
 	collider.shape.size = Vector3(4.5, 3.6, 6.0)
-	object_id = ObjectId.HOUSE
-	glb_mesh = _glb_mesh
-	collider_body.position = _glb_mesh.position
-	collider_body.rotation = glb_mesh.rotation
-	set_scale(glb_mesh.scale)
+	mesh_object.object_id = ObjectId.HOUSE
+	collider_body.position = mesh_object.position
+	collider_body.rotation = mesh_object.rotation
+	set_scale(mesh_object.scale)
 
-func set_to_chest(_glb_mesh: Node3D) -> void:
+func set_to_chest() -> void:
 	collider.shape = BoxShape3D.new()
 	collider.shape.size = Vector3(1.0, 1.0, 1.55)
-	object_id = ObjectId.CHEST
-	glb_mesh = _glb_mesh
-	collider_body.position = _glb_mesh.position
-	collider_body.rotation = glb_mesh.rotation
-	set_scale(glb_mesh.scale)
+	mesh_object.object_id = ObjectId.CHEST
+	collider_body.position = mesh_object.position
+	collider_body.rotation = mesh_object.rotation
+	set_scale(mesh_object.scale)
 
-func set_to_tree(_glb_mesh: Node3D) -> void:
+func set_to_tree() -> void:
 	collider.shape = CylinderShape3D.new()
 	collider.shape.height = 4.0
 	collider.shape.radius = 0.5
-	object_id = ObjectId.TREE
-	glb_mesh = _glb_mesh
-	collider_body.position = _glb_mesh.position
-	collider_body.rotation = glb_mesh.rotation
-	set_scale(glb_mesh.scale)
-	max_health = round(glb_mesh.scale.y * 2.0)
+	mesh_object.object_id = ObjectId.TREE
+	collider_body.position = mesh_object.position
+	collider_body.rotation = mesh_object.rotation
+	set_scale(mesh_object.scale)
+	max_health = round(mesh_object.scale.y * 2.0)
 	health = max_health
 
-func set_to_rock(_glb_mesh: Node3D) -> void:
+func set_to_rock() -> void:
 	collider.shape = SphereShape3D.new()
 	collider.shape.radius = 0.7
-	object_id = ObjectId.ROCK
-	glb_mesh = _glb_mesh
-	collider_body.position = _glb_mesh.position
-	collider_body.rotation = glb_mesh.rotation
-	set_scale(glb_mesh.scale)
-	max_health = round(glb_mesh.scale.x + glb_mesh.scale.y + glb_mesh.scale.z)
+	mesh_object.object_id = ObjectId.ROCK
+	collider_body.position = mesh_object.position
+	collider_body.rotation = mesh_object.rotation
+	set_scale(mesh_object.scale)
+	max_health = round(mesh_object.scale.x + mesh_object.scale.y + mesh_object.scale.z)
 	health = max_health
 
-func set_to_berrybush(_glb_mesh: Node3D, _object_id: ObjectId) -> void:
+func set_to_berrybush(_object_id: ObjectId) -> void:
 	collider.shape = SphereShape3D.new()
 	collider.shape.radius = 0.7
-	object_id = _object_id
-	glb_mesh = _glb_mesh
-	collider_body.position = _glb_mesh.position
-	collider_body.rotation = glb_mesh.rotation
-	set_scale(glb_mesh.scale)
+	mesh_object.object_id = _object_id
+	collider_body.position = mesh_object.position
+	collider_body.rotation = mesh_object.rotation
+	set_scale(mesh_object.scale)
 	berrybush = Berrybush.new(self)
 
-func set_to_npc(_glb_mesh: Node3D) -> void:
+func set_to_npc() -> void:
 	collider.shape = CylinderShape3D.new()
 	collider.shape.height = 4.0 # TODO: Verify why it need to be so large. Should be 1.8
 	collider.shape.radius = 0.5
-	object_id = ObjectId.NPC
-	glb_mesh = _glb_mesh
-	collider_body.position = _glb_mesh.position
-	collider_body.rotation = glb_mesh.rotation
-	set_scale(glb_mesh.scale)
+	mesh_object.object_id = ObjectId.NPC
+	collider_body.position = mesh_object.position
+	collider_body.rotation = mesh_object.rotation
+	set_scale(mesh_object.scale)
 	max_health = 4
 	health = max_health
-	npc = NPC.new(glb_mesh)
+	npc = NPC.new(mesh_object)
 
 func reset_object():
-	collider.shape = null
-	object_id = ObjectId.NO_OBJECT
+	mesh_object = MeshObject.new()
+	collider.call_deferred("set_shape", null)
 	berrybush = null
 	npc = null
 
@@ -156,17 +152,11 @@ class Berrybush:
 
 	func fill():
 		is_filled = true
-		var position = parent.glb_mesh.position
-		var scale = parent.glb_mesh.scale
-		WorldState.state.pool_manager.remove_mesh(parent.glb_mesh)
-		var filled_mesh = WorldState.state.pool_manager.get_mesh(WorldObject.ObjectId.BERRYBUSH_FULL, position, scale)
-		parent.glb_mesh = filled_mesh
+		WorldState.state.pool_manager.remove_mesh(parent.mesh_object)
+		parent.mesh_object = WorldState.state.pool_manager.get_mesh(ObjectId.BERRYBUSH_FULL, parent.mesh_object.position, parent.mesh_object.scale)
 
 	func reset():
 		is_filled = false
 		berries_fill_secs = 0.0
-		var position = parent.glb_mesh.position
-		var scale = parent.glb_mesh.scale
-		WorldState.state.pool_manager.remove_mesh(parent.glb_mesh)
-		var empty_mesh = WorldState.state.pool_manager.get_mesh(WorldObject.ObjectId.BERRYBUSH_EMPTY, position, scale)
-		parent.glb_mesh = empty_mesh
+		WorldState.state.pool_manager.remove_mesh(parent.mesh_object)
+		parent.mesh_object = WorldState.state.pool_manager.get_mesh(WorldObject.ObjectId.BERRYBUSH_EMPTY, parent.mesh_object.position, parent.mesh_object.scale)

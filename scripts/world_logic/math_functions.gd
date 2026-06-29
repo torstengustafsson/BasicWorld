@@ -36,32 +36,6 @@ static func calculate_angle_between_points(point_a: Vector3, point_b: Vector3) -
 	# that amount to get 0 for flat ground.
 	return angle_deg - 90.0
 
-# TODO: This function need to use collision mask so it only collides with terrain.
-# Now, if it first collides with a tree or something the calculations will break.
-static func get_terrain_angle_at_position(position: Vector3, space_state: PhysicsDirectSpaceState3D) -> float:
-	var origin = position + Vector3(0.0, 10000.0, 0.0)
-	var end = position - Vector3(0.0, 10000.0, 0.0)
-
-	var query = PhysicsRayQueryParameters3D.create(origin, end)
-	query.collide_with_areas = true
-
-	var result = space_state.intersect_ray(query)
-
-	# Check if the ray hit the terrain
-	if not result or result["collider"].get_parent() is not TerrainChunk:
-		return INF
-
-	var calculate_slope_angle = func(_normal: Vector3) -> float:
-		var dot_product: float = _normal.dot(Vector3.UP)
-		dot_product = clamp(dot_product, -1.0, 1.0)  # Avoid floating-point errors
-		var angle_rad: float = acos(dot_product)
-		var angle_deg: float = rad_to_deg(angle_rad)
-		return angle_deg
-
-	var normal: Vector3 = result["normal"]
-	var angle: float = calculate_slope_angle.call(normal)
-	return angle
-
 # Godots built-in modulus function does not work as expected for negative values
 static func mod(n: int, m: int) -> int:
 	return ((n % m) + m) % m;
@@ -75,6 +49,33 @@ static func resize_rect(rect: Rect2, scale: float) -> Rect2:
 		new_size.x,
 		new_size.y
 	)
+
+static func get_holed_rect(outer: Rect2, hole: Rect2) -> Array[Rect2]:
+	var top := Rect2(
+		outer.position.x,
+		outer.position.y,
+		outer.size.x,
+		hole.position.y - outer.position.y
+	)
+	var bottom := Rect2(
+		outer.position.x,
+		hole.end.y,
+		outer.size.x,
+		outer.end.y - hole.end.y
+	)
+	var left := Rect2(
+		outer.position.x,
+		hole.position.y,
+		hole.position.x - outer.position.x,
+		hole.size.y
+	)
+	var right := Rect2(
+		hole.end.x,
+		hole.position.y,
+		outer.end.x - hole.end.x,
+		hole.size.y
+	)
+	return [top, bottom, left, right]
 
 static func get_middle_point_vec2(a: Vector2, b: Vector2):
 	return (a + b) * 0.5

@@ -36,8 +36,8 @@ func above_threshold(position: Vector3) -> bool:
 
 static func create_forest_noise(rng: RandomNumberGenerator) -> NoiseFunctions:
 	var high_density_noise = NoiseContainer.new(rng.randi(), 0.006, 0.5)
-	var low_density_noise = NoiseContainer.new(rng.randi(), 0.5, 0.25)
-	var no_forest_noise = NoiseContainer.new(rng.randi(), 0.0006, 0.6, false)
+	var low_density_noise = NoiseContainer.new(rng.randi(), 0.5, 0.2)
+	var no_forest_noise = NoiseContainer.new(rng.randi(), 0.0006, 0.625, false)
 	return NoiseFunctions.new([high_density_noise, low_density_noise, no_forest_noise])
 
 static func create_rocks_noise(rng: RandomNumberGenerator) -> NoiseFunctions:

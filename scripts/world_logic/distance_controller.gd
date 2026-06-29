@@ -6,11 +6,12 @@ var lod_last_player_pos: Vector2
 var terrain_last_player_index: Vector2i
 
 var update_close_objects_time = 0
-const FORCE_UPDATE_CLOSE_OBJECTS_INTERVAL_SECONDS = 2.0
+const FORCE_UPDATE_CLOSE_OBJECTS_INTERVAL_SECONDS = 5.0
 
-var cleanup_faraway_objects_time = 0
-const FORCE_CLEANUP_FARAWAY_OBJECTS_INTERVAL_SECONDS = 10.0
+var distance_controller_threads: Dictionary[String, ThreadWorker]
 
+var player_spawn_set: bool = false
+var meshes_initialized: bool = false
 
 func _init():
 	lod_last_player_pos = Vector2(WorldState.state.player.position.x, WorldState.state.player.position.z)
@@ -25,63 +26,68 @@ func _ready() -> void:
 	await get_tree().process_frame
 
 	var terrain_boundary = WorldState.state.terrain_generator.get_terrain_size()
-
 	generate_starting_items(terrain_boundary)
 
-	update_lods()
+	distance_controller_threads = {
+		"cleanup_faraway_meshes": ThreadCleanupFarawayMeshes.new(),
+		"cleanup_faraway_objects": ThreadCleanupFarawayObjects.new(),
+		"add_meshes": ThreadAddMeshes.new(),
+		"add_roads": ThreadAddRoads.new(),
+		"add_settlements": ThreadAddSettlements.new(),
+	}
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	TerrainManager.update_angle_positions() # Needed by threads
+	WorldState.state.pool_manager.apply_mesh_updates() # Threads queue mesh updates like position. Main thread apply them here
+
+	# Check for when threads are fully initialized
+	if not player_spawn_set \
+		and (distance_controller_threads["add_settlements"].initialization_completed or Engine.get_process_frames() > 5):
+		# Player will spawn in the nearest settlement, if it is created within 5 frames. If not, player will spawn at origin
+		player_spawn_set = true
+		initalize_player_spawn()
+	if not meshes_initialized and distance_controller_threads["add_meshes"].initialization_completed:
+		# add_nearby_objects need to be called as soon as meshes have been added to avoid empty meshes without colliders near player spawn
+		meshes_initialized = true
+		add_nearby_objects()
+
 	var player_chunk_index = WorldState.state.terrain_generator.get_player_chunk_index(WorldState.state.player.position)
 	if player_chunk_index != terrain_last_player_index:
 		WorldState.state.terrain_generator.update_chunks_around_player(WorldState.state.player.position, 1)
 		terrain_last_player_index = player_chunk_index
 
+	update_close_objects_time += delta
 	var distance_traveled = (Vector2(WorldState.state.player.position.x, WorldState.state.player.position.z) - lod_last_player_pos).length()
-	if distance_traveled > Globals.LOD_UPDATE_DISTANCE:
-		update_lods()
+	if update_close_objects_time > FORCE_UPDATE_CLOSE_OBJECTS_INTERVAL_SECONDS or distance_traveled > Globals.LOD_UPDATE_DISTANCE:
+		add_nearby_objects()
 		lod_last_player_pos = Vector2(WorldState.state.player.position.x, WorldState.state.player.position.z)
 		update_close_objects_time = 0
 
-func update_lods():
-	remove_faraway_meshes()
-	remove_faraway_objects()
-	add_outer_bounds_meshes()
+	for thread in distance_controller_threads.values():
+		thread.wake_up_thread()
+		thread.update_player_position(WorldState.state.player.position)
+
+func initalize_player_spawn():
+	# Make player spawn in a settlement if possible
+	var settlements = WorldState.state.settlement_manager.settlements.query_all()
+	if settlements.size() > 0:
+		var pos = settlements[0].position
+		var angle = TerrainManager.get_terrain_angle_at_position(pos)
+		WorldState.state.player.position = pos + Vector3(randf_range(-2.0, 2.0), min(abs(angle), 10.0), randf_range(-2.0, 2.0))
 	add_nearby_objects()
+	WorldState.state.npc_manager.create_tutorial_npc(WorldState.state.player.position)
+	var axe_position = WorldState.state.player.position + Vector3(-1.0, 2.0, -4.0)
+	WorldState.state.item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
+	var pickaxe_position = WorldState.state.player.position + Vector3(1.0, 2.0, -4.0)
+	WorldState.state.item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
 
-func remove_faraway_meshes():
-	const OUTER_BOUNDS = Globals.LOD_DISTANCE_NO_COLLIDER * Globals.LOD_REMOVE_DISTANCE_MULTIPLIER
-	var start_pos = Vector2(WorldState.state.player.position.x - OUTER_BOUNDS, WorldState.state.player.position.z - OUTER_BOUNDS)
-	var size = Vector2(OUTER_BOUNDS * 2, OUTER_BOUNDS * 2)
-	var boundary_to_keep: Rect2 = Rect2(start_pos, size)
-	WorldState.state.pool_manager.remove_faraway_world_meshes(boundary_to_keep)
 
-func remove_faraway_objects():
-	const INNER_BOUNDS = Globals.LOD_DISTANCE_FULL * Globals.LOD_REMOVE_DISTANCE_MULTIPLIER
-	var start_pos = Vector2(WorldState.state.player.position.x - INNER_BOUNDS, WorldState.state.player.position.z - INNER_BOUNDS)
-	var size = Vector2(INNER_BOUNDS * 2, INNER_BOUNDS * 2)
-	var boundary_to_keep: Rect2 = Rect2(start_pos, size)
-	WorldState.state.pool_manager.remove_faraway_world_objects(boundary_to_keep)
-
-func add_outer_bounds_meshes():
-	const OUTER_BOUNDS = Globals.LOD_DISTANCE_NO_COLLIDER
-	var start_pos = Vector2(WorldState.state.player.position.x - OUTER_BOUNDS, WorldState.state.player.position.z - OUTER_BOUNDS)
-	var size = Vector2(OUTER_BOUNDS * 2, OUTER_BOUNDS * 2)
-	var boundary: Rect2 = Rect2(start_pos, size)
-	WorldState.state.object_manager.add_world_meshes(boundary)
-	var nearby_settlements: Array[SettlementManager.SettlementData] = WorldState.state.settlement_manager.create_settlements(boundary)
-	WorldState.state.npc_manager.create_npcs_meshes_in_settlements(nearby_settlements)
-	WorldState.state.settlement_manager.remove_objects_from_settlements(nearby_settlements)
-	WorldState.state.road_generator.generate_roads(boundary)
-	var quarter_boundary = MathFunctions.resize_rect(boundary, 0.25)
-	WorldState.state.road_generator.remove_objects_from_roads(quarter_boundary) # Dont remove until close, to save performance
-	var nearby_road_segments = WorldState.state.road_generator.road_segments.query_circle(Vector2(WorldState.state.player.position.x, WorldState.state.player.position.z), OUTER_BOUNDS)
-	WorldState.state.terrain_generator.update_shader_data(nearby_settlements, nearby_road_segments)
-
+# This function requires meshes to have been added first, otherwise, no objects will spawn
 func add_nearby_objects():
-	var nearby_meshes = WorldState.state.pool_manager.get_meshes_in_range(WorldState.state.player.position, Globals.LOD_DISTANCE_FULL)
-	for mesh in nearby_meshes:
-		WorldState.state.pool_manager.get_object(mesh)
-	if WorldState.state.npc_manager.tutorial_npc and (WorldState.state.npc_manager.tutorial_npc.glb_mesh.position - WorldState.state.player.position).length() < Globals.LOD_DISTANCE_FULL:
+	var nearby_mesh_objects = WorldState.state.pool_manager.get_meshes_in_range(WorldState.state.player.position, Globals.LOD_DISTANCE_FULL)
+	for mesh_object: MeshObject in nearby_mesh_objects:
+		WorldState.state.pool_manager.get_object(mesh_object)
+	if WorldState.state.npc_manager.tutorial_npc and (WorldState.state.npc_manager.tutorial_npc.mesh_object.position - WorldState.state.player.position).length() < Globals.LOD_DISTANCE_FULL:
 		WorldState.state.npc_manager.add_tutorial_npc()
 
 
@@ -104,3 +110,7 @@ func generate_starting_items(boundary):
 	for stone in 40:
 		var stone_position = get_random_position.call()
 		WorldState.state.item_generator.spawn_item(stone_position, ItemProperties.Item.STONE)
+
+func _on_exit():
+	for thread in distance_controller_threads.values():
+		thread.stop()

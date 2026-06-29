@@ -45,11 +45,8 @@ var added_boundaries: Dictionary[Rect2, bool] = {}
 
 
 func is_grid_position_ok(grid_position: Vector3) -> bool:
-	return MathFunctions.get_terrain_angle_at_position(grid_position, WorldState.state.space_state) <= Globals.MAX_GRID_STEEPNESS
-
-func is_grid_index_ok(grid_index: Vector2i) -> bool:
-	return is_grid_position_ok(get_grid_position(grid_index))
-
+	var angle = TerrainManager.get_terrain_angle_at_position(grid_position)
+	return angle != Globals.NOT_A_NUMBER and angle <= Globals.MAX_GRID_STEEPNESS
 
 func get_grid_position(grid_index: Vector2i) -> Vector3:
 	rng.seed = hash(grid_index)
@@ -155,7 +152,7 @@ func _is_edge_index_position_ok(grid_index: Vector2i, neighbor_index: Vector2i) 
 	var angle = MathFunctions.calculate_angle_between_points(grid_position, neighbor_position)
 	return angle <= Globals.MAX_GRID_STEEPNESS
 
-func _get_num_objects_in_edge(grid_position: Vector3, neighbor_position: Vector3, objects: Array, width_to_check: float) -> int:
+func _get_num_objects_in_edge(grid_position: Vector3, neighbor_position: Vector3, objects: Array) -> int:
 	var result: int = 0
 	var a = Vector2(grid_position.x, grid_position.z)
 	var b = Vector2(neighbor_position.x, neighbor_position.z)
@@ -166,19 +163,19 @@ func _get_num_objects_in_edge(grid_position: Vector3, neighbor_position: Vector3
 		var t: float = clamp(ap.dot(ab) / ab.dot(ab), 0.0, 1.0);
 		var closest: Vector2 = a + t * ab;
 		var road_dist: float = (object_position - closest).length()
-		if road_dist < width_to_check:
+		if road_dist < Globals.ROAD_WIDTH + Globals.ROAD_MARGIN:
 			result += 1
 	return result
 
 func _calculate_weight(grid_position: Vector3, neighbor_position: Vector3) -> float:
 	var edge_angle = MathFunctions.calculate_angle_between_points(grid_position, neighbor_position)
 	var query_rect = Rect2(
-		min(grid_position.x, neighbor_position.x) - Globals.ROAD_WIDTH,
-		min(grid_position.z, neighbor_position.z) - Globals.ROAD_WIDTH,
-		abs(grid_position.x - neighbor_position.x) + 2 * Globals.ROAD_WIDTH,
-		abs(grid_position.z - neighbor_position.z) + 2 * Globals.ROAD_WIDTH)
-	var objects = WorldState.state.pool_manager.used_meshes_quadtree.query(query_rect)
-	var num_obstacles = 0 if objects.size() == 0 else _get_num_objects_in_edge(grid_position, neighbor_position, objects, Globals.ROAD_WIDTH)
+		min(grid_position.x, neighbor_position.x) - Globals.ROAD_WIDTH + Globals.ROAD_MARGIN,
+		min(grid_position.z, neighbor_position.z) - Globals.ROAD_WIDTH + Globals.ROAD_MARGIN,
+		abs(grid_position.x - neighbor_position.x) + 2 * Globals.ROAD_WIDTH + Globals.ROAD_MARGIN,
+		abs(grid_position.z - neighbor_position.z) + 2 * Globals.ROAD_WIDTH + Globals.ROAD_MARGIN)
+	var objects = WorldState.state.pool_manager.get_meshes_in_area(query_rect)
+	var num_obstacles = 0 if objects.size() == 0 else _get_num_objects_in_edge(grid_position, neighbor_position, objects)
 	var distance = (grid_position - neighbor_position).length()
 	# Every object in the way adds weight 20, every flat meter adds weight 1, adding a multiplier of 1 more per meter, per 10 degrees steepness
 	var weight = num_obstacles * 20.0 + distance * (1 + edge_angle * 0.1)

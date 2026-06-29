@@ -19,9 +19,12 @@ static var npc_sounds: Array[AudioManager.SoundID] = [
 	AudioManager.SoundID.QUIT_TOUCHING_ME,
 ]
 
-func _init(glb_mesh: Node3D):
-	default_sound = npc_sounds[randi() % npc_sounds.size()]
-	model = glb_mesh.get_node("Armature").get_node("Skeleton3D").get_node("Human") # This assumes .glb model structure
+func _init(mesh_object: MeshObject):
+	if mesh_object.scale.y <= 0.7:
+		default_sound = AudioManager.SoundID.LAUGH
+	else:
+		default_sound = npc_sounds[randi() % npc_sounds.size()]
+	model = mesh_object.mesh.get_node("Armature").get_node("Skeleton3D").get_node("Human") # This assumes .glb model structure
 
 	# Need to make copy of material to avoid changing on all NPCs
 	model_material = model.get_active_material(0).duplicate()
@@ -29,7 +32,7 @@ func _init(glb_mesh: Node3D):
 	default_color = model_material.albedo_color
 
 	# Start animation
-	var animationplayer: AnimationPlayer = glb_mesh.get_node("AnimationPlayer")
+	var animationplayer: AnimationPlayer = mesh_object.mesh.get_node("AnimationPlayer")
 	animationplayer.get_animation("ArmatureAction").loop_mode = Animation.LOOP_LINEAR
 	animationplayer.play("ArmatureAction")
 

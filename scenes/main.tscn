@@ -22,9 +22,9 @@ fog_enabled = true
 fog_mode = 1
 fog_density = 1.0
 fog_sky_affect = 0.0
-fog_depth_curve = 3.03144
-fog_depth_begin = 500.0
-fog_depth_end = 3386.6
+fog_depth_curve = 1.2
+fog_depth_begin = 384.0
+fog_depth_end = 2048.0
 
 [node name="BasicWorld" type="Node3D" unique_id=1337950811]
 script = ExtResource("1_o6xl0")
