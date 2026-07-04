@@ -99,10 +99,15 @@ func add_tutorial_npc():
 		tutorial_npc.npc = NPC.new(tutorial_npc_mesh_object)
 		tutorial_npc.npc.default_sound = AudioManager.SoundID.ROGGAN
 
-func interact(collider) -> void:
+func interact(collider) -> GameWorld.InteractResult:
 	var object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.NPC, collider.position)
 	if object and object.collider_body == collider and object.npc:
 		WorldState.state.audio_manager.play_sound(object.npc.default_sound, object.mesh_object.position)
+		if object.mesh_object == tutorial_npc_mesh_object:
+			var result = GameWorld.InteractResult.new(GameWorld.InteractResults.StartDialogue)
+			result.dialogue = _generate_tutorial_npc_dialogue()
+			return result
+	return GameWorld.InteractResult.new()
 
 func interact_equipped_item(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> bool:
 	var object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.NPC, collider.position)
@@ -120,6 +125,38 @@ func handle_chop(collider) -> ObjectManager.ChopResult:
 			return ObjectManager.ChopResult.new(ObjectManager.ChopResults.ChoppedDown)
 		return ObjectManager.ChopResult.new(ObjectManager.ChopResults.StillStanding)
 	return ObjectManager.ChopResult.new(ObjectManager.ChopResults.NoHit)
+
+func _generate_tutorial_npc_dialogue():
+	var dialogue: DialogueMenu.Dialogue = DialogueMenu.Dialogue.new("Welcome to BasicWorld! A basic game where you can do basic stuff, like talking to me!", DialogueMenu.DialogueAction.TheOtherOneTalk)
+
+	var go_back: DialogueMenu.Dialogue = DialogueMenu.Dialogue.new("I want to ask about something else..", DialogueMenu.DialogueAction.YouTalk)
+	go_back.response_options = [dialogue]
+	var goodbye: DialogueMenu.Dialogue = DialogueMenu.Dialogue.new("Goodbye", DialogueMenu.DialogueAction.Exit)
+
+	var about_the_game: DialogueMenu.Dialogue = DialogueMenu.Dialogue.new("Why am I here?", DialogueMenu.DialogueAction.YouTalk)
+	var about_the_game_response = DialogueMenu.Dialogue.new("I guess you like to try out basic stuff! Try exploring a bit, this world is infinitely generating. You may also try talking to the other villagers. If you get tired, simply press ESC and then 'Exit Game' to quit!", DialogueMenu.DialogueAction.TheOtherOneTalk)
+	var about_the_game_explore = DialogueMenu.Dialogue.new("Tell me about exploring the world", DialogueMenu.DialogueAction.YouTalk)
+	var about_the_game_explore_response = DialogueMenu.Dialogue.new("If you find a road, try following it. You may find new settlements, and with the right tools, you can gather resources from the forest. Stay by a bush and wait to pick its berries.", DialogueMenu.DialogueAction.TheOtherOneTalk)
+	about_the_game_explore_response.response_options = [go_back, goodbye]
+	about_the_game_explore.response_options = [about_the_game_explore_response]
+	var about_the_game_npcs = DialogueMenu.Dialogue.new("Tell me about other villagers", DialogueMenu.DialogueAction.YouTalk)
+	var about_the_game_npcs_response = DialogueMenu.Dialogue.new("Some will want your stuff. They may seem obnoxious at times, but please, before you go swinging your weapons at them, think of the children!", DialogueMenu.DialogueAction.TheOtherOneTalk)
+	about_the_game_npcs_response.response_options = [go_back, goodbye]
+	about_the_game_npcs.response_options = [about_the_game_npcs_response]
+	about_the_game_response.response_options = [about_the_game_explore, about_the_game_npcs, goodbye]
+	about_the_game.response_options = [about_the_game_response]
+
+	var controls: DialogueMenu.Dialogue = DialogueMenu.Dialogue.new("How do I play this game?", DialogueMenu.DialogueAction.YouTalk)
+	var controls_response = DialogueMenu.Dialogue.new("You already figured out the basics by managing to talk to me. But you can press ESC and then 'Show Controls' to see all the available controls", DialogueMenu.DialogueAction.TheOtherOneTalk)
+	var controls_continue = DialogueMenu.Dialogue.new("Sounds great!", DialogueMenu.DialogueAction.YouTalk)
+	controls_response.response_options = [controls_continue, goodbye]
+	var controls_continue_response = DialogueMenu.Dialogue.new("Also, if you want to be fancy and start flying around, try pressing 'G'. I call it 'Godmode'!", DialogueMenu.DialogueAction.TheOtherOneTalk)
+	controls_continue_response.response_options = [go_back, goodbye]
+	controls_continue.response_options = [controls_continue_response]
+	controls.response_options = [controls_response]
+
+	dialogue.response_options = [about_the_game, controls, goodbye]
+	return dialogue
 
 func _process(_delta: float) -> void:
 	if tutorial_npc and tutorial_npc.mesh_object.mesh:

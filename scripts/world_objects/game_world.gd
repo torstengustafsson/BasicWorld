@@ -2,17 +2,16 @@ extends Node3D
 
 class_name GameWorld
 
-enum InteractResults { NoResult, GainItem, DeleteEquippedItem }
+enum InteractResults { NoResult, GainItem, DeleteEquippedItem, StartDialogue }
 
 const ITEM_SPAWN_OFFSET = Vector3(0.0, 1.0, 0.0)
-
 class InteractResult:
 	var result: InteractResults
-	var item: ItemProperties.Item
+	var item: ItemProperties.Item = ItemProperties.Item.NO_ITEM
+	var dialogue: DialogueMenu.Dialogue = DialogueMenu.Dialogue.new("", DialogueMenu.DialogueAction.YouTalk)
 
-	func _init(_result: InteractResults = InteractResults.NoResult, _item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> void:
+	func _init(_result: InteractResults = InteractResults.NoResult) -> void:
 		result = _result
-		item = _item
 
 var distance_controller: DistanceController
 
@@ -46,37 +45,45 @@ func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM)
 	var berries_picked = WorldState.state.object_manager.interact(collider)
 	if berries_picked > 0:
 		WorldState.state.audio_manager.play_sound(AudioManager.SoundID.PICK_UP_ITEM, collider.position)
-		return InteractResult.new(InteractResults.GainItem, ItemProperties.Item.BERRY)
+		var result = InteractResult.new(InteractResults.GainItem)
+		result.item = ItemProperties.Item.BERRY
+		return result
 
 	var item_picked = WorldState.state.item_generator.interact(collider)
 	if item_picked != ItemProperties.Item.NO_ITEM:
-		return InteractResult.new(InteractResults.GainItem, item_picked)
+		var result = InteractResult.new(InteractResults.GainItem)
+		result.item = item_picked
+		return result
 
 	if item != ItemProperties.Item.NO_ITEM:
 		var npc_took_item: bool = WorldState.state.npc_manager.interact_equipped_item(collider, item)
 		if npc_took_item:
 			return InteractResult.new(InteractResults.DeleteEquippedItem)
 	else:
-		WorldState.state.npc_manager.interact(collider)
+		return WorldState.state.npc_manager.interact(collider)
 	return InteractResult.new()
 
-func handle_use_item(collider, item: ItemProperties.Item) -> void:
+func handle_use_item(collider, item: ItemProperties.Item) -> InteractResult:
 	var collision_position = collider.position
 	var berries_picked = WorldState.state.object_manager.interact(collider)
 	if berries_picked > 0:
-		return InteractResult.new(InteractResults.GainItem, ItemProperties.Item.BERRY)
+		var result = InteractResult.new(InteractResults.GainItem)
+		result.item = ItemProperties.Item.BERRY
+		return result
 
 	var item_picked = WorldState.state.item_generator.interact(collider)
 	if item_picked != ItemProperties.Item.NO_ITEM:
 		WorldState.state.audio_manager.play_sound(AudioManager.SoundID.PICK_UP_ITEM, collision_position)
-		return InteractResult.new(InteractResults.GainItem, item_picked)
+		var result = InteractResult.new(InteractResults.GainItem)
+		result.item = item_picked
+		return result
 
 	if item != ItemProperties.Item.NO_ITEM:
 		var npc_took_item: bool = WorldState.state.npc_manager.interact_equipped_item(collider, item)
 		if npc_took_item:
 			return InteractResult.new(InteractResults.DeleteEquippedItem)
 	else:
-		WorldState.state.npc_manager.interact(collider)
+		return WorldState.state.npc_manager.interact(collider)
 
 	if item == ItemProperties.Item.AXE:
 		var chop_result: ObjectManager.ChopResult = WorldState.state.object_manager.handle_tree_chop(collider)

@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://cn5yt3d23xawi"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_8sm60"]
+font_color = Color(0, 0, 0, 1)
+
+[node name="DialogueMenu" type="CanvasLayer" unique_id=1726019993]
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=974261125]
+offset_left = 140.0
+offset_top = 354.0
+offset_right = 1060.0
+offset_bottom = 585.0
+color = Color(0.70796657, 0.7079665, 0.7079665, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="." unique_id=1443255984]
+offset_left = 153.0
+offset_top = 360.0
+offset_right = 1054.0
+offset_bottom = 466.0
+color = Color(0.5330367, 0.5330367, 0.5330367, 1)
+
+[node name="Label" type="Label" parent="." unique_id=880687296]
+offset_left = 182.0
+offset_top = 370.0
+offset_right = 1036.0
+offset_bottom = 456.0
+label_settings = SubResource("LabelSettings_8sm60")
+vertical_alignment = 1
+autowrap_mode = 2

@@ -5,16 +5,19 @@ class_name PlayerControls
 var space_state: PhysicsDirectSpaceState3D
 var player_camera: Camera3D
 var player_inventory: PlayerInventory
+var dialogue_menu: DialogueMenu
 var game_world: GameWorld
 
 func _init(
+	_player_camera: Camera3D,
 	inventory: Node2D,
 	hotkey_menu: HotkeyItems,
-	_player_camera: Camera3D,
+	_dialogue_menu: DialogueMenu,
 	_game_world: GameWorld,
 ):
 	player_camera = _player_camera
 	player_inventory = PlayerInventory.new(inventory, hotkey_menu, player_camera)
+	dialogue_menu = _dialogue_menu
 	game_world = _game_world
 	add_child(player_inventory)
 
@@ -60,15 +63,22 @@ func handle_interaction():
 	if not result:
 		return
 
-	var interact_result: GameWorld.InteractResult = game_world.interact(result.collider, player_inventory.equipped_item.item_id)
+	var equipped_item = player_inventory.equipped_item.item_id if player_inventory.item_in_hand else ItemProperties.Item.NO_ITEM
+	var interact_result: GameWorld.InteractResult = game_world.interact(result.collider, equipped_item)
 	match interact_result.result:
 		GameWorld.InteractResults.GainItem:
 			player_inventory.add_item(interact_result.item)
 		GameWorld.InteractResults.DeleteEquippedItem:
 			player_inventory.delete_equipped_item()
+		GameWorld.InteractResults.StartDialogue:
+			if dialogue_menu.visible:
+				dialogue_menu.close_dialogue()
+			else:
+				if interact_result.dialogue:
+					dialogue_menu.open_dialogue(interact_result.dialogue)
 
 
-func handle_use_item():
+func handle_use_item() -> void:
 	const RAY_LENGTH = 1.8
 	var mousepos = get_viewport().get_mouse_position()
 	var origin = player_camera.project_ray_origin(mousepos)
