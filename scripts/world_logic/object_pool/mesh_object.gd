@@ -1,32 +1,33 @@
 class_name MeshObject
 
+var id: int
 var mesh: Node3D # .glb mesh
 var object_id: WorldObject.ObjectId
-var process_mode: Node.ProcessMode = Node.PROCESS_MODE_PAUSABLE
+var process_mode: Node.ProcessMode
 var position: Vector3
 var rotation: Vector3
 var scale: Vector3
 func _init(
-	_mesh = null,
-	_object_id = WorldObject.ObjectId.NO_OBJECT,
-	_position = Globals.OUT_OF_SIGHT,
-	_rotation = Vector3(0.0, 0.0, 0.0),
-	_scale = Vector3(1.0, 1.0, 1.0)
+	_id: int,
+	_mesh: Node3D = null,
+	_object_id: WorldObject.ObjectId = WorldObject.ObjectId.NO_OBJECT,
+	_process_mode: Node.ProcessMode = Node.PROCESS_MODE_PAUSABLE,
+	_position: Vector3 = Globals.OUT_OF_SIGHT,
+	_rotation: Vector3 = Vector3(0.0, 0.0, 0.0),
+	_scale: Vector3 = Vector3(1.0, 1.0, 1.0)
 ):
+	id = _id
 	mesh = _mesh
 	object_id = _object_id
 	position = _position
 	rotation = _rotation
 	scale = _scale
 
-func set_position(_position: Vector3):
-	mesh.call_deferred("set_position", _position)
-	position = _position
+func reset() -> void:
+	process_mode = Node.PROCESS_MODE_DISABLED
+	position = Globals.OUT_OF_SIGHT
+	rotation = Vector3(0.0, 0.0, 0.0)
+	scale = Vector3(1.0, 1.0, 1.0)
 
-func set_rotation(_rotation: Vector3):
-	mesh.call_deferred("set_rotation", _rotation)
-	rotation = _rotation
-
-func set_scale(_scale: Vector3):
-	mesh.call_deferred("set_scale", _scale)
-	scale = _scale
+func copy() -> MeshObject:
+	return MeshObject.new(id, mesh.duplicate(), object_id, process_mode, position, rotation, scale)

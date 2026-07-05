@@ -27,8 +27,6 @@ const POINTS_AROUND: Array[Vector2i] = [
 	Vector2i(1, 1),
 ]
 
-var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-
 var max_weight: float = -1.0
 
 var added_boundaries: Dictionary[Rect2, bool] = {}
@@ -49,6 +47,7 @@ func is_grid_position_ok(grid_position: Vector3) -> bool:
 	return angle != Globals.NOT_A_NUMBER and angle <= Globals.MAX_GRID_STEEPNESS
 
 func get_grid_position(grid_index: Vector2i) -> Vector3:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = hash(grid_index)
 	var rand_value_x = (-Globals.WORLD_GRID_STEP / 4.0 + rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
 	var rand_value_z = (-Globals.WORLD_GRID_STEP / 4.0 + rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
@@ -168,16 +167,16 @@ func _get_num_objects_in_edge(grid_position: Vector3, neighbor_position: Vector3
 	return result
 
 func _calculate_weight(grid_position: Vector3, neighbor_position: Vector3) -> float:
-	var edge_angle = MathFunctions.calculate_angle_between_points(grid_position, neighbor_position)
 	var query_rect = Rect2(
-		min(grid_position.x, neighbor_position.x) - Globals.ROAD_WIDTH + Globals.ROAD_MARGIN,
-		min(grid_position.z, neighbor_position.z) - Globals.ROAD_WIDTH + Globals.ROAD_MARGIN,
+		min(grid_position.x, neighbor_position.x) - Globals.ROAD_WIDTH - Globals.ROAD_MARGIN,
+		min(grid_position.z, neighbor_position.z) - Globals.ROAD_WIDTH - Globals.ROAD_MARGIN,
 		abs(grid_position.x - neighbor_position.x) + 2 * Globals.ROAD_WIDTH + Globals.ROAD_MARGIN,
 		abs(grid_position.z - neighbor_position.z) + 2 * Globals.ROAD_WIDTH + Globals.ROAD_MARGIN)
 	var objects = WorldState.state.pool_manager.get_meshes_in_area(query_rect)
 	var num_obstacles = 0 if objects.size() == 0 else _get_num_objects_in_edge(grid_position, neighbor_position, objects)
 	var distance = (grid_position - neighbor_position).length()
 	# Every object in the way adds weight 20, every flat meter adds weight 1, adding a multiplier of 1 more per meter, per 10 degrees steepness
+	var edge_angle = MathFunctions.calculate_angle_between_points(grid_position, neighbor_position)
 	var weight = num_obstacles * 20.0 + distance * (1 + edge_angle * 0.1)
 	if max_weight < weight:
 		max_weight = weight

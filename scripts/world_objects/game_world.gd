@@ -94,7 +94,8 @@ func handle_use_item(collider, item: ItemProperties.Item) -> InteractResult:
 					WorldState.state.item_generator.spawn_item(collision_position + ITEM_SPAWN_OFFSET, ItemProperties.Item.WOOD)
 		chop_result = WorldState.state.npc_manager.handle_chop(collider)
 		if chop_result.result != ObjectManager.ChopResults.NoHit:
-			WorldState.state.audio_manager.play_sound(AudioManager.SoundID.AXE_HIT, collision_position)
+			# Need to displace a bit since only one sound per position is allowed at once, and NPC will play "hurt" sound as well
+			WorldState.state.audio_manager.play_sound(AudioManager.SoundID.AXE_HIT, collision_position + Vector3(0.01, 0.01, 0.01))
 
 	if item == ItemProperties.Item.PICKAXE:
 		var chop_result: ObjectManager.ChopResult = WorldState.state.object_manager.handle_rock_chop(collider)

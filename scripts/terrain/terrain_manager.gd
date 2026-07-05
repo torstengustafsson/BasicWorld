@@ -23,8 +23,8 @@ static func get_terrain_angle_at_position(position: Vector3) -> float:
 		# Special case, main thread get to update and access it directly
 		update_angle_positions()
 		existing_value = _added_angle_positions.get(position_xz)
+		mutex.unlock()
 		if existing_value:
-			mutex.unlock()
 			return existing_value
 	mutex.unlock()
 	return Globals.NOT_A_NUMBER
@@ -32,14 +32,17 @@ static func get_terrain_angle_at_position(position: Vector3) -> float:
 # This must be called from the main thread
 static func update_angle_positions() -> void:
 	mutex.lock()
-	while _angle_positions_to_be_added.size() > 0:
-		var position_xz = _angle_positions_to_be_added.pop_back()
+	var positions_to_be_added = _angle_positions_to_be_added.duplicate()
+	_angle_positions_to_be_added.clear()
+	mutex.unlock()
+
+	while positions_to_be_added.size() > 0:
+		var position_xz = positions_to_be_added.pop_back()
 		var origin = Vector3(position_xz.x, 10000.0, position_xz.y)
 		var end = Vector3(position_xz.x, -10000.0, position_xz.y)
 
 		var query = PhysicsRayQueryParameters3D.create(origin, end)
 		query.collide_with_areas = true
-
 		var result = WorldState.state.space_state.intersect_ray(query)
 
 		# Check if the ray hit the terrain
@@ -55,5 +58,6 @@ static func update_angle_positions() -> void:
 
 		var normal: Vector3 = result["normal"]
 		var angle: float = calculate_slope_angle.call(normal)
+		mutex.lock()
 		_added_angle_positions[position_xz] = angle
-	mutex.unlock()
+		mutex.unlock()

@@ -65,10 +65,10 @@ func _add_meshes_from_pool(boundary: Rect2, step: int, noise_function: NoiseFunc
 	var start_pos_z: int = int(floor(boundary.position.y / step) * step)
 	var end_pos_x: int = int(ceil((boundary.position.x + boundary.size.x) / step) * step)
 	var end_pos_z: int = int(ceil((boundary.position.y + boundary.size.y) / step) * step)
+	var spread = step / floor(2)
 	for x in range(start_pos_x, end_pos_x, step):
 		for z in range(start_pos_z, end_pos_z, step):
 			rng.seed = hash(Vector2i(x, z)) + hash(object_id) # Used to reproduce the same result every time for random values
-			var spread = step / floor(2)
 			var rand_value_x = rng.randf_range(-spread, spread)
 			var rand_value_z = rng.randf_range(-spread, spread)
 			var rand_value_max_height = rng.randf_range(0.0, 0.5)
@@ -78,21 +78,20 @@ func _add_meshes_from_pool(boundary: Rect2, step: int, noise_function: NoiseFunc
 			var position = Vector3(pos_x, height, pos_z)
 
 			# Skip if another object of same type is already placed there
-			var existing_object: MeshObject = WorldState.state.pool_manager.get_mesh_at_position(object_id, position)
-			if existing_object:
+			var existing_object: MeshObject = WorldState.state.pool_manager.get_mesh_at_position(position)
+			if existing_object and existing_object.object_id == object_id:
 				# Settlements and roads may be generated after the object has been placed.
 				# In that case, remove the object as soon as we know the postion is occupied.
 				if WorldState.state.settlement_manager.is_inside_settlement(position, object_id) \
 					or WorldState.state.road_generator.is_in_road(position):
 					added_meshes.erase(hash(position) + hash(object_id))
-					WorldState.state.pool_manager.remove_mesh(existing_object)
+					WorldState.state.pool_manager.remove_mesh_by_id(existing_object.id)
 				continue
 
-			# If object has been created before, no need to recalculate all the conditions. Just add the object since we know it should be there
+			# # If object has been created before, no need to recalculate all the conditions. Just add the object since we know it should be there
 			if added_meshes.has(hash(position) + hash(object_id)):
-				WorldState.state.pool_manager.get_mesh(object_id, position, get_scale.call(rng))
+				WorldState.state.pool_manager.add_mesh(object_id, position, get_scale.call(rng))
 				continue
-
 
 			# Skip if outside of noise function threshold
 			if noise_function.above_threshold(position):
@@ -122,7 +121,7 @@ func _add_meshes_from_pool(boundary: Rect2, step: int, noise_function: NoiseFunc
 
 			# Add object to scene
 			added_meshes[hash(position) + hash(object_id)] = true
-			WorldState.state.pool_manager.get_mesh(object_id, position, get_scale.call(rng))
+			WorldState.state.pool_manager.add_mesh(object_id, position, get_scale.call(rng))
 
 func add_world_meshes(boundary: Rect2) -> void:
 	_add_meshes_from_pool(boundary, Globals.STEP_TREES, forest_noise, WorldObject.ObjectId.TREE, _get_tree_scale)
@@ -166,9 +165,9 @@ func interact(collider) -> int:
 func _process(delta):
 	# Handle trees
 	if shaking_tree and shake_timer < INF:
-		shaking_tree.set_rotation(Vector3(PI * (sin(shake_timer * 40.0) * 0.05), 0.0, 0.0))
+		shaking_tree.rotation = Vector3(PI * (sin(shake_timer * 40.0) * 0.05), 0.0, 0.0)
 		if shake_timer > TREE_SHAKE_SECS:
-			shaking_tree.set_rotation(Vector3(0.0, 0.0, 0.0))
+			shaking_tree.rotation = Vector3(0.0, 0.0, 0.0)
 			shaking_tree = null
 			shake_timer = INF
 		shake_timer += delta

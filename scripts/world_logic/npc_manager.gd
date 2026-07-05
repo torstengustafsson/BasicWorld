@@ -4,9 +4,6 @@ class_name NpcManager
 
 var settlement_manager: SettlementManager
 
-var tutorial_npc: WorldObject
-var tutorial_npc_mesh_object: MeshObject = MeshObject.new()
-
 static func set_npc_scale(npc: NPC) -> void:
 	var object_rng = RandomNumberGenerator.new()
 	object_rng.seed = hash(npc.position)
@@ -56,9 +53,7 @@ func _create_npc_meshes(boundary: Rect2, amount: int, rng: RandomNumberGenerator
 		var position = Vector3(pos_x, height, pos_z)
 		var rotation = Vector3(0.0, rng.randf() * 2 * PI, 0.0)
 		var scale = Vector3(randf_range(0.9, 1.1), randf_range(0.9, 1.1), randf_range(0.9, 1.1))
-		var npc_mesh = WorldState.state.pool_manager.get_mesh(WorldObject.ObjectId.NPC, position, scale)
-		if npc_mesh:
-			npc_mesh.set_rotation(rotation)
+		WorldState.state.pool_manager.add_mesh(WorldObject.ObjectId.NPC, position, scale, rotation)
 
 func _create_npc_children_meshes(boundary: Rect2, amount, rng: RandomNumberGenerator) -> void:
 	for i in amount:
@@ -68,9 +63,7 @@ func _create_npc_children_meshes(boundary: Rect2, amount, rng: RandomNumberGener
 		var position = Vector3(pos_x, height, pos_z)
 		var rotation = Vector3(0.0, rng.randf() * 2 * PI, 0.0)
 		var scale = Vector3(randf_range(0.55, 0.7), randf_range(0.55, 0.7), randf_range(0.55, 0.7))
-		var npc_mesh = WorldState.state.pool_manager.get_mesh(WorldObject.ObjectId.NPC, position, scale)
-		if npc_mesh:
-			npc_mesh.set_rotation(rotation)
+		WorldState.state.pool_manager.add_mesh(WorldObject.ObjectId.NPC, position, scale, rotation)
 
 # One NPC will spawn close to player spawn. It is possible to open dialogue with this NPC to get explanations of the game
 func create_tutorial_npc(player_pos: Vector3):
@@ -80,33 +73,25 @@ func create_tutorial_npc(player_pos: Vector3):
 	var pos_z = rng.randf_range(player_pos.z - 5.0, player_pos.z + 5.0)
 	# If position collides with other objects, keep testing new positions until it does not
 	var iterations = 0
-	while WorldState.state.pool_manager.used_objects_quadtree.query_circle(Vector2(pos_x, pos_z), 3.0).size() > 0 and iterations < 100:
+	while WorldState.state.pool_manager.get_meshes_in_range(Vector3(pos_x, 0.0, pos_z), 3.0).size() > 0 and iterations < 100:
 		iterations += 1
 		pos_x = rng.randf_range(player_pos.x - 5.0, player_pos.x + 5.0)
 		pos_z = rng.randf_range(player_pos.z - 5.0, player_pos.z + 5.0)
 	var height = WorldState.state.terrain_height_noise.get_height_at(pos_x, pos_z)
 	var position = Vector3(pos_x, height, pos_z)
-	tutorial_npc_mesh_object.mesh = PoolManager.human_waving_mesh.instantiate()
-	tutorial_npc_mesh_object.set_position(position)
-	tutorial_npc_mesh_object.set_scale(Vector3(1.0, 1.0, 1.0))
-	tutorial_npc_mesh_object.object_id = WorldObject.ObjectId.NPC
-	add_child(tutorial_npc_mesh_object.mesh)
-	add_tutorial_npc()
-
-func add_tutorial_npc():
-	tutorial_npc = WorldState.state.pool_manager.get_object(tutorial_npc_mesh_object)
-	if tutorial_npc:
-		tutorial_npc.npc = NPC.new(tutorial_npc_mesh_object)
-		tutorial_npc.npc.default_sound = AudioManager.SoundID.ROGGAN
+	var scale = Vector3(1.0, 1.0, 1.0)
+	WorldState.state.pool_manager.add_mesh(WorldObject.ObjectId.TUTORIAL_NPC, position, scale)
 
 func interact(collider) -> GameWorld.InteractResult:
 	var object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.NPC, collider.position)
 	if object and object.collider_body == collider and object.npc:
 		WorldState.state.audio_manager.play_sound(object.npc.default_sound, object.mesh_object.position)
-		if object.mesh_object == tutorial_npc_mesh_object:
-			var result = GameWorld.InteractResult.new(GameWorld.InteractResults.StartDialogue)
-			result.dialogue = _generate_tutorial_npc_dialogue()
-			return result
+	object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.TUTORIAL_NPC, collider.position)
+	if object and object.collider_body == collider and object.npc:
+		WorldState.state.audio_manager.play_sound(object.npc.default_sound, object.mesh_object.position)
+		var result = GameWorld.InteractResult.new(GameWorld.InteractResults.StartDialogue)
+		result.dialogue = _generate_tutorial_npc_dialogue()
+		return result
 	return GameWorld.InteractResult.new()
 
 func interact_equipped_item(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> bool:
@@ -117,6 +102,8 @@ func interact_equipped_item(collider, item: ItemProperties.Item = ItemProperties
 
 func handle_chop(collider) -> ObjectManager.ChopResult:
 	var object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.NPC, collider.position)
+	if not object:
+		object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.TUTORIAL_NPC, collider.position)
 	if object and object.collider_body == collider and object.npc:
 		object.npc.trigger_damage()
 		object.health -= 1
@@ -159,6 +146,11 @@ func _generate_tutorial_npc_dialogue():
 	return dialogue
 
 func _process(_delta: float) -> void:
-	if tutorial_npc and tutorial_npc.mesh_object.mesh:
+	var tutorial_npc = WorldState.state.pool_manager.get_active_objects_of_type(WorldObject.ObjectId.TUTORIAL_NPC)
+	if not tutorial_npc:
+		return
+	assert(tutorial_npc.size() == 1)
+	tutorial_npc = tutorial_npc[0]
+	if tutorial_npc.mesh_object.mesh and tutorial_npc.mesh_object.mesh.is_inside_tree():
 		tutorial_npc.mesh_object.mesh.look_at(WorldState.state.player.position)
 		tutorial_npc.collider_body.look_at(WorldState.state.player.position)

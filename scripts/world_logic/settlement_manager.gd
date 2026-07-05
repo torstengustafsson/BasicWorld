@@ -102,7 +102,7 @@ func create_settlements(boundary: Rect2) -> Array[SettlementData]:
 				continue
 			var settlement_data = try_add_settlement(grid_index, rng)
 			if settlement_data:
-				settlements.insert({"position": Vector2(position.x, position.z), "data": settlement_data})
+				settlements.insert({"position": Vector2(settlement_data.position.x, settlement_data.position.z), "data": settlement_data})
 				new_settlements.append(settlement_data)
 				_add_settlement_to_scene(settlement_data)
 	return new_settlements
@@ -182,13 +182,9 @@ func _add_chest(position: Vector3, rotation: Vector3) -> Transform:
 
 func _add_settlement_to_scene(settlement_data: SettlementData):
 	for transform in settlement_data.house_transforms:
-		var house = WorldState.state.pool_manager.get_mesh(WorldObject.ObjectId.HOUSE, transform.position, transform.scale)
-		if house:
-			house.set_rotation(transform.rotation)
+		WorldState.state.pool_manager.add_mesh(WorldObject.ObjectId.HOUSE, transform.position, transform.scale, transform.rotation)
 	var transform = settlement_data.chest_transform
-	var chest = WorldState.state.pool_manager.get_mesh(WorldObject.ObjectId.CHEST, transform.position, transform.scale)
-	if chest:
-		chest.set_rotation(transform.rotation)
+	WorldState.state.pool_manager.add_mesh(WorldObject.ObjectId.CHEST, transform.position, transform.scale, transform.rotation)
 
 func save() -> Dictionary:
 	#TODO

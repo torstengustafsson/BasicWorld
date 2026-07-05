@@ -38,7 +38,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	TerrainManager.update_angle_positions() # Needed by threads
-	WorldState.state.pool_manager.apply_mesh_updates() # Threads queue mesh updates like position. Main thread apply them here
+	WorldState.state.pool_manager.apply_queued_updates() # Threads queue mesh updates like position. Main thread apply them here
 
 	# Check for when threads are fully initialized
 	if not player_spawn_set \
@@ -60,6 +60,7 @@ func _process(delta: float) -> void:
 	var distance_traveled = (Vector2(WorldState.state.player.position.x, WorldState.state.player.position.z) - lod_last_player_pos).length()
 	if update_close_objects_time > FORCE_UPDATE_CLOSE_OBJECTS_INTERVAL_SECONDS or distance_traveled > Globals.LOD_UPDATE_DISTANCE:
 		add_nearby_objects()
+		#cleanup_faraway_objects()
 		lod_last_player_pos = Vector2(WorldState.state.player.position.x, WorldState.state.player.position.z)
 		update_close_objects_time = 0
 
@@ -86,10 +87,15 @@ func initalize_player_spawn():
 func add_nearby_objects():
 	var nearby_mesh_objects = WorldState.state.pool_manager.get_meshes_in_range(WorldState.state.player.position, Globals.LOD_DISTANCE_FULL)
 	for mesh_object: MeshObject in nearby_mesh_objects:
-		WorldState.state.pool_manager.get_object(mesh_object)
-	if WorldState.state.npc_manager.tutorial_npc and (WorldState.state.npc_manager.tutorial_npc.mesh_object.position - WorldState.state.player.position).length() < Globals.LOD_DISTANCE_FULL:
-		WorldState.state.npc_manager.add_tutorial_npc()
+		WorldState.state.pool_manager.add_object(mesh_object)
 
+func cleanup_faraway_objects():
+	const INNER_BOUNDS = Globals.LOD_DISTANCE_FULL * Globals.LOD_REMOVE_DISTANCE_MULTIPLIER
+	var boundary_to_keep: Rect2 = Rect2(
+		Vector2(WorldState.state.player.position.x - INNER_BOUNDS, WorldState.state.player.position.z - INNER_BOUNDS),
+		Vector2(INNER_BOUNDS * 2, INNER_BOUNDS * 2)
+	)
+	WorldState.state.pool_manager.remove_faraway_world_objects(boundary_to_keep)
 
 # TODO: Add object pool for items
 func generate_starting_items(boundary):
