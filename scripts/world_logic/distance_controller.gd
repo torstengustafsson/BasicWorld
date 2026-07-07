@@ -1,6 +1,7 @@
-extends Node3D
+# This class is responsible for updating the world state based on player movement.
+# Delegates most of its work to dedicated threads.
 
-class_name DistanceController
+class_name DistanceController extends Node3D
 
 var lod_last_player_pos: Vector2
 var terrain_last_player_index: Vector2i
@@ -19,11 +20,6 @@ func _init():
 
 func _ready() -> void:
 	WorldState.state.terrain_generator.add_chunks_around_player(WorldState.state.player.position)
-
-	# TODO: Find out why we need to wait here.
-	# Without the wait, ground collisions will not be available at start outside of player immediate area.
-	# This make below ground-based calculations like removing trees on steep terrain not possible.
-	await get_tree().process_frame
 
 	var terrain_boundary = WorldState.state.terrain_generator.get_terrain_size()
 	generate_starting_items(terrain_boundary)

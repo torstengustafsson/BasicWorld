@@ -32,7 +32,7 @@ func _init(_player: Node3D) -> void:
 	item_generator = WorldItemGenerator.new()
 	settlement_manager = SettlementManager.new()
 	road_generator = RoadGenerator.new()
-	npc_manager = NpcManager.new(settlement_manager)
+	npc_manager = NpcManager.new()
 	world_grid = WorldGrid.new()
 	audio_manager = AudioManager.new()
 

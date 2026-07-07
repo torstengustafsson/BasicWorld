@@ -2,8 +2,6 @@ extends Node
 
 class_name NpcManager
 
-var settlement_manager: SettlementManager
-
 static func set_npc_scale(npc: NPC) -> void:
 	var object_rng = RandomNumberGenerator.new()
 	object_rng.seed = hash(npc.position)
@@ -18,8 +16,7 @@ static func set_npc_child_scale(npc: NPC) -> void:
 	npc.default_sound = AudioManager.SoundID.LAUGH
 	npc.wants = NPC.WantsOptions.NONE
 
-func _init(_settlement_manager: SettlementManager) -> void:
-	settlement_manager = _settlement_manager
+func _init() -> void:
 	add_to_group("Persist")
 
 func get_all_npcs() -> Array[NPC]:
