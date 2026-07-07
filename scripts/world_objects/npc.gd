@@ -4,6 +4,7 @@ enum WantsOptions { FOOD, WOOD, STONE, NONE }
 
 var model: MeshInstance3D
 var model_material: StandardMaterial3D
+var pants_material: StandardMaterial3D
 var default_color: Color
 
 var default_sound: AudioManager.SoundID
@@ -20,10 +21,6 @@ static var npc_sounds: Array[AudioManager.SoundID] = [
 ]
 
 func _init(mesh_object: MeshObject):
-	if mesh_object.scale.y <= 0.7:
-		default_sound = AudioManager.SoundID.LAUGH
-	else:
-		default_sound = npc_sounds[randi() % npc_sounds.size()]
 	model = mesh_object.mesh.get_node("Armature").get_node("Skeleton3D").get_node("Human") # This assumes .glb model structure
 
 	# Need to make copy of material to avoid changing on all NPCs
@@ -31,10 +28,23 @@ func _init(mesh_object: MeshObject):
 	model.set_surface_override_material(0, model_material)
 	default_color = model_material.albedo_color
 
-	# Start animation
+	pants_material = model.get_active_material(1).duplicate()
+	pants_material.albedo_color = Color(randf_range(0.0, 1.0), randf_range(0.0, 1.0), randf_range(0.0, 1.0))
+	model.set_surface_override_material(1, pants_material)
+
 	var animationplayer: AnimationPlayer = mesh_object.mesh.get_node("AnimationPlayer")
-	animationplayer.get_animation("ArmatureAction").loop_mode = Animation.LOOP_LINEAR
-	animationplayer.play("ArmatureAction")
+
+	if mesh_object.object_id == WorldObject.ObjectId.NPC:
+		if mesh_object.scale.y <= 0.7:
+			default_sound = AudioManager.SoundID.LAUGH
+		else:
+			default_sound = npc_sounds[randi() % npc_sounds.size()]
+		animationplayer.get_animation("Walk").loop_mode = Animation.LOOP_LINEAR
+		animationplayer.play("Walk")
+	if mesh_object.object_id == WorldObject.ObjectId.TUTORIAL_NPC:
+		default_sound = AudioManager.SoundID.ROGGAN
+		animationplayer.get_animation("Wave").loop_mode = Animation.LOOP_LINEAR
+		animationplayer.play("Wave")
 
 	if default_sound == AudioManager.SoundID.FOOD_PLEASE:
 		wants = WantsOptions.FOOD

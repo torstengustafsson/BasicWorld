@@ -13,7 +13,7 @@ config_version=5
 config/name="BasicWorld"
 run/main_scene="uid://bm61mflsgkswc"
 config/features=PackedStringArray("4.6", "Forward Plus")
-boot_splash/image="uid://dkhgrum5mqytj"
+boot_splash/image="uid://x3cdvovnu4ge"
 config/icon="res://icon.svg"
 
 [debug_draw_3d]
