@@ -4,19 +4,22 @@ class_name PlayerControls
 
 var space_state: PhysicsDirectSpaceState3D
 var player_camera: Camera3D
+var pause_menu: PauseMenu
 var player_inventory: PlayerInventory
 var dialogue_menu: DialogueMenu
 var game_world: GameWorld
 
 func _init(
 	_player_camera: Camera3D,
-	inventory: Node2D,
+	_pause_menu: PauseMenu,
 	hotkey_menu: HotkeyItems,
 	_dialogue_menu: DialogueMenu,
 	_game_world: GameWorld,
 ):
 	player_camera = _player_camera
-	player_inventory = PlayerInventory.new(inventory, hotkey_menu, player_camera)
+	pause_menu = _pause_menu
+	var inventory_node = pause_menu.get_node("InventoryMenu/Inventory")
+	player_inventory = PlayerInventory.new(inventory_node, hotkey_menu, player_camera)
 	dialogue_menu = _dialogue_menu
 	game_world = _game_world
 	add_child(player_inventory)
@@ -76,6 +79,8 @@ func handle_interaction():
 			else:
 				if interact_result.dialogue:
 					dialogue_menu.open_dialogue(interact_result.dialogue)
+		GameWorld.InteractResults.OpenChest:
+			pause_menu.open_chest_inventory(interact_result.id)
 
 
 func handle_use_item() -> void:

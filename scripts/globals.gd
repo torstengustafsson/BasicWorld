@@ -46,7 +46,7 @@ const ROAD_MARGIN: float = 0.5
 # outside of LOD_DISTANCE_NO_COLLIDER are removed from the scene. The check is made whenever the
 # player moves beyond LOD_UPDATE_DISTANCE from its position at the last update.
 # NOTE: LOD_DISTANCE_FULL must be >= LOD_UPDATE_DISTANCE.
-const LOD_DISTANCE_FULL = 16.0
+const LOD_DISTANCE_FULL = 32.0
 const LOD_DISTANCE_NO_COLLIDER = 256.0
 const LOD_UPDATE_DISTANCE = LOD_DISTANCE_FULL * 0.5 # Objects will spawn and despawn whenever player moves this distance
 const LOD_REMOVE_DISTANCE_MULTIPLIER = 1.2 # A value of 1.2 means wait to remove faraway objects until 20% more distance than LOD_DISTANCE_NO_COLLIDER away

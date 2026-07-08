@@ -1,6 +1,4 @@
-extends Node2D
-
-class_name PlayerInventory
+class_name PlayerInventory extends Node2D
 
 const NO_EQUIPPED_ITEM = -1
 
@@ -10,8 +8,6 @@ var player_camera: Node3D
 
 var equipped_item: EquippedItem = EquippedItem.new()
 var item_in_hand: bool = false
-
-var held_item = null
 
 func _init(_inventory: Inventory, hotkey_menu: HotkeyItems, _player_camera: Node3D):
 	add_to_group("Persist")
@@ -26,6 +22,7 @@ func _ready() -> void:
 	equipped_item.set_item(ItemProperties.Item.NO_ITEM)
 	player_camera.add_child(equipped_item)
 	equipped_item.hide()
+	update_inventory_bindings()
 
 
 func add_item(item: ItemProperties.Item, amount: int = 1):
@@ -87,11 +84,11 @@ func delete_equipped_item():
 
 func update_inventory_bindings():
 	for slot in inventory.inventory_grid.get_children():
-		if not slot.is_connected("gui_input", Callable(self, "slot_gui_input")):
-			slot.gui_input.connect(slot_gui_input.bind(slot))
+		if not slot.is_connected("gui_input", Callable(Inventory, "slot_gui_input")):
+			slot.gui_input.connect(Inventory.slot_gui_input.bind(slot))
 	for slot in hotkey_inventory.inventory_grid.get_children():
-		if not slot.is_connected("gui_input", Callable(self, "slot_gui_input")):
-			slot.gui_input.connect(slot_gui_input.bind(slot))
+		if not slot.is_connected("gui_input", Callable(Inventory, "slot_gui_input")):
+			slot.gui_input.connect(Inventory.slot_gui_input.bind(slot))
 
 
 func print_text_to_screen(text: String):
@@ -123,30 +120,6 @@ func print_text_to_screen(text: String):
 	# Remove after 2 seconds
 	await get_tree().create_timer(2.0).timeout
 	canvas.queue_free()
-
-
-# TODO: Handle equipped item
-func slot_gui_input(event: InputEvent, slot: InventorySlot) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MouseButton.MOUSE_BUTTON_LEFT:
-		if held_item == null:
-			if slot.item == ItemProperties.Item.NO_ITEM:
-				return
-			slot.set_picked_up()
-			held_item = slot
-		else:
-			held_item.icon.position = Vector2.ZERO
-			held_item.set_placed_down()
-			slot.set_item(held_item.item, held_item.amount)
-			slot.set_placed_down()
-			if held_item != slot:
-				held_item.set_empty()
-			held_item = null
-
-
-# TODO: This node gets paused when inventory is up
-func _input(_event: InputEvent) -> void:
-	if held_item:
-		held_item.icon.position = get_global_mouse_position() - held_item.global_position - held_item.size / 2
 
 
 func save() -> Dictionary:

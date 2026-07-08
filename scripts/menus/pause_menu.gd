@@ -1,4 +1,4 @@
-extends CanvasLayer
+class_name PauseMenu extends CanvasLayer
 
 var settings_menu_open: bool = false
 var inventory_open: bool = false
@@ -8,6 +8,7 @@ var unpausable_nodes: Array[Node] = []
 @onready var save_load_state: SaveLoadState = SaveLoadState.new()
 
 @onready var inventory_menu = $InventoryMenu
+@onready var chest_inventory_menu = $InventoryMenu/ChestInventory
 @onready var settings_menu = $SettingsMenu
 @onready var settings_submenu = $SettingsMenu/SettingsSubmenu
 @onready var controls_submenu = $SettingsMenu/ControlsSubmenu
@@ -34,29 +35,40 @@ func _ready() -> void:
 	add_child(save_load_state)
 
 
-func _process(_delta: float) -> void:
-	if Input.is_action_just_pressed("open_settings"):
+func _input(event: InputEvent) -> void:
+	if event is not InputEventKey:
+		return
+
+	if event.is_action_pressed("open_settings"):
 		if settings_menu_open || inventory_open:
 			_resume_game()
 		else:
 			_open_settings_menu()
 
-	if !settings_menu_open && Input.is_action_just_pressed("open_inventory"):
+	if event.is_action_pressed("open_inventory") and !settings_menu_open:
 		if inventory_open:
 			_resume_game()
 		else:
 			_open_inventory()
+
+	if event.is_action_pressed("interact") and chest_inventory_menu.is_open():
+		_resume_game()
 
 func pause_game():
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	show()
 	get_tree().paused = true
 
+func open_chest_inventory(chest_id: int):
+	chest_inventory_menu.open_chest(chest_id)
+	_open_inventory()
+
 # Close all menus and unpause the game
 func _resume_game() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	hide()
 	inventory_menu.hide()
+	chest_inventory_menu.close_chest()
 	settings_menu_open = false
 	inventory_open = false
 	get_tree().paused = false

@@ -198,7 +198,6 @@ func remove_object_by_id(id: int) -> void:
 	objects_by_type[object.mesh_object.object_id].erase(object)
 	object_positions_quadtree.remove_item(id)
 	object_mutex.unlock()
-	remove_mesh_by_id(id)
 
 # Compared to remove_object, this function also makes sure the removed object will stay removed on later re-generation
 func delete_object(object: WorldObject) -> void:
@@ -207,6 +206,7 @@ func delete_object(object: WorldObject) -> void:
 	deleted_objects_quadtree.insert({"position": Vector2(object.mesh_object.position.x, object.mesh_object.position.z), "data": deleted_object})
 	deleted_objects_quadtree_mutex.unlock()
 	remove_object_by_id(object.mesh_object.id)
+	remove_mesh_by_id(object.mesh_object.id)
 
 func remove_faraway_world_objects(boundary_to_keep: Rect2) -> void:
 	const LARGE_VALUE = 1000000.0

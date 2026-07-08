@@ -130,7 +130,7 @@ func generate_shortest_distance_between_grid_points(grid_from: Vector2i, grid_de
 	iterations = 0
 	while current_step_index != grid_from:
 		if iterations > MAX_ITERATIONS:
-			print("No path found between " + str(grid_from) + " and " + str(grid_destination))
+			print("No path found between ", grid_from, " and ", grid_destination, " (", get_grid_position(grid_from), ", ", get_grid_position(grid_destination), ")")
 			break
 		iterations += 1
 		var current_position = get_grid_position(current_step_index)

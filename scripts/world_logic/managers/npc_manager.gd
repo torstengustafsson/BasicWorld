@@ -89,7 +89,7 @@ func interact(collider) -> GameWorld.InteractResult:
 		var result = GameWorld.InteractResult.new(GameWorld.InteractResults.StartDialogue)
 		result.dialogue = _generate_tutorial_npc_dialogue()
 		return result
-	return GameWorld.InteractResult.new()
+	return GameWorld.InteractResult.NO_INTERACT_RESULT
 
 func interact_equipped_item(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> bool:
 	var object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.NPC, collider.position)

@@ -1,8 +1,11 @@
-extends Node2D
-
-class_name Inventory
+# Based on: https://www.youtube.com/watch?v=FHYb63ppHmk&list=PLY1jY0hbmKxBvcEHa0k5Aw8_MKoB6jrRU
+class_name Inventory extends Node2D
 
 @onready var inventory_grid: GridContainer = $InventoryGrid
+
+# When player is moving items in the inventory, this is the item that is being held.
+# Only one item can be held at a time. Need to handle moving between multiple inventories
+static var held_item: InventorySlot = null
 
 var slot_scene = preload("res://scenes/inventory/inventory_slot.tscn")
 var inventory_size: Vector2i = Vector2i(8, 4)
@@ -20,6 +23,8 @@ func clear_inventory():
 		slot.item = ItemProperties.Item.NO_ITEM
 		slot.amount = 0
 	total_items_amount.clear()
+	for slot in inventory_grid.get_children():
+		slot.set_empty()
 
 func add_item(item: ItemProperties.Item, amount_to_add: int) -> bool:
 	total_items_amount[item] = total_items_amount.get(item, 0) + amount_to_add
@@ -68,6 +73,51 @@ func update_grid():
 				if item.item != ItemProperties.Item.NO_ITEM:
 					# Update the UI for this item, e.g. show the item icon and amount
 					pass
+
+func _input(_event: InputEvent) -> void:
+	if held_item:
+		held_item.icon.position = get_global_mouse_position() - held_item.global_position - held_item.size / 2
+		held_item.amount_label.position = get_global_mouse_position() - held_item.global_position - held_item.size / 2 + InventorySlot.AMOUNT_TEXT_POSITION
+
+# Return true if inventory state was changed
+static func slot_gui_input(event: InputEvent, slot: InventorySlot) -> bool:
+	# Held item should show amount
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MouseButton.MOUSE_BUTTON_LEFT):
+		return false
+	if not held_item: # Pick up item
+		if slot.item == ItemProperties.Item.NO_ITEM:
+			return false
+		slot.set_picked_up()
+		held_item = slot
+		return true
+	else: # Put held item back on a slot
+		if slot.item == ItemProperties.Item.NO_ITEM: # Free slot, simply place it there
+			slot.set_item(held_item.item, held_item.amount)
+			slot.set_placed_down()
+			held_item.set_empty()
+			_reset_held_item()
+			return true
+		else: # Item is put back on occupied slot
+			if held_item == slot: # Same slot it was picked up from, simply place it back
+				slot.set_item(held_item.item, held_item.amount)
+				slot.set_placed_down()
+				_reset_held_item()
+				return false
+			if slot.item == held_item.item: # Same item type, can add to stack
+				var leftover = slot.add_amount(held_item.amount)
+				held_item.amount = leftover
+				if leftover <= 0:
+					slot.item = held_item.item
+					slot.set_placed_down()
+					held_item.set_empty()
+					_reset_held_item()
+				return true
+		return false # Otherwise, slot contains another item type, in which case nothing happens
+
+static func _reset_held_item():
+	held_item.icon.position = Vector2.ZERO
+	held_item.set_placed_down()
+	held_item = null
 
 func _save() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []

@@ -10,7 +10,7 @@ extends Node3D
 
 @onready var player_controls: PlayerControls = PlayerControls.new(
 	player.get_node("Head/Camera3D"),
-	$PauseMenu/InventoryMenu/Inventory,
+	$PauseMenu,
 	hotkey_menu,
 	dialogue_menu,
 	game_world,

@@ -2,16 +2,19 @@ extends Node3D
 
 class_name GameWorld
 
-enum InteractResults { NoResult, GainItem, DeleteEquippedItem, StartDialogue }
+enum InteractResults { NoResult, GainItem, DeleteEquippedItem, StartDialogue, OpenChest }
 
 const ITEM_SPAWN_OFFSET = Vector3(0.0, 1.0, 0.0)
 class InteractResult:
+	static var NO_INTERACT_RESULT = InteractResult.new()
 	var result: InteractResults
 	var item: ItemProperties.Item = ItemProperties.Item.NO_ITEM
 	var dialogue: DialogueMenu.Dialogue = DialogueMenu.Dialogue.new("", DialogueMenu.DialogueAction.YouTalk)
+	var id: int = 0
 
-	func _init(_result: InteractResults = InteractResults.NoResult) -> void:
+	func _init(_result: InteractResults = InteractResults.NoResult, _id = 0) -> void:
 		result = _result
+		id = _id
 
 var distance_controller: DistanceController
 
@@ -60,8 +63,15 @@ func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM)
 		if npc_took_item:
 			return InteractResult.new(InteractResults.DeleteEquippedItem)
 	else:
-		return WorldState.state.npc_manager.interact(collider)
-	return InteractResult.new()
+		var result = WorldState.state.npc_manager.interact(collider)
+		if result != InteractResult.NO_INTERACT_RESULT:
+			return result
+
+	var object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.CHEST, collider.position)
+	if object:
+		return InteractResult.new(InteractResults.OpenChest, hash(collider.position))
+
+	return InteractResult.NO_INTERACT_RESULT
 
 func handle_use_item(collider, item: ItemProperties.Item) -> InteractResult:
 	var collision_position = collider.position
@@ -105,4 +115,4 @@ func handle_use_item(collider, item: ItemProperties.Item) -> InteractResult:
 			for i in chop_result.amount_gained:
 				WorldState.state.item_generator.spawn_item(collision_position + ITEM_SPAWN_OFFSET, ItemProperties.Item.STONE)
 
-	return InteractResult.new()
+	return InteractResult.NO_INTERACT_RESULT
