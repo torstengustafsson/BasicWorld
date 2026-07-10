@@ -2,8 +2,8 @@ class_name NPC
 
 enum WantsOptions { FOOD, WOOD, STONE, NONE }
 
-var model: MeshInstance3D
-var model_material: StandardMaterial3D
+var mesh_instance: MeshInstance3D
+var mesh_instance_material: StandardMaterial3D
 var pants_material: StandardMaterial3D
 var default_color: Color
 
@@ -20,28 +20,28 @@ static var npc_sounds: Array[AudioManager.SoundID] = [
 	AudioManager.SoundID.QUIT_TOUCHING_ME,
 ]
 
-func _init(mesh_object: MeshObject):
-	model = mesh_object.mesh.get_node("Armature").get_node("Skeleton3D").get_node("Human") # This assumes .glb model structure
+func initialize(parent: WorldObject, rng: RandomNumberGenerator):
+	mesh_instance = parent.model.get_node("Armature").get_node("Skeleton3D").get_node("Human") # This assumes .glb model structure
 
 	# Need to make copy of material to avoid changing on all NPCs
-	model_material = model.get_active_material(0).duplicate()
-	model.set_surface_override_material(0, model_material)
-	default_color = model_material.albedo_color
+	mesh_instance_material = mesh_instance.get_active_material(0).duplicate()
+	mesh_instance.set_surface_override_material(0, mesh_instance_material)
+	default_color = mesh_instance_material.albedo_color
 
-	pants_material = model.get_active_material(1).duplicate()
-	pants_material.albedo_color = Color(randf_range(0.0, 1.0), randf_range(0.0, 1.0), randf_range(0.0, 1.0))
-	model.set_surface_override_material(1, pants_material)
+	pants_material = mesh_instance.get_active_material(1).duplicate()
+	pants_material.albedo_color = Color(rng.randf_range(0.0, 1.0), rng.randf_range(0.0, 1.0), rng.randf_range(0.0, 1.0))
+	mesh_instance.set_surface_override_material(1, pants_material)
 
-	var animationplayer: AnimationPlayer = mesh_object.mesh.get_node("AnimationPlayer")
+	var animationplayer: AnimationPlayer = parent.model.get_node("AnimationPlayer")
 
-	if mesh_object.object_id == WorldObject.ObjectId.NPC:
-		if mesh_object.scale.y <= 0.7:
+	if parent.object_id == WorldObject.ObjectId.NPC:
+		if parent.scale.y <= 0.7:
 			default_sound = AudioManager.SoundID.LAUGH
 		else:
-			default_sound = npc_sounds[randi() % npc_sounds.size()]
+			default_sound = npc_sounds[rng.randi() % npc_sounds.size()]
 		animationplayer.get_animation("Walk").loop_mode = Animation.LOOP_LINEAR
 		animationplayer.play("Walk")
-	if mesh_object.object_id == WorldObject.ObjectId.TUTORIAL_NPC:
+	if parent.object_id == WorldObject.ObjectId.TUTORIAL_NPC:
 		default_sound = AudioManager.SoundID.ROGGAN
 		animationplayer.get_animation("Wave").loop_mode = Animation.LOOP_LINEAR
 		animationplayer.play("Wave")
@@ -55,12 +55,12 @@ func _init(mesh_object: MeshObject):
 
 # Return true if died
 func trigger_damage() -> void:
-	WorldState.state.audio_manager.play_sound(AudioManager.SoundID.NO, model.global_position)
+	WorldState.state.audio_manager.play_sound(AudioManager.SoundID.NO, mesh_instance.global_position)
 	var blink_cycle = 0.1
 	var loops = int(DAMAGE_TAKEN_SECS / (blink_cycle * 2))
-	var tween = model.create_tween().set_loops(loops)
-	tween.tween_property(model_material, "albedo_color", Color.RED, 0.1)
-	tween.tween_property(model_material, "albedo_color", default_color, 0.1)
+	var tween = mesh_instance.create_tween().set_loops(loops)
+	tween.tween_property(mesh_instance_material, "albedo_color", Color.RED, 0.1)
+	tween.tween_property(mesh_instance_material, "albedo_color", default_color, 0.1)
 
 # Return true if NPC took item
 func interact_item(item: ItemProperties.Item) -> bool:
@@ -68,7 +68,7 @@ func interact_item(item: ItemProperties.Item) -> bool:
 	var want_and_is_wood = wants == WantsOptions.WOOD and item == ItemProperties.Item.WOOD
 	var want_and_is_stone = wants == WantsOptions.STONE and item == ItemProperties.Item.STONE
 	if want_and_is_food or want_and_is_wood or want_and_is_stone:
-		WorldState.state.audio_manager.play_sound(AudioManager.SoundID.YES, model.global_position)
+		WorldState.state.audio_manager.play_sound(AudioManager.SoundID.YES, mesh_instance.global_position)
 		return true
-	WorldState.state.audio_manager.play_sound(default_sound, model.global_position)
+	WorldState.state.audio_manager.play_sound(default_sound, mesh_instance.global_position)
 	return false

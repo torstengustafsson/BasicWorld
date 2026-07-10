@@ -172,7 +172,7 @@ func _calculate_weight(grid_position: Vector3, neighbor_position: Vector3) -> fl
 		min(grid_position.z, neighbor_position.z) - Globals.ROAD_WIDTH - Globals.ROAD_MARGIN,
 		abs(grid_position.x - neighbor_position.x) + 2 * Globals.ROAD_WIDTH + Globals.ROAD_MARGIN,
 		abs(grid_position.z - neighbor_position.z) + 2 * Globals.ROAD_WIDTH + Globals.ROAD_MARGIN)
-	var objects = WorldState.state.pool_manager.get_meshes_in_area(query_rect)
+	var objects = WorldState.state.multimesh_manager.get_all_objects_in_boundary(query_rect)
 	var num_obstacles = 0 if objects.size() == 0 else _get_num_objects_in_edge(grid_position, neighbor_position, objects)
 	var distance = (grid_position - neighbor_position).length()
 	# Every object in the way adds weight 20, every flat meter adds weight 1, adding a multiplier of 1 more per meter, per 10 degrees steepness

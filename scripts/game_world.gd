@@ -44,44 +44,43 @@ func count_all_children(node: Node) -> int:
 		count += count_all_children(child)
 	return count
 
-func interact(collider, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> InteractResult:
-	var berries_picked = WorldState.state.object_manager.interact(collider)
+func interact(collision_position: Vector3, item: ItemProperties.Item = ItemProperties.Item.NO_ITEM) -> InteractResult:
+	var berries_picked = WorldState.state.object_manager.interact(collision_position)
 	if berries_picked > 0:
-		WorldState.state.audio_manager.play_sound(AudioManager.SoundID.PICK_UP_ITEM, collider.position)
+		WorldState.state.audio_manager.play_sound(AudioManager.SoundID.PICK_UP_ITEM, collision_position)
 		var result = InteractResult.new(InteractResults.GainItem)
 		result.item = ItemProperties.Item.BERRY
 		return result
 
-	var item_picked = WorldState.state.item_generator.interact(collider)
+	var item_picked = WorldState.state.item_generator.interact(collision_position)
 	if item_picked != ItemProperties.Item.NO_ITEM:
 		var result = InteractResult.new(InteractResults.GainItem)
 		result.item = item_picked
 		return result
 
 	if item != ItemProperties.Item.NO_ITEM:
-		var npc_took_item: bool = WorldState.state.npc_manager.interact_equipped_item(collider, item)
+		var npc_took_item: bool = WorldState.state.npc_manager.interact_equipped_item(collision_position, item)
 		if npc_took_item:
 			return InteractResult.new(InteractResults.DeleteEquippedItem)
 	else:
-		var result = WorldState.state.npc_manager.interact(collider)
+		var result = WorldState.state.npc_manager.interact(collision_position)
 		if result != InteractResult.NO_INTERACT_RESULT:
 			return result
 
-	var object = WorldState.state.pool_manager.get_object_at_position(WorldObject.ObjectId.CHEST, collider.position)
+	var object = WorldState.state.multimesh_manager.get_object_at_position(WorldObject.ObjectId.CHEST, collision_position)
 	if object:
-		return InteractResult.new(InteractResults.OpenChest, hash(collider.position))
+		return InteractResult.new(InteractResults.OpenChest, hash(collision_position))
 
 	return InteractResult.NO_INTERACT_RESULT
 
-func handle_use_item(collider, item: ItemProperties.Item) -> InteractResult:
-	var collision_position = collider.position
-	var berries_picked = WorldState.state.object_manager.interact(collider)
+func handle_use_item(collision_position: Vector3, item: ItemProperties.Item) -> InteractResult:
+	var berries_picked = WorldState.state.object_manager.interact(collision_position)
 	if berries_picked > 0:
 		var result = InteractResult.new(InteractResults.GainItem)
 		result.item = ItemProperties.Item.BERRY
 		return result
 
-	var item_picked = WorldState.state.item_generator.interact(collider)
+	var item_picked = WorldState.state.item_generator.interact(collision_position)
 	if item_picked != ItemProperties.Item.NO_ITEM:
 		WorldState.state.audio_manager.play_sound(AudioManager.SoundID.PICK_UP_ITEM, collision_position)
 		var result = InteractResult.new(InteractResults.GainItem)
@@ -89,26 +88,26 @@ func handle_use_item(collider, item: ItemProperties.Item) -> InteractResult:
 		return result
 
 	if item != ItemProperties.Item.NO_ITEM:
-		var npc_took_item: bool = WorldState.state.npc_manager.interact_equipped_item(collider, item)
+		var npc_took_item: bool = WorldState.state.npc_manager.interact_equipped_item(collision_position, item)
 		if npc_took_item:
 			return InteractResult.new(InteractResults.DeleteEquippedItem)
 	else:
-		return WorldState.state.npc_manager.interact(collider)
+		return WorldState.state.npc_manager.interact(collision_position)
 
 	if item == ItemProperties.Item.AXE:
-		var chop_result: ObjectManager.ChopResult = WorldState.state.object_manager.handle_tree_chop(collider)
+		var chop_result: ObjectManager.ChopResult = WorldState.state.object_manager.handle_tree_chop(collision_position)
 		if chop_result.result != ObjectManager.ChopResults.NoHit:
 			WorldState.state.audio_manager.play_sound(AudioManager.SoundID.AXE_HIT, collision_position)
 			if chop_result.result == ObjectManager.ChopResults.ChoppedDown:
 				for i in chop_result.amount_gained:
 					WorldState.state.item_generator.spawn_item(collision_position + ITEM_SPAWN_OFFSET, ItemProperties.Item.WOOD)
-		chop_result = WorldState.state.npc_manager.handle_chop(collider)
+		chop_result = WorldState.state.npc_manager.handle_chop(collision_position)
 		if chop_result.result != ObjectManager.ChopResults.NoHit:
 			# Need to displace a bit since only one sound per position is allowed at once, and NPC will play "hurt" sound as well
 			WorldState.state.audio_manager.play_sound(AudioManager.SoundID.AXE_HIT, collision_position + Vector3(0.01, 0.01, 0.01))
 
 	if item == ItemProperties.Item.PICKAXE:
-		var chop_result: ObjectManager.ChopResult = WorldState.state.object_manager.handle_rock_chop(collider)
+		var chop_result: ObjectManager.ChopResult = WorldState.state.object_manager.handle_rock_chop(collision_position)
 		if chop_result.result != ObjectManager.ChopResults.NoHit:
 			WorldState.state.audio_manager.play_sound(AudioManager.SoundID.PICKAXE_HIT, collision_position)
 		if chop_result.result == ObjectManager.ChopResults.ChoppedDown:

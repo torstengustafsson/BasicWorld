@@ -15,7 +15,7 @@ static func get_terrain_angle_at_position(position: Vector3) -> float:
 	var position_xz = Vector2(position.x, position.z)
 	mutex.lock()
 	var existing_value = _added_angle_positions.get(position_xz)
-	if existing_value:
+	if existing_value != null:
 		mutex.unlock()
 		return existing_value
 	_angle_positions_to_be_added.append(position_xz)
@@ -24,7 +24,7 @@ static func get_terrain_angle_at_position(position: Vector3) -> float:
 		update_angle_positions()
 		existing_value = _added_angle_positions.get(position_xz)
 		mutex.unlock()
-		if existing_value:
+		if existing_value != null:
 			return existing_value
 	mutex.unlock()
 	return Globals.NOT_A_NUMBER

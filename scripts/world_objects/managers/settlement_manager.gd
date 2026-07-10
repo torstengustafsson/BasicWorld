@@ -1,31 +1,19 @@
-extends Node
-
-class_name SettlementManager
-
-class Transform:
-	var position: Vector3
-	var rotation: Vector3
-	var scale: Vector3
-	func _init(_position: Vector3, _rotation: Vector3, _scale: Vector3) -> void:
-		position = _position
-		rotation = _rotation
-		scale = _scale
+class_name SettlementManager extends Node
 
 class SettlementData:
 	var grid_index: Vector2i
 	var position: Vector3
 	var radius: float
-	var house_transforms: Array[Transform]
-	var chest_transform: Transform
-	func _init(_grid_index, _position, _radius, _house_transforms, _chest_transform) -> void:
+	var houses: Array[WorldObject]
+	var chest: WorldObject
+	func _init(_grid_index, _position, _radius, _houses, _chest) -> void:
 		grid_index = _grid_index
 		position = _position
 		radius = _radius
-		house_transforms = _house_transforms
-		chest_transform = _chest_transform
-
+		houses = _houses
+		chest = _chest
 	func get_num_houses() -> int:
-		return house_transforms.size()
+		return houses.size()
 
 var added_terrain_angle_boundaries: Dictionary[Array, bool] = {}
 var settlements: Quadtree = Quadtree.new()
@@ -96,7 +84,6 @@ func create_settlements(boundary: Rect2) -> Array[SettlementData]:
 			var existing_settlement = settlements.get_item(Vector2(position.x, position.z))
 			if existing_settlement:
 				new_settlements.append(existing_settlement)
-				_add_settlement_to_scene(existing_settlement)
 				continue
 			if not WorldState.state.world_grid.is_grid_position_ok(position):
 				continue
@@ -104,7 +91,6 @@ func create_settlements(boundary: Rect2) -> Array[SettlementData]:
 			if settlement_data:
 				settlements.insert({"position": Vector2(settlement_data.position.x, settlement_data.position.z), "data": settlement_data})
 				new_settlements.append(settlement_data)
-				_add_settlement_to_scene(settlement_data)
 	return new_settlements
 
 func try_add_settlement(grid_index: Vector2i, rng: RandomNumberGenerator) -> SettlementData:
@@ -144,7 +130,7 @@ func add_settlement(grid_position: Vector3, grid_index: Vector2i, rng: RandomNum
 	var house_spread_angle_multiplier: float = (MAX_NUM_HOUSES * 2 - num_houses)
 	var last_angle: float = start_rotation
 	var largest_radius: float = 0.0
-	var houses: Array[Transform] = []
+	var houses: Array[WorldObject] = []
 	for house_angle in num_houses:
 		var angle = last_angle + PI / 3 * rng.randf_range(0.2, 0.3) * house_spread_angle_multiplier
 		last_angle = angle
@@ -162,7 +148,7 @@ func is_inside_settlement(position: Vector3, object_id: WorldObject.ObjectId) ->
 	var is_removable_type: bool = \
 		object_id == WorldObject.ObjectId.TREE or \
 		object_id == WorldObject.ObjectId.ROCK or \
-		object_id == WorldObject.ObjectId.BERRYBUSH_EMPTY or \
+		object_id == WorldObject.ObjectId.BERRYBUSH or \
 		object_id == WorldObject.ObjectId.BERRYBUSH_FULL
 	if is_removable_type:
 		var close_settlements = settlements.query_circle(Vector2(position.x, position.z), Globals.MAX_SETTLEMENT_RADIUS + 1.0)
@@ -171,20 +157,22 @@ func is_inside_settlement(position: Vector3, object_id: WorldObject.ObjectId) ->
 	return false
 
 
-func _add_house(position: Vector3, rotation: Vector3) -> Transform:
-	var scale = Vector3(1.0 , 1.0, 1.0)
-	return Transform.new(position, rotation, scale)
+func _add_house(position: Vector3, rotation: Vector3) -> WorldObject:
+	return WorldObject.create_object(WorldObject.ObjectId.HOUSE, position, rotation)
 
-func _add_chest(position: Vector3, rotation: Vector3) -> Transform:
+func _add_chest(position: Vector3, rotation: Vector3) -> WorldObject:
 	position.y = WorldState.state.terrain_height_noise.get_height_at(position.x, position.z)
-	var scale = Vector3(1.0 , 1.0, 1.0)
-	return Transform.new(position, rotation, scale)
+	return WorldObject.create_object(WorldObject.ObjectId.CHEST, position, rotation)
 
-func _add_settlement_to_scene(settlement_data: SettlementData):
-	for transform in settlement_data.house_transforms:
-		WorldState.state.pool_manager.add_mesh(WorldObject.ObjectId.HOUSE, transform.position, transform.scale, transform.rotation)
-	var transform = settlement_data.chest_transform
-	WorldState.state.pool_manager.add_mesh(WorldObject.ObjectId.CHEST, transform.position, transform.scale, transform.rotation)
+func add_settlement_objects(multimesh_chunk: MultiMeshChunk, object_id: WorldObject.ObjectId) -> void:
+	match object_id:
+		WorldObject.ObjectId.HOUSE:
+			for settlement in settlements.query(multimesh_chunk.chunk_boundary):
+				for house in settlement.houses:
+					multimesh_chunk.place(house)
+		WorldObject.ObjectId.CHEST:
+			for settlement in settlements.query(multimesh_chunk.chunk_boundary):
+				multimesh_chunk.place(settlement.chest)
 
 func save() -> Dictionary:
 	#TODO

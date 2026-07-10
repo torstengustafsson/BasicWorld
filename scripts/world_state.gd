@@ -5,7 +5,7 @@ class_name WorldState
 static var state: WorldState
 
 var terrain_generator: TerrainGenerator
-var pool_manager: PoolManager
+var multimesh_manager: MultiMeshManager
 var object_manager: ObjectManager
 var item_generator: WorldItemGenerator
 var settlement_manager: SettlementManager
@@ -27,7 +27,7 @@ func _init(_player: Node3D) -> void:
 	player = _player
 
 	terrain_generator = TerrainGenerator.new(terrain_height_noise)
-	pool_manager = PoolManager.new()
+	multimesh_manager = MultiMeshManager.new()
 	object_manager = ObjectManager.new(rng)
 	item_generator = WorldItemGenerator.new()
 	settlement_manager = SettlementManager.new()
@@ -39,7 +39,7 @@ func _init(_player: Node3D) -> void:
 
 func _ready() -> void:
 	add_child(terrain_generator)
-	add_child(pool_manager)
+	add_child(multimesh_manager)
 	add_child(object_manager)
 	add_child(item_generator)
 	add_child(settlement_manager)

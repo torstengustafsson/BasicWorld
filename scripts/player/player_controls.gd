@@ -66,8 +66,14 @@ func handle_interaction():
 	if not result:
 		return
 
+	var collider: Object = result.collider
+	var shape_index: int = result.shape
+	var owner_id: int = collider.shape_find_owner(shape_index)
+	var collision_shape: Node = collider.shape_owner_get_owner(owner_id)
+	var collision_position = collision_shape.global_transform.origin
+
 	var equipped_item = player_inventory.equipped_item.item_id if player_inventory.item_in_hand else ItemProperties.Item.NO_ITEM
-	var interact_result: GameWorld.InteractResult = game_world.interact(result.collider, equipped_item)
+	var interact_result: GameWorld.InteractResult = game_world.interact(collision_position, equipped_item)
 	match interact_result.result:
 		GameWorld.InteractResults.GainItem:
 			player_inventory.add_item(interact_result.item)
@@ -94,4 +100,10 @@ func handle_use_item() -> void:
 	if not result:
 		return
 
-	game_world.handle_use_item(result.collider, player_inventory.equipped_item.item_id)
+	var collider: Object = result.collider
+	var shape_index: int = result.shape
+	var owner_id: int = collider.shape_find_owner(shape_index)
+	var collision_shape: Node = collider.shape_owner_get_owner(owner_id)
+	var collision_position = collision_shape.global_transform.origin
+
+	game_world.handle_use_item(collision_position, player_inventory.equipped_item.item_id)

@@ -63,10 +63,10 @@ func create_item_particle_effect() -> GPUParticles3D:
 	particles.draw_pass_1 = particle
 	return particles
 
-func interact(collider) -> ItemProperties.Item:
+func interact(collision_position: Vector3) -> ItemProperties.Item:
 	var item_index = 0
 	for item in world_items:
-		if item.object.get_node("PickableArea") == collider:
+		if item.object.position == collision_position:
 			WorldState.state.audio_manager.play_sound(AudioManager.SoundID.PICK_UP_ITEM, item.object.position)
 			item.object.queue_free()
 			world_items.remove_at(item_index)

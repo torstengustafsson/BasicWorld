@@ -4,6 +4,8 @@ class_name Globals
 # Set to specific string to get repeatable result
 static var RANDOM_SEED = MathFunctions.generate_random_seed()
 
+const MAX_INT = 9223372036854775807
+
 # Each terrain resolution halves the detail, and doubles the amount of chunks in the distance
 # Must be minimum 1, since that is the max resolution.
 const NUM_CHUNK_RESOLUTIONS: int = 4
@@ -42,6 +44,10 @@ const MAX_OBJECT_STEEPNESS = 25.0
 const ROAD_WIDTH: float = 1.5
 const ROAD_MARGIN: float = 0.5
 
+# All added objects are sorted into chunks of multimeshes. Each such chunk have a fixed size of x- and z dimensions.
+const MULTIMESH_CHUNK_SIZE = 128.0
+const MULTIMESH_CHUNK_MAX_INSTANCES = 1000
+
 # Level of detail is set up so that objects within LOD_DISTANCE_FULL get a collider, and objects
 # outside of LOD_DISTANCE_NO_COLLIDER are removed from the scene. The check is made whenever the
 # player moves beyond LOD_UPDATE_DISTANCE from its position at the last update.
@@ -49,7 +55,7 @@ const ROAD_MARGIN: float = 0.5
 const LOD_DISTANCE_FULL = 32.0
 const LOD_DISTANCE_NO_COLLIDER = 256.0
 const LOD_UPDATE_DISTANCE = LOD_DISTANCE_FULL * 0.5 # Objects will spawn and despawn whenever player moves this distance
-const LOD_REMOVE_DISTANCE_MULTIPLIER = 1.2 # A value of 1.2 means wait to remove faraway objects until 20% more distance than LOD_DISTANCE_NO_COLLIDER away
+const LOD_REMOVE_DISTANCE_MULTIPLIER = 3.0 # A value of 1.2 means wait to remove faraway objects until 20% more distance than LOD_DISTANCE_NO_COLLIDER away
 
 # Internal values, should generally not be touched
 const OUT_OF_SIGHT = Vector3(-1000000.0, -1000000.0, -1000000.0)

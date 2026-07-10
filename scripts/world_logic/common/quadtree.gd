@@ -72,7 +72,7 @@ func insert(item: Dictionary) -> bool:
 	if not boundary.has_point(item["position"]):
 		return false
 
-	if has(item["data"]):
+	if has(item["position"]):
 		return true # Item already exist
 
 	if items.size() < capacity or depth >= MAX_DEPTH:
@@ -206,30 +206,27 @@ func get_item(position: Vector2):
 			return result
 	return null
 
-func has(item_data) -> bool:
-	for i in items.size():
-		if items[i]["data"] == item_data:
+func has(position: Vector2) -> bool:
+	for item in items:
+		if item["position"] == position:
 			return true
 	if divided:
-		return (northwest.has(item_data)
-			or northeast.has(item_data)
-			or southwest.has(item_data)
-			or southeast.has(item_data))
+		return (northwest.has(position)
+			or northeast.has(position)
+			or southwest.has(position)
+			or southeast.has(position))
 	return false
 
-
-# Remove a specific item by reference equality of its "data" field.
-# Returns true if the item was found and removed.
-func remove_item(item_data) -> bool:
+func remove_item(position: Vector2) -> bool:
 	for i in items.size():
-		if items[i]["data"] == item_data:
+		if items[i]["position"] == position:
 			items.remove_at(i)
 			return true
 	if divided:
-		return (northwest.remove_item(item_data)
-			or northeast.remove_item(item_data)
-			or southwest.remove_item(item_data)
-			or southeast.remove_item(item_data))
+		return (northwest.remove_item(position)
+			or northeast.remove_item(position)
+			or southwest.remove_item(position)
+			or southeast.remove_item(position))
 	return false
 
 
