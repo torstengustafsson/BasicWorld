@@ -37,7 +37,7 @@ func close_dialogue():
 
 func _show_dialogue(dialogue: Dialogue):
 	_reset_buttons(dialogue.response_options.size())
-	$Label.text = dialogue.text
+	$Background/TextArea/Label.text = dialogue.text
 	for i in dialogue.response_options.size():
 		var response = dialogue.response_options[i]
 		if i >= response_buttons.size():
@@ -60,10 +60,15 @@ func _reset_buttons(num_buttons: int):
 	for i in response_buttons.size():
 		if response_buttons[i].pressed.is_connected(_on_response_button_pressed):
 			response_buttons[i].pressed.disconnect(_on_response_button_pressed)
-		if response_buttons[i].get_parent() == self:
-			remove_child(response_buttons[i])
+		if response_buttons[i].get_parent() == $Background:
+			$Background.remove_child(response_buttons[i])
 	for i in min(num_buttons, response_buttons.size()):
 		var button = response_buttons[i]
+		button.position = Vector2(0, 0)
 		button.size = Vector2(300, 32)
-		button.position = Vector2(420.0, 470 + 40.0 * i)
-		add_child(button)
+		button.anchor_left = 0.5
+		button.position.x -= button.size.x / 2.0
+		button.anchor_top = 0.52
+		button.position.y += i * (button.size.y + 5)
+
+		$Background.add_child(button)
