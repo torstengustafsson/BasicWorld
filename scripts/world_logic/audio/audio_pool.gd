@@ -14,8 +14,8 @@ func _ready() -> void:
 		_players.append(p)
 		_play_times.append(0.0)
 
-func play(stream: AudioStream, pos: Vector3, bus: StringName = &"Master",
-		  pitch: float = 1.0, volume_db: float = 0.0) -> AudioStreamPlayer3D:
+func play(stream: AudioStream, pos: Vector3, pitch: float = 1.0, volume_db: float = 0.0) -> AudioStreamPlayer3D:
+	var bus: StringName = &"Master"
 	var player := _get_player_for(pos)
 	player.stream = stream
 	player.global_position = pos

@@ -138,8 +138,10 @@ func handle_chop(collision_position: Vector3) -> ObjectManager.ChopResult:
 		npc_object.object.npc.trigger_damage()
 		npc_object.object.health -= 1
 		if npc_object.object.health <= 0:
+			WorldState.state.audio_manager.play_sound(AudioManager.SoundID.NO, npc_object.object.position, 0.6, 50.0)
 			_delete_npc(npc_object.object)
 			return ObjectManager.ChopResult.new(ObjectManager.ChopResults.ChoppedDown)
+		WorldState.state.audio_manager.play_sound(AudioManager.SoundID.NO, npc_object.object.position)
 		return ObjectManager.ChopResult.new(ObjectManager.ChopResults.StillStanding)
 	return ObjectManager.ChopResult.new(ObjectManager.ChopResults.NoHit)
 

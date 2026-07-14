@@ -37,5 +37,5 @@ var audio_pool: AudioPool = AudioPool.new()
 func _ready() -> void:
 	add_child(audio_pool)
 
-func play_sound(sound_id: SoundID, global_position: Vector3):
-	audio_pool.play(sounds[sound_id], global_position)
+func play_sound(sound_id: SoundID, global_position: Vector3, pitch: float = 1.0, volume_db: float = 0.0):
+	audio_pool.play(sounds[sound_id], global_position, pitch, volume_db)

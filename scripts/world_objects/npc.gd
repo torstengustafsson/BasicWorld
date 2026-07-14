@@ -55,7 +55,6 @@ func initialize(parent: WorldObject, rng: RandomNumberGenerator):
 
 # Return true if died
 func trigger_damage() -> void:
-	WorldState.state.audio_manager.play_sound(AudioManager.SoundID.NO, mesh_instance.global_position)
 	var blink_cycle = 0.1
 	var loops = int(DAMAGE_TAKEN_SECS / (blink_cycle * 2))
 	var tween = mesh_instance.create_tween().set_loops(loops)
