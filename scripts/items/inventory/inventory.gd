@@ -129,12 +129,9 @@ func _save() -> Array[Dictionary]:
 		result.append(data)
 	return result
 
-
-func _load(data: Array): # Cant be typed due to gdscript. Should be: Array[Dictionary]
+func _load(data: Array) -> void:
 	clear_inventory()
-	for item in data:
-		var item_id: ItemProperties.Item = item["id"]
-		var slot: InventorySlot = slot_scene.instantiate()
-		slot.item = item_id
-		slot.amount = item["amount"]
-		inventory_grid.add_child(slot)
+	assert(data.size() == inventory_grid.get_children().size())
+	for i in range(data.size()):
+		var slot: InventorySlot = inventory_grid.get_children()[i]
+		slot.set_item(data[i]["id"], data[i]["amount"])

@@ -1,6 +1,4 @@
-extends Node
-
-class_name ItemProperties
+class_name ItemProperties extends RefCounted
 
 const no_item_scene = preload("res://scenes/items/no_item.tscn")
 const axe_scene = preload("res://scenes/items/axe.tscn")

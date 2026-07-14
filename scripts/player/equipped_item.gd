@@ -1,6 +1,4 @@
-extends Node3D
-
-class_name EquippedItem
+class_name EquippedItem extends Node3D
 
 const EQUIPPED_ITEM_DEFAULT_POSITION: Vector3 = Vector3(-0.5, -0.4, -0.6)
 const EQUIPPED_ITEM_DEFAULT_ROTATION: Vector3 = Vector3(0.0, 1.4 * PI, 0.2 * PI)

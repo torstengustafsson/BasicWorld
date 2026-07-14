@@ -87,8 +87,19 @@ func insert(item: Dictionary) -> bool:
 		or southwest.insert(item)
 		or southeast.insert(item))
 
+func query_all_positions(result: Array = []) -> Array:
+	for item in items:
+		result.append(item["position"])
 
-# Query all items
+	if divided:
+		northwest.query_all_positions(result)
+		northeast.query_all_positions(result)
+		southwest.query_all_positions(result)
+		southeast.query_all_positions(result)
+
+	return result
+
+
 func query_all(result: Array = []) -> Array:
 	for item in items:
 		result.append(item["data"])

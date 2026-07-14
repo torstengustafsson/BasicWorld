@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://bs72ogkvdd7d6" path="res://addons/brackeys-proto-controller/proto_controller/proto_controller.tscn" id="2_tipki"]
 [ext_resource type="PackedScene" uid="uid://c3hlevqadr32h" path="res://scenes/pause_menu.tscn" id="4_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://dhaksq5wolwly" path="res://scenes/hud.tscn" id="5_tbgi4"]
-[ext_resource type="PackedScene" uid="uid://cn5yt3d23xawi" path="res://scenes/dialogue_menu.tscn" id="5_tefeu"]
+[ext_resource type="PackedScene" uid="uid://dv03qcij5yw66" path="res://scenes/dialogue_menu.tscn" id="5_tefeu"]
 [ext_resource type="Script" uid="uid://di17ml25x524b" path="res://scripts/menus/dialogue_menu.gd" id="6_tefeu"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0xm2m"]

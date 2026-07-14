@@ -1,12 +1,10 @@
-extends MeshInstance3D
-
-class_name TerrainChunk
+class_name TerrainChunk extends MeshInstance3D
 
 # Chunks are positioned so its origin is in the upper left corner of the chunk (x_pos and z_pos)
 
 class ShaderParameters:
 	var settlement_data: Array = [] # Array[SettlementManager.SettlementData]
-	var road_segments: Array = [] # Array[RoadGenerator.RoadSegment]
+	var road_segments: Array = [] # Array[RoadManager.RoadSegment]
 
 # Add this number of subdivisions to each side of the chunk. Will not be rendered.
 # Used to avoid visible seams between terrain chunks

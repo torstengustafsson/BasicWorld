@@ -1,6 +1,4 @@
-extends Inventory
-
-class_name HotkeyItems
+class_name HotkeyItems extends Inventory
 
 const NO_EQUIPPED_ITEM = -1
 var equipped_item_index: int = NO_EQUIPPED_ITEM

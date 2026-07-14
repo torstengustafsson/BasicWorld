@@ -1,6 +1,4 @@
-extends Node
-
-class_name AudioPool
+class_name AudioPool extends Node
 
 const POOL_SIZE = 8
 
@@ -44,3 +42,7 @@ func _get_player_for(pos: Vector3) -> AudioStreamPlayer3D:
 			oldest_idx = i
 	_players[oldest_idx].stop()
 	return _players[oldest_idx]
+
+func destroy():
+	for p in _players:
+		p.stop()

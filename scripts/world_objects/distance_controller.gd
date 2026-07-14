@@ -18,17 +18,19 @@ func _init():
 	lod_last_player_pos = Vector2(WorldState.state.player.position.x, WorldState.state.player.position.z)
 	terrain_last_player_index = Vector2i(0, 0)
 
-func _ready() -> void:
+func initialize_world(new_game: bool = true) -> void:
 	WorldState.state.terrain_generator.add_chunks_around_player(WorldState.state.player.position)
+	await get_tree().process_frame
 
 	update_world(INITIAL_BATCH_SIZE)
-	initalize_player_spawn()
+	if new_game:
+		initalize_player_spawn()
 
-	var around_player = Rect2(
-		Vector2(WorldState.state.player.position.x - Globals.LOD_DISTANCE_FULL, WorldState.state.player.position.z - Globals.LOD_DISTANCE_FULL),
-		Vector2(2 * Globals.LOD_DISTANCE_FULL, 2 * Globals.LOD_DISTANCE_FULL)
-	)
-	generate_starting_items(around_player, 15)
+		var around_player = Rect2(
+			Vector2(WorldState.state.player.position.x - Globals.LOD_DISTANCE_FULL, WorldState.state.player.position.z - Globals.LOD_DISTANCE_FULL),
+			Vector2(2 * Globals.LOD_DISTANCE_FULL, 2 * Globals.LOD_DISTANCE_FULL)
+		)
+		WorldState.state.item_manager.generate_starting_items(around_player, 15)
 
 func _process(delta: float) -> void:
 	TerrainManager.update_angle_positions() # Needed by threads
@@ -71,8 +73,8 @@ func _update_world_faraway(batch_size: int = 3):
 	)
 	var nearby_settlements: Array[SettlementManager.SettlementData] = WorldState.state.settlement_manager.create_settlements(boundary)
 	WorldState.state.npc_manager.create_npcs_in_settlements(nearby_settlements)
-	WorldState.state.road_generator.generate_roads(boundary)
-	var nearby_road_segments: Array = WorldState.state.road_generator.get_roads_in_area(boundary)
+	WorldState.state.road_manager.generate_roads(boundary)
+	var nearby_road_segments: Array = WorldState.state.road_manager.get_roads_in_area(boundary)
 	WorldState.state.terrain_generator.update_shader_data(nearby_settlements, nearby_road_segments)
 	WorldState.state.multimesh_manager.add_multimesh_chunks(boundary, batch_size)
 
@@ -101,30 +103,3 @@ func _cleanup_world_close():
 		Vector2(INNER_BOUNDS * 2, INNER_BOUNDS * 2)
 	)
 	WorldState.state.multimesh_manager.remove_faraway_colliders(boundary_to_keep)
-
-# TODO: Manage items better
-func generate_starting_items(boundary: Rect2, amount: int):
-	var get_random_position = func() -> Vector3:
-		var pos_x = WorldState.state.rng.randf_range(boundary.position.x, boundary.end.x)
-		var pos_z = WorldState.state.rng.randf_range(boundary.position.y, boundary.end.y)
-		return Vector3(
-			pos_x,
-			WorldState.state.terrain_height_noise.get_height_at(pos_x, pos_z) + 0.5,
-			pos_z)
-
-	for berry in floor(amount / 3.0):
-		var berry_position = get_random_position.call()
-		WorldState.state.item_generator.spawn_item(berry_position, ItemProperties.Item.BERRY)
-
-	for wood in floor(amount / 3.0):
-		var wood_position = get_random_position.call()
-		WorldState.state.item_generator.spawn_item(wood_position, ItemProperties.Item.WOOD)
-
-	for stone in floor(amount / 3.0):
-		var stone_position = get_random_position.call()
-		WorldState.state.item_generator.spawn_item(stone_position, ItemProperties.Item.STONE)
-
-	var axe_position = WorldState.state.player.position + Vector3(-1.0, 2.0, -4.0)
-	WorldState.state.item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
-	var pickaxe_position = WorldState.state.player.position + Vector3(1.0, 2.0, -4.0)
-	WorldState.state.item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)

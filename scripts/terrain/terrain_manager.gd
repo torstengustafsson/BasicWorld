@@ -1,6 +1,4 @@
-extends Node
-
-class_name TerrainManager
+class_name TerrainManager extends Node
 
 # Terrain angles are pre-calculated and stored at all relevant positions
 # When the angle for a new position is requested for the first time, it will be queued and later (next frame) actually added.

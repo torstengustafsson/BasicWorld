@@ -1,6 +1,4 @@
-extends Node
-
-class_name ObjectManager
+class_name ObjectManager extends Node
 
 enum ChopResults { NoHit, StillStanding, ChoppedDown }
 
@@ -70,7 +68,7 @@ func _add_meshes_from_pool(multimesh_chunk: MultiMeshChunk, step: int, noise_fun
 				continue
 
 			# # Skip if road is in the way
-			if WorldState.state.road_generator.is_in_road(position):
+			if WorldState.state.road_manager.is_in_road(position):
 				continue
 
 			# Skip if inside a settlement
@@ -149,3 +147,7 @@ func _process(delta):
 	for object in objects:
 		if object.berrybush:
 			object.berrybush.update(delta)
+
+func destroy():
+	forest_noise = null
+	rocks_noise = null

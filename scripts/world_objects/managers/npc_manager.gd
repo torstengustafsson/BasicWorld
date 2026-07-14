@@ -9,13 +9,9 @@ class NpcObject:
 		object = _object
 		static_body = _static_body
 
-
 var npcs: Quadtree = Quadtree.new()
 var deleted_npcs: Quadtree = Quadtree.new()
 var tutorial_npc: WorldObject = null
-
-func _init() -> void:
-	add_to_group("Persist")
 
 func create_npcs_in_settlements(settlements: Array[SettlementManager.SettlementData]) -> void:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -72,15 +68,6 @@ func create_tutorial_npc(player_pos: Vector3):
 	var position = Vector3(pos_x, height, pos_z)
 	tutorial_npc = WorldObject.create_object(WorldObject.ObjectId.TUTORIAL_NPC, position)
 	_add_npc_to_scene(tutorial_npc)
-
-func add_npc_objects(multimesh_chunk: MultiMeshChunk, object_id: WorldObject.ObjectId) -> void:
-	match object_id:
-		WorldObject.ObjectId.NPC:
-			for npc in npcs.query(multimesh_chunk.chunk_boundary):
-				multimesh_chunk.place(npc)
-		WorldObject.ObjectId.TUTORIAL_NPC:
-			if tutorial_npc:
-				multimesh_chunk.place(tutorial_npc)
 
 func _generate_tutorial_npc_dialogue():
 	var dialogue: DialogueMenu.Dialogue = DialogueMenu.Dialogue.new("Welcome to BasicWorld! A basic game where you can do basic stuff, like talking to me!", DialogueMenu.DialogueAction.TheOtherOneTalk)
@@ -139,7 +126,7 @@ func handle_chop(collision_position: Vector3) -> ObjectManager.ChopResult:
 		npc_object.object.health -= 1
 		if npc_object.object.health <= 0:
 			WorldState.state.audio_manager.play_sound(AudioManager.SoundID.NO, npc_object.object.position, 0.6, 50.0)
-			_delete_npc(npc_object.object)
+			_delete_npc(Vector2(npc_object.object.position.x, npc_object.object.position.z))
 			return ObjectManager.ChopResult.new(ObjectManager.ChopResults.ChoppedDown)
 		WorldState.state.audio_manager.play_sound(AudioManager.SoundID.NO, npc_object.object.position)
 		return ObjectManager.ChopResult.new(ObjectManager.ChopResults.StillStanding)
@@ -157,8 +144,8 @@ func _add_npc_to_scene(object: WorldObject):
 	npcs.insert({"position": Vector2(object.position.x, object.position.z), "data": NpcObject.new(object, static_body) })
 	return static_body
 
-func _delete_npc(object: WorldObject):
-	var npc_object = npcs.get_item(Vector2(object.position.x, object.position.z))
+func _delete_npc(position_xz: Vector2):
+	var npc_object = npcs.get_item(position_xz)
 	if not npc_object:
 		return
 	_delete_npc_object(npc_object)
@@ -189,3 +176,27 @@ func _process(_delta: float) -> void:
 	if tutorial_npc.model and tutorial_npc.model.is_inside_tree():
 		tutorial_npc.model.look_at(WorldState.state.player.position)
 		tutorial_npc.collision_shape.look_at(WorldState.state.player.position)
+
+func destroy():
+	for npc_object in npcs.query_all():
+		_delete_npc_object(npc_object)
+	npcs.clear()
+	deleted_npcs.clear()
+
+func save() -> Dictionary:
+	var result: Dictionary = {}
+	var deleted_object_data: Array = []
+	for position_xz in deleted_npcs.query_all_positions():
+		deleted_object_data.append([position_xz.x, position_xz.y])
+	result["deleted_objects"] = deleted_object_data
+	if tutorial_npc:
+		result["tutorial_npc"] = [tutorial_npc.position.x, tutorial_npc.position.z]
+	return result
+
+static func load(data: Dictionary) -> Array[Vector2]:
+	var result: Array[Vector2] = []
+	for position_xz in data["deleted_objects"]:
+		result.append(Vector2(position_xz[0], position_xz[1]))
+	if data.has("tutorial_npc"):
+		result.append(Vector2(data["tutorial_npc"][0], data["tutorial_npc"][1]))
+	return result

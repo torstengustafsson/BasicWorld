@@ -10,7 +10,6 @@ var equipped_item: EquippedItem = EquippedItem.new()
 var item_in_hand: bool = false
 
 func _init(_inventory: Inventory, hotkey_menu: HotkeyItems, _player_camera: Node3D):
-	add_to_group("Persist")
 	inventory = _inventory
 	hotkey_inventory = hotkey_menu
 	player_camera = _player_camera
@@ -123,22 +122,17 @@ func print_text_to_screen(text: String):
 
 
 func save() -> Dictionary:
-	return {}
-# 	var items = inventory_menu._save()
-# 	var result: Dictionary = {}
-# 	var items_dict: Dictionary = {}
-# 	items_dict["items"] = items
-# 	items_dict["equipped_item"] = equipped_item.item_id
-# 	items_dict["item_in_hand"] = item_in_hand
-# 	items_dict["hotkeys"] = hotkey_assignments
-# 	result[SaveLoadState.StateType.PlayerInventory] =  items_dict
-# 	return result
+	var items = inventory._save()
+	var hotkey_items = hotkey_inventory._save()
+	var result: Dictionary = {}
+	result["items"] = items
+	result["hotkeys"] = hotkey_items
+	result["item_in_hand"] = item_in_hand
+	result["equipped_item"] = equipped_item.item_id
+	return result
 
-func load(_data: Dictionary):
-	pass
-# 	var item_data = data[str(SaveLoadState.StateType.PlayerInventory)]
-# 	inventory_menu._load(item_data["items"])
-# 	item_in_hand = item_data["item_in_hand"]
-# 	equip_item(item_data["equipped_item"])
-# 	hotkey_assignments = item_data["hotkeys"]
-# 	hotkey_counter = hotkey_assignments.size()
+func load(data: Dictionary) -> void:
+	inventory._load(data["items"])
+	hotkey_inventory._load(data["hotkeys"])
+	item_in_hand = data["item_in_hand"]
+	equip_item_index(data["equipped_item"])

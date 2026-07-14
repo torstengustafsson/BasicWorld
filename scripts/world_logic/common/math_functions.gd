@@ -82,3 +82,20 @@ static func get_middle_point_vec2(a: Vector2, b: Vector2):
 
 static func get_middle_point_vec3(a: Vector3, b: Vector3):
 	return (a + b) * 0.5
+
+static func transform_to_array(t: Transform3D) -> Array:
+	return [
+		t.basis.x.x, t.basis.x.y, t.basis.x.z,
+		t.basis.y.x, t.basis.y.y, t.basis.y.z,
+		t.basis.z.x, t.basis.z.y, t.basis.z.z,
+		t.origin.x, t.origin.y, t.origin.z
+	]
+
+static func array_to_transform(arr: Array) -> Transform3D:
+	var basis := Basis(
+		Vector3(arr[0], arr[1], arr[2]),
+		Vector3(arr[3], arr[4], arr[5]),
+		Vector3(arr[6], arr[7], arr[8])
+	)
+	var origin := Vector3(arr[9], arr[10], arr[11])
+	return Transform3D(basis, origin)

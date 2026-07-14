@@ -91,7 +91,7 @@ func generate_shortest_distance_between_grid_points(grid_from: Vector2i, grid_de
 			var next_position = get_grid_position(edge_index)
 
 			var existing_road_cost_multiplier = 1.0
-			for road_segment in WorldState.state.road_generator.road_segments.query(query_rect):
+			for road_segment in WorldState.state.road_manager.road_segments.query(query_rect):
 				if (road_segment.from == Vector2(current_position.x, current_position.z) and road_segment.to == Vector2(next_position.x, next_position.z)) \
 					or (road_segment.from == Vector2(next_position.x, next_position.z) and road_segment.to == Vector2(current_position.x, current_position.z)):
 					# Following existing road
@@ -184,3 +184,6 @@ func _calculate_weight(grid_position: Vector3, neighbor_position: Vector3) -> fl
 
 func _distance_heuristic(a: Vector2i, b: Vector2i):
 	return (a - b).length() * Globals.WORLD_GRID_STEP * 2
+
+func destroy():
+	added_boundaries.clear()

@@ -1,6 +1,4 @@
-extends Node3D
-
-class_name PlayerControls
+class_name PlayerControls extends Node3D
 
 var space_state: PhysicsDirectSpaceState3D
 var player_camera: Camera3D

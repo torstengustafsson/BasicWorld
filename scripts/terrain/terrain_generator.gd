@@ -1,7 +1,6 @@
 # Based on https://www.youtube.com/watch?v=rWeQ30h25Yg
 
-extends Node
-class_name TerrainGenerator
+class_name TerrainGenerator extends Node
 
 var shader_parameters: TerrainChunk.ShaderParameters = TerrainChunk.ShaderParameters.new()
 
@@ -171,6 +170,15 @@ func get_terrain_size() -> Rect2:
 
 func get_chunk_boundary(chunk) -> Rect2:
 	return Rect2(chunk.x_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0, chunk.z_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0, Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE)
+
+func destroy():
+	for chunk_res in chunks:
+		var chunks_for_res = chunks[chunk_res]
+		for key in chunks_for_res:
+			var chunk: TerrainChunk = chunks_for_res[key]
+			if chunk.get_parent() == self:
+				remove_child(chunk)
+			chunk.queue_free()
 
 # Uncomment to render terrain chunk boundaries
 # func _process(_delta):

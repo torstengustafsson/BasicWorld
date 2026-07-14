@@ -1,6 +1,4 @@
-extends Node
-
-class_name AudioManager
+class_name AudioManager extends Node
 
 enum SoundID {
 	YES,
@@ -39,3 +37,6 @@ func _ready() -> void:
 
 func play_sound(sound_id: SoundID, global_position: Vector3, pitch: float = 1.0, volume_db: float = 0.0):
 	audio_pool.play(sounds[sound_id], global_position, pitch, volume_db)
+
+func destroy():
+	audio_pool.destroy()

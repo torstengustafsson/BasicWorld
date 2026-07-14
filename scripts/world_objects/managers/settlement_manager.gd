@@ -22,42 +22,6 @@ func _init():
 	settlements.boundary = Rect2(Vector2(-INF, -INF), Vector2(INF, INF))
 	add_to_group("Persist")
 
-# This function is used to pre-request terrain angles so they will be available for thread access later
-# Caches results for improved performance.
-func request_terrain_angles(boundary: Rect2) -> void:
-	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-	var step = int(Globals.WORLD_GRID_STEP * Globals.SETTLEMENT_GRID_STEP)
-	var start_pos_x = floor(boundary.position.x / step) * step
-	var start_pos_z = floor(boundary.position.y / step) * step
-	var end_pos_x = ceil((boundary.position.x + boundary.size.x) / step) * step
-	var end_pos_z = ceil((boundary.position.y + boundary.size.y) / step) * step
-	var start_index_x: int = start_pos_x / Globals.WORLD_GRID_STEP
-	var start_index_z: int = start_pos_z / Globals.WORLD_GRID_STEP
-	var end_index_x: int = end_pos_x / Globals.WORLD_GRID_STEP
-	var end_index_z: int = end_pos_z / Globals.WORLD_GRID_STEP
-	var key = [start_index_x, start_index_z, end_index_x, end_index_z]
-	if added_terrain_angle_boundaries.has(key):
-		return # No need to request these points since they have already been added
-	added_terrain_angle_boundaries[key] = true
-	for grid_index_x in range(start_index_x, end_index_x, Globals.SETTLEMENT_GRID_STEP):
-		for grid_index_z in range(start_index_z, end_index_z, Globals.SETTLEMENT_GRID_STEP):
-			# Need a way to reproduce the same result every time for random values, position is used since we always know it
-			# will be the same for the same generation. This only works because we always set bounds to one terrain chunk at a time.
-			rng.seed = hash(Vector2i(grid_index_x, grid_index_z))
-			var rand_value_x = rng.randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
-			var rand_value_z = rng.randi_range(-Globals.SETTLEMENT_GRID_SPREAD, Globals.SETTLEMENT_GRID_SPREAD)
-			var grid_index = Vector2i(grid_index_x + rand_value_x, grid_index_z + rand_value_z)
-			# Need to do same calculation as WorldGrid.get_grid_position now, but without the height since that is what we need to request
-			rng.seed = hash(grid_index)
-			var grid_position_rand_value_x = (-Globals.WORLD_GRID_STEP / 4.0 + rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
-			var grid_position_rand_value_z = (-Globals.WORLD_GRID_STEP / 4.0 + rng.randf_range(0.0, Globals.WORLD_GRID_STEP / 2.0))
-			var grid_position_x = grid_index.x * Globals.WORLD_GRID_STEP + grid_position_rand_value_x
-			var grid_position_z = grid_index.y * Globals.WORLD_GRID_STEP + grid_position_rand_value_z
-			var position = Vector3(grid_position_x, 0.0, grid_position_z)
-			# Dont need to bother with height since TerrainManager uses raycast from high to low. Hit will always be the same for each x- and z.
-			TerrainManager.get_terrain_angle_at_position(position)
-
-
 func create_settlements(boundary: Rect2) -> Array[SettlementData]:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	var new_settlements: Array[SettlementData] = []
@@ -174,10 +138,6 @@ func add_settlement_objects(multimesh_chunk: MultiMeshChunk, object_id: WorldObj
 			for settlement in settlements.query(multimesh_chunk.chunk_boundary):
 				multimesh_chunk.place(settlement.chest)
 
-func save() -> Dictionary:
-	#TODO
-	return {}
-
-func load(_data: Dictionary):
-	#TODO
-	pass
+func destroy():
+	added_terrain_angle_boundaries = {}
+	settlements = Quadtree.new()

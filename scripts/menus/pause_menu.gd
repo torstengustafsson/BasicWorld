@@ -3,9 +3,9 @@ class_name PauseMenu extends CanvasLayer
 var settings_menu_open: bool = false
 var inventory_open: bool = false
 
-var unpausable_nodes: Array[Node] = []
+var save_load_state: SaveLoadState
 
-@onready var save_load_state: SaveLoadState = SaveLoadState.new()
+var unpausable_nodes: Array[Node] = []
 
 @onready var inventory_menu = $InventoryMenu
 @onready var chest_inventory_menu = $InventoryMenu/ChestInventory
@@ -32,8 +32,8 @@ func _ready() -> void:
 	settings_exitgame_button.connect("pressed", _exit_game.bind())
 	controls_back_button.connect("pressed", _open_settings_menu.bind())
 
-	add_child(save_load_state)
-
+func _add_save_load_state(_save_load_state: SaveLoadState):
+	save_load_state = _save_load_state
 
 func _input(event: InputEvent) -> void:
 	if event is not InputEventKey:
@@ -96,6 +96,7 @@ func _save_game():
 
 func _load_game():
 	save_load_state.load_game()
+	_resume_game()
 
 func _exit_game():
 	get_tree().quit()

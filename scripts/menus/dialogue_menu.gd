@@ -1,6 +1,4 @@
-extends CanvasLayer
-
-class_name DialogueMenu
+class_name DialogueMenu extends CanvasLayer
 
 enum DialogueAction { YouTalk, TheOtherOneTalk, Exit }
 

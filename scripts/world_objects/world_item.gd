@@ -1,6 +1,4 @@
-extends Node
-
-class_name WorldItem
+class_name WorldItem extends Node
 
 var object: RigidBody3D
 var item_id: ItemProperties.Item

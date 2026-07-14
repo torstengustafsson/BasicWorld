@@ -1,6 +1,4 @@
-extends Node3D
-
-class_name GameWorld
+class_name GameWorld extends Node3D
 
 enum InteractResults { NoResult, GainItem, DeleteEquippedItem, StartDialogue, OpenChest }
 
@@ -16,19 +14,22 @@ class InteractResult:
 		result = _result
 		id = _id
 
+var player: Node3D
 var distance_controller: DistanceController
 
 func _init(_player: Node3D) -> void:
-	WorldState.state = WorldState.new(_player)
+	player = _player
 
 func _ready() -> void:
 	var start_time = Time.get_ticks_msec()
 
-	WorldState.state.space_state = get_world_3d().direct_space_state
-	distance_controller = DistanceController.new()
-	add_child(WorldState.state)
-	add_child(distance_controller)
-	await get_tree().process_frame
+	var world_state_info: WorldState.StateInformation = WorldState.StateInformation.new()
+	world_state_info.world_seed = Globals.RANDOM_SEED
+	world_state_info.player = player
+	world_state_info.deleted_objects = []
+	world_state_info.deleted_npcs = []
+	world_state_info.world_items = []
+	create_world(true, world_state_info)
 
 	var elapsed = Time.get_ticks_msec() - start_time
 
@@ -37,6 +38,26 @@ func _ready() -> void:
 	print("Number of objects in scene = " + str(count_all_children(self)))
 	print("RANDOM SEED = " + str(Globals.RANDOM_SEED))
 
+func create_world(new_game: bool, world_state_info: WorldState.StateInformation):
+	cleanup_world() # Only one world at a time is allowed
+	WorldState.state = WorldState.create_state(world_state_info)
+	WorldState.state.space_state = get_world_3d().direct_space_state
+	distance_controller = DistanceController.new()
+	add_child(WorldState.state)
+	add_child(distance_controller)
+	distance_controller.initialize_world(new_game)
+	if not new_game and world_state_info.tutorial_npc_position != Vector2.INF:
+		var position_xz = world_state_info.tutorial_npc_position
+		var tutorial_npc_position = Vector3(position_xz.x, WorldState.state.terrain_height_noise.get_height_at(position_xz.x, position_xz.y), position_xz.y)
+		WorldState.state.npc_manager.tutorial_npc = WorldObject.create_object(WorldObject.ObjectId.TUTORIAL_NPC, tutorial_npc_position)
+		WorldState.state.npc_manager._add_npc_to_scene(WorldState.state.npc_manager.tutorial_npc)
+
+func cleanup_world():
+	if WorldState.state:
+		WorldState.state.destroy()
+		WorldState.state.queue_free()
+	if distance_controller:
+		distance_controller.queue_free()
 
 func count_all_children(node: Node) -> int:
 	var count = node.get_child_count()
@@ -51,7 +72,7 @@ func interact(collision_position: Vector3, item: ItemProperties.Item = ItemPrope
 		var result = InteractResult.new(InteractResults.GainItem)
 		result.item = ItemProperties.Item.BERRY
 		return result
-	var item_picked = WorldState.state.item_generator.interact(collision_position)
+	var item_picked = WorldState.state.item_manager.interact(collision_position)
 	if item_picked != ItemProperties.Item.NO_ITEM:
 		var result = InteractResult.new(InteractResults.GainItem)
 		result.item = item_picked
@@ -78,7 +99,7 @@ func handle_use_item(collision_position: Vector3, item: ItemProperties.Item) -> 
 				WorldState.state.audio_manager.play_sound(AudioManager.SoundID.AXE_HIT, collision_position)
 				if chop_result.result == ObjectManager.ChopResults.ChoppedDown:
 					for i in chop_result.amount_gained:
-						WorldState.state.item_generator.spawn_item(collision_position + ITEM_SPAWN_OFFSET, ItemProperties.Item.WOOD)
+						WorldState.state.item_manager.spawn_item(collision_position + ITEM_SPAWN_OFFSET, ItemProperties.Item.WOOD)
 			chop_result = WorldState.state.npc_manager.handle_chop(collision_position)
 			if chop_result.result != ObjectManager.ChopResults.NoHit:
 				# Need to displace a bit since only one sound per position is allowed at once, and NPC will play "hurt" sound as well
@@ -89,5 +110,14 @@ func handle_use_item(collision_position: Vector3, item: ItemProperties.Item) -> 
 				WorldState.state.audio_manager.play_sound(AudioManager.SoundID.PICKAXE_HIT, collision_position)
 			if chop_result.result == ObjectManager.ChopResults.ChoppedDown:
 				for i in chop_result.amount_gained:
-					WorldState.state.item_generator.spawn_item(collision_position + ITEM_SPAWN_OFFSET, ItemProperties.Item.STONE)
+					WorldState.state.item_manager.spawn_item(collision_position + ITEM_SPAWN_OFFSET, ItemProperties.Item.STONE)
 	return InteractResult.NO_INTERACT_RESULT
+
+func save() -> Dictionary:
+	var result: Dictionary = {}
+	result["WorldState"] = WorldState.state.save()
+	return result
+
+func load(data: Dictionary) -> void:
+	var world_state_info = WorldState.load(data["WorldState"], player)
+	create_world(false, world_state_info)

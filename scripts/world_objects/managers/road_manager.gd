@@ -1,6 +1,4 @@
-extends Node
-
-class_name RoadGenerator
+class_name RoadManager extends Node
 
 const NO_GRID_POINT = Vector2i(INF, INF)
 
@@ -12,7 +10,7 @@ class RoadSegment:
 		to = _to
 
 static var mutex: Mutex = Mutex.new()
-static var _added_road_positions: Dictionary[Vector3, bool] = {}
+var _added_road_positions: Dictionary[Vector3, bool] = {}
 
 var connected_settlements: Dictionary = {}  # Tracks which settlement pairs are already connected
 
@@ -121,6 +119,11 @@ func _connection_exists_between_settlements(settlement: SettlementManager.Settle
 func _add_connection_between_settlements(settlement: SettlementManager.SettlementData, other_settlement: SettlementManager.SettlementData):
 	var connection_key = _get_settlement_connection_key(settlement.grid_index, other_settlement.grid_index)
 	connected_settlements[connection_key] = true
+
+func destroy():
+	_added_road_positions.clear()
+	connected_settlements.clear()
+	road_segments = Quadtree.new()
 
 # Can be used for debugging road generation
 # func _generate_road(from: Vector2i, to: Vector2i) -> void:

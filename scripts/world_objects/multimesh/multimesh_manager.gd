@@ -54,9 +54,12 @@ static func _get_grid_cells_touching(boundary: Rect2) -> Array[Rect2]:
 
 	return result
 
+func _init(initial_deleted_objects: Array[Vector2]) -> void:
+	for position_xz in initial_deleted_objects:
+		deleted_objects.insert({"position": position_xz, "data": true})
+
 # Will add the objects without their colliders. Colliders must be activated separately per object instance.
 func add_multimesh_chunks(boundary: Rect2, batch_size: int = 3):
-	# print("Chunk manager add_multimesh_chunks ", boundary)
 	var i = 0
 	var multimesh_chunk_boundaries = _get_grid_cells_touching(boundary)
 	for chunk_boundary in multimesh_chunk_boundaries:
@@ -64,14 +67,14 @@ func add_multimesh_chunks(boundary: Rect2, batch_size: int = 3):
 			if not active_multimesh_chunks.has(chunk_boundary):
 				active_multimesh_chunks[chunk_boundary] = {}
 			if active_multimesh_chunks[chunk_boundary].has(object_id):
+				# TODO: If multimesh chunk is added before roads for an area, then objects will
+				# currently not be removed from the road, with this solution.
 				continue
 			var mesh_scene = MULTIMESH_MESH_ID_MAPPINGS[object_id]
 			var multimesh_chunk = MultiMeshChunk.new(chunk_boundary, active_objects, deleted_objects, mesh_scene)
 			active_multimesh_chunks[chunk_boundary][object_id] = multimesh_chunk
 			add_child(multimesh_chunk)
 			WorldState.state.settlement_manager.add_settlement_objects(multimesh_chunk, object_id)
-			# if object_id == WorldObject.ObjectId.TREE:
-				# print("Try add world objects for ", object_id, ",", chunk_boundary)
 			WorldState.state.object_manager.add_world_objects(multimesh_chunk, object_id)
 			i += 1
 			if i > batch_size:
@@ -79,7 +82,7 @@ func add_multimesh_chunks(boundary: Rect2, batch_size: int = 3):
 				await get_tree().process_frame
 
 func add_colliders(boundary: Rect2):
-	for multimesh_chunks_at_boundary in active_multimesh_chunks.values(): # TODO: added_multimesh_chunks should only contain active chunks
+	for multimesh_chunks_at_boundary in active_multimesh_chunks.values():
 		for multimesh_chunk in multimesh_chunks_at_boundary.values():
 			multimesh_chunk.add_colliders(boundary)
 
@@ -165,5 +168,27 @@ func add_object_with_collider(object_id: WorldObject.ObjectId, position: Vector3
 func delete_object(object: WorldObject) -> bool:
 	var removed = remove_object(object)
 	if removed:
-		deleted_objects.insert({"position": Vector2(object.position.x, object.position.z), "data": object})
+		deleted_objects.insert({"position": Vector2(object.position.x, object.position.z), "data": true})
 	return removed
+
+func destroy():
+	for multimesh_chunks_at_boundary in active_multimesh_chunks.values():
+		for multimesh_chunk in multimesh_chunks_at_boundary.values():
+			multimesh_chunk.destroy()
+	active_multimesh_chunks.clear()
+	active_objects.clear()
+	deleted_objects.clear()
+
+func save() -> Dictionary:
+	var result: Dictionary = {}
+	var deleted_object_data: Array = []
+	for position_xz in deleted_objects.query_all_positions():
+		deleted_object_data.append([position_xz.x, position_xz.y])
+	result["deleted_objects"] = deleted_object_data
+	return result
+
+static func load(data: Dictionary) -> Array[Vector2]:
+	var result: Array[Vector2] = []
+	for position_xz in data["deleted_objects"]:
+		result.append(Vector2(position_xz[0], position_xz[1]))
+	return result

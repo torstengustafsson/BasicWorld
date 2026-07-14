@@ -1,6 +1,4 @@
-extends Node
-
-class_name TerrainNoise
+class_name TerrainNoise  extends RefCounted
 
 var noise_terraintype : Noise
 var noise_terraintype1 : Noise
