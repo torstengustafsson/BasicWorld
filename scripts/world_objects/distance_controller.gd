@@ -49,15 +49,11 @@ func initalize_player_spawn():
 	# Make player spawn in a settlement if possible
 	var settlements = WorldState.state.settlement_manager.settlements.query_all()
 	if settlements.size() > 0:
-		var pos = settlements[0].position
-		var angle = TerrainManager.get_terrain_angle_at_position(pos)
-		WorldState.state.player.position = pos + Vector3(randf_range(-2.0, 2.0), min(abs(angle), 10.0), randf_range(-2.0, 2.0))
+		var pos = settlements[0].position + Vector3(randf_range(-2.0, 2.0), 0.0, randf_range(-2.0, 2.0))
+		var pos_with_height = Vector3(pos.x, WorldState.state.terrain_height_noise.get_height_at(pos.x, pos.z), pos.z)
+		WorldState.state.player.position = pos_with_height
 	update_world(INITIAL_BATCH_SIZE)
 	WorldState.state.npc_manager.create_tutorial_npc(WorldState.state.player.position)
-	var axe_position = WorldState.state.player.position + Vector3(-1.0, 2.0, -4.0)
-	WorldState.state.item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
-	var pickaxe_position = WorldState.state.player.position + Vector3(1.0, 2.0, -4.0)
-	WorldState.state.item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
 
 func update_world(batch_size: int = 3):
 	_update_world_faraway(batch_size)
@@ -109,10 +105,12 @@ func _cleanup_world_close():
 # TODO: Manage items better
 func generate_starting_items(boundary: Rect2, amount: int):
 	var get_random_position = func() -> Vector3:
+		var pos_x = WorldState.state.rng.randf_range(boundary.position.x, boundary.end.x)
+		var pos_z = WorldState.state.rng.randf_range(boundary.position.y, boundary.end.y)
 		return Vector3(
-			WorldState.state.rng.randf_range(boundary.position.x, boundary.end.x),
-			5.0,
-			WorldState.state.rng.randf_range(boundary.position.y, boundary.end.y))
+			pos_x,
+			WorldState.state.terrain_height_noise.get_height_at(pos_x, pos_z) + 0.5,
+			pos_z)
 
 	for berry in floor(amount / 3.0):
 		var berry_position = get_random_position.call()
@@ -125,3 +123,8 @@ func generate_starting_items(boundary: Rect2, amount: int):
 	for stone in floor(amount / 3.0):
 		var stone_position = get_random_position.call()
 		WorldState.state.item_generator.spawn_item(stone_position, ItemProperties.Item.STONE)
+
+	var axe_position = WorldState.state.player.position + Vector3(-1.0, 2.0, -4.0)
+	WorldState.state.item_generator.spawn_item(axe_position, ItemProperties.Item.AXE)
+	var pickaxe_position = WorldState.state.player.position + Vector3(1.0, 2.0, -4.0)
+	WorldState.state.item_generator.spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
