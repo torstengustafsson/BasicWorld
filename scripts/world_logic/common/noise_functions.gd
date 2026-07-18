@@ -1,19 +1,23 @@
 class_name NoiseFunctions
 
+# NOTE: This will keep expanding forever
+var added_mask_textures: Dictionary[int, ImageTexture] = {}
+
 class NoiseContainer:
 	var noise: FastNoiseLite
 	var threshold: float # Value between 0.0 and 1.0, 0.4 means keep ~40% of the area, 0.25 means keep ~25% of the area
 	var additive: bool
 	var random_seed: int
-	func _init(_random_seed, frequency, _threshold, _additive=true):
+	var edge_width: float
+
+	func _init(_random_seed, frequency, _threshold, _additive=true, _edge_width=0.05):
+		random_seed = _random_seed
 		threshold = _threshold
 		additive = _additive
-		random_seed = _random_seed
+		edge_width = _edge_width
 		noise = FastNoiseLite.new()
 		noise.seed = random_seed
 		noise.frequency = frequency
-
-
 
 var noises: Array[NoiseContainer] = []
 var num_additive_noises = 0
@@ -24,15 +28,46 @@ func _init(noises_array: Array[NoiseContainer]) -> void:
 		num_additive_noises += int(noise.additive)
 
 func above_threshold(position: Vector3) -> bool:
-	var num_true: int = 0
+	return get_density(position) > 0.5
+
+# Used to get a smooth combined value from the noise containers.
+# Edges between on/off gets blended, with noise_container.edge_width as the blend factor.
+func get_density(position: Vector3) -> float:
+	var additive_value: float = 1.0
+	var cutting_value: float = 0.0
+	var has_additive := false
+
 	for noise_container in noises:
 		var noise_value = (noise_container.noise.get_noise_2d(position.x, position.z) + 1) / 2.0
-		if noise_value > noise_container.threshold:
-			if noise_container.additive:
-				num_true += 1
-			else:
-				return true # Non-additive noise cuts directly
-	return num_true == num_additive_noises
+		var threshold = noise_container.threshold
+		var edge_width = noise_container.edge_width
+		var smoothstep_value = smoothstep(threshold - edge_width, threshold + edge_width, noise_value)
+
+		if noise_container.additive:
+			additive_value = min(additive_value, smoothstep_value)
+			has_additive = true
+		else:
+			cutting_value = max(cutting_value, smoothstep_value)
+
+	if not has_additive:
+		return cutting_value
+	return max(additive_value, cutting_value)
+
+# This is expensive to calculate, so results are cached in added_mask_textures for reuse
+func generate_mask_texture(origin: Vector2, size: Vector2, resolution: int = 512) -> ImageTexture:
+	var key = hash(origin) + hash(size) + resolution
+	if added_mask_textures.has(key):
+		return added_mask_textures[key]
+	var img := Image.create(resolution, resolution, false, Image.FORMAT_R8)
+	for y in resolution:
+		for x in resolution:
+			var world_x := origin.x + (float(x) / resolution) * size.x
+			var world_z := origin.y + (float(y) / resolution) * size.y
+			var value := get_density(Vector3(world_x, 0.0, world_z))
+			img.set_pixel(x, y, Color(value, value, value))
+	var result = ImageTexture.create_from_image(img)
+	added_mask_textures[key] = result
+	return result
 
 static func create_forest_noise(rng: RandomNumberGenerator) -> NoiseFunctions:
 	var high_density_noise = NoiseContainer.new(rng.randi(), 0.006, 0.5)

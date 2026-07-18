@@ -39,6 +39,8 @@ uniform vec4 road_albedo_texture;
 uniform vec4 cliff_albedo_texture;
 uniform vec4 barren_albedo_texture;
 uniform vec4 snow_albedo_texture;
+uniform vec4 forest_albedo_texture;
+uniform sampler2D forest_mask;
 
 const float blend_sharpness = 2.0;
 const float barren_height = 40.0;
@@ -46,7 +48,6 @@ const float snow_height = 100.0;
 varying vec3 world_position;
 varying float terrain_slope;
 
-// 2D noise function (replace with your own or use Godot's noise if available)
 float rand(vec2 co) {
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
@@ -64,6 +65,13 @@ float noise(vec2 uv) {
     return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
 }
 
+vec3 mix_with_forest(vec3 input_color) {
+    vec2 uv = (world_position.xz - chunk_position) / chunk_size;
+    float mask = texture(forest_mask, uv).r;
+    float blend = smoothstep(0.6, 0.0, mask);
+    vec3 forest_color = mix(input_color, forest_albedo_texture.rgb, blend);
+    return forest_color;
+}
 
 vec3 mix_with_cliff(vec3 input_color) {
     // Add transition between grass and cliffs
@@ -103,29 +111,29 @@ void fragment() {
         // Skip chunk margins, neighboring chunks will render this
         discard;
     }
-    else {
-        float in_road = 0.0;
+    float in_road = 0.0;
 
-        // Create spots under settlements
-        for (int i = 0; i < settlement_count; i++) {
-            vec2 dir = world_uv - settlement_data[i].xy;
-            float angle = atan(dir.y, dir.x);
-            float n = noise1d(angle * NOISE_SCALE);
-            float radius = settlement_data[i].z + (n - 0.5) * 2.0 * NOISE_STRENGTH;
-            float dist = length(dir);
-            in_road = max(in_road, step(dist, radius));
-        }
-
-        // Create roads between road edges
-        for (int i = 0; i < road_edge_count; i++) {
-            float road_dist = point_to_segment_dist(world_uv, road_segments[i].xy, road_segments[i].zw);
-            in_road = max(in_road, step(road_dist, road_width));
-        }
-
-        vec3 flat_color = mix(grass_albedo_texture.rgb, road_albedo_texture.rgb, in_road);
-        vec3 add_barren_color = mix_at_height(flat_color, barren_height, 0.5, barren_albedo_texture);
-        vec3 snow_color = mix_at_height(add_barren_color, snow_height, 0.15, snow_albedo_texture);
-        vec3 final_color = mix_with_cliff(snow_color);
-        ALBEDO = final_color;
+    // Create spots under settlements
+    for (int i = 0; i < settlement_count; i++) {
+        vec2 dir = world_uv - settlement_data[i].xy;
+        float angle = atan(dir.y, dir.x);
+        float n = noise1d(angle * NOISE_SCALE);
+        float radius = settlement_data[i].z + (n - 0.5) * 2.0 * NOISE_STRENGTH;
+        float dist = length(dir);
+        in_road = max(in_road, step(dist, radius));
     }
+
+    // Create roads between road edges
+    for (int i = 0; i < road_edge_count; i++) {
+        float road_dist = point_to_segment_dist(world_uv, road_segments[i].xy, road_segments[i].zw);
+        in_road = max(in_road, step(road_dist, road_width));
+    }
+
+    vec3 add_forest_color = mix_with_forest(grass_albedo_texture.rgb);
+    vec3 add_road_color = mix(add_forest_color, road_albedo_texture.rgb, in_road);
+    vec3 add_barren_color = mix_at_height(add_road_color, barren_height, 0.5, barren_albedo_texture);
+    vec3 add_snow_color = mix_at_height(add_barren_color, snow_height, 0.15, snow_albedo_texture);
+    vec3 final_color = mix_with_cliff(add_snow_color);
+
+    ALBEDO = final_color;
 }

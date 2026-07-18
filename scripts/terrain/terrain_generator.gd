@@ -6,7 +6,7 @@ var shader_parameters: TerrainChunk.ShaderParameters = TerrainChunk.ShaderParame
 
 const NUM_CHUNKS_FULL_RES = 3 # 3 Mean 3x3 chunks around player at full res, with player expected to be in the middle chunk
 const GRID_SIZE = NUM_CHUNKS_FULL_RES + 2 * (Globals.NUM_CHUNK_RESOLUTIONS - 1)
-var HALF_GRID_SIZE: int = floor(GRID_SIZE / floor(2)) # Make constant to avoid handling the integer division warning each time
+var HALF_GRID_SIZE: int = int((GRID_SIZE - 1)/ float(2)) # Make constant to avoid handling the integer division warning each time
 
 # Contains a Dictionary holding the chunks for each resolution size
 # resolution=1 means highest resolution, 2 means half of that, and so on.
@@ -21,7 +21,6 @@ func _init(_terrain_noise):
 	for res in range(Globals.NUM_CHUNK_RESOLUTIONS):
 		chunks[res] = {}
 
-# settlement_data: Array[SettlementManager.SettlementData]
 func update_shader_data(settlement_data: Array, road_segments: Array):
 	shader_parameters.settlement_data = settlement_data.duplicate()
 	shader_parameters.road_segments = road_segments.duplicate()
@@ -31,6 +30,8 @@ func update_shader_data(settlement_data: Array, road_segments: Array):
 		for key in chunks_for_res:
 			var chunk: TerrainChunk = chunks_for_res[key]
 			chunk.set_shader_data(shader_parameters)
+			chunk.set_forest_shader_data()
+
 
 func update_chunks_around_player(player_pos: Vector3, batch_size = 1000):
 	cleanup_chunks(player_pos)
@@ -62,17 +63,15 @@ func _add_chunk(grid_x_index: int, grid_z_index: int, player_pos: Vector3) -> Te
 
 	# else, new chunk
 	hide_other_resolutions_at_index(resolution_index, key)
-	var chunk = TerrainChunk.new(chunk_x_pos, chunk_z_pos, Globals.TERRAIN_CHUNK_SIZE, resolution_index, terrain_noise)
+	var chunk = TerrainChunk.new(chunk_x_pos, chunk_z_pos, resolution_index, terrain_noise)
 	chunk.set_shader_data(shader_parameters)
 	chunks[resolution_index][key] = chunk
 	add_child(chunk)
 	return chunk
 
 func get_player_chunk_index(player_pos: Vector3) -> Vector2i:
-	var player_fit_x = floor(player_pos.x) - (int(floor(player_pos.x)) % Globals.TERRAIN_CHUNK_SIZE)
-	var player_fit_z = floor(player_pos.z) - (int(floor(player_pos.z)) % Globals.TERRAIN_CHUNK_SIZE)
-	var x_index = HALF_GRID_SIZE + player_fit_x / Globals.TERRAIN_CHUNK_SIZE - HALF_GRID_SIZE
-	var z_index = HALF_GRID_SIZE + player_fit_z / Globals.TERRAIN_CHUNK_SIZE - HALF_GRID_SIZE
+	var x_index: int = floori(player_pos.x / Globals.TERRAIN_CHUNK_SIZE)
+	var z_index: int = floori(player_pos.z / Globals.TERRAIN_CHUNK_SIZE)
 	return Vector2i(x_index, z_index)
 
 func cleanup_chunks(player_pos: Vector3):
@@ -169,7 +168,7 @@ func get_terrain_size() -> Rect2:
 	return Rect2(min_x, min_z, max_x - min_x, max_z - min_z)
 
 func get_chunk_boundary(chunk) -> Rect2:
-	return Rect2(chunk.x_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0, chunk.z_pos - Globals.TERRAIN_CHUNK_SIZE / 2.0, Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE)
+	return Rect2(chunk.x_pos, chunk.z_pos, Globals.TERRAIN_CHUNK_SIZE, Globals.TERRAIN_CHUNK_SIZE)
 
 func destroy():
 	for chunk_res in chunks:
@@ -182,10 +181,6 @@ func destroy():
 
 # Uncomment to render terrain chunk boundaries
 # func _process(_delta):
-# 	render_chunk_boundaries()
-
-# func render_chunk_boundaries():
-
 # 	for chunk_res in chunks:
 # 		var chunks_for_res = chunks[chunk_res]
 # 		for key in chunks_for_res:
