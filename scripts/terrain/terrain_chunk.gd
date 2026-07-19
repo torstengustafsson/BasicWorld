@@ -86,12 +86,14 @@ func set_shader_data(params: ShaderParameters):
 		terrain_material.set_shader_parameter("uv_scale", Vector2(uv_scale, uv_scale))
 		terrain_material.set_shader_parameter("uv_offset", Vector2(uv_offset, uv_offset))
 
-	terrain_material.set_shader_parameter("grass_albedo_texture", Color(0.25, 0.5, 0.25, 1.0))
-	terrain_material.set_shader_parameter("forest_albedo_texture", Color(0.35, 0.5, 0.25, 1.0))
-	terrain_material.set_shader_parameter("road_albedo_texture", Color(0.5, 0.5, 0.2, 1.0))
-	terrain_material.set_shader_parameter("cliff_albedo_texture", Color(0.35, 0.35, 0.35, 1.0))
-	terrain_material.set_shader_parameter("barren_albedo_texture", Color(0.35, 0.3, 0.2, 1.0))
-	terrain_material.set_shader_parameter("snow_albedo_texture", Color(0.9, 0.9, 0.9, 1.0))
+	terrain_material.set_shader_parameter("barren_height", TerrainConstants.HEIGHT_BARREN)
+	terrain_material.set_shader_parameter("snow_height", TerrainConstants.HEIGHT_SNOW)
+	terrain_material.set_shader_parameter("grass_albedo_texture", TerrainConstants.COLOR_GRASS)
+	terrain_material.set_shader_parameter("forest_albedo_texture", TerrainConstants.COLOR_FOREST)
+	terrain_material.set_shader_parameter("road_albedo_texture", TerrainConstants.COLOR_ROAD)
+	terrain_material.set_shader_parameter("cliff_albedo_texture", TerrainConstants.COLOR_CLIFF)
+	terrain_material.set_shader_parameter("barren_albedo_texture", TerrainConstants.COLOR_BARREN)
+	terrain_material.set_shader_parameter("snow_albedo_texture", TerrainConstants.COLOR_SNOW)
 	terrain_material.set_shader_parameter("settlement_count", params.settlement_data.size())
 	var shader_settlement_data: Array[Vector3] = []
 	for settlement_data in params.settlement_data:

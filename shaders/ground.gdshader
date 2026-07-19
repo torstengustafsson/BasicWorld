@@ -29,6 +29,8 @@ uniform vec2 chunk_size;
 uniform vec2 uv_scale = vec2(1.0, 1.0);
 uniform vec2 uv_offset = vec2(0.0, 0.0);
 
+uniform float barren_height;
+uniform float snow_height;
 uniform vec3 settlement_data[128]; // [pos_x, pos,z, radius]
 uniform int settlement_count = 0;
 uniform vec4 road_segments[1024]; // Two vec2:s of (from, to) points
@@ -43,8 +45,6 @@ uniform vec4 forest_albedo_texture;
 uniform sampler2D forest_mask;
 
 const float blend_sharpness = 2.0;
-const float barren_height = 40.0;
-const float snow_height = 100.0;
 varying vec3 world_position;
 varying float terrain_slope;
 

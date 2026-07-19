@@ -27,18 +27,18 @@ func _init(noises_array: Array[NoiseContainer]) -> void:
 	for noise in noises:
 		num_additive_noises += int(noise.additive)
 
-func above_threshold(position: Vector3) -> bool:
+func above_threshold(position: Vector2) -> bool:
 	return get_density(position) > 0.5
 
 # Used to get a smooth combined value from the noise containers.
 # Edges between on/off gets blended, with noise_container.edge_width as the blend factor.
-func get_density(position: Vector3) -> float:
+func get_density(position: Vector2) -> float:
 	var additive_value: float = 1.0
 	var cutting_value: float = 0.0
 	var has_additive := false
 
 	for noise_container in noises:
-		var noise_value = (noise_container.noise.get_noise_2d(position.x, position.z) + 1) / 2.0
+		var noise_value = (noise_container.noise.get_noise_2d(position.x, position.y) + 1) / 2.0
 		var threshold = noise_container.threshold
 		var edge_width = noise_container.edge_width
 		var smoothstep_value = smoothstep(threshold - edge_width, threshold + edge_width, noise_value)
@@ -63,7 +63,7 @@ func generate_mask_texture(origin: Vector2, size: Vector2, resolution: int = 512
 		for x in resolution:
 			var world_x := origin.x + (float(x) / resolution) * size.x
 			var world_z := origin.y + (float(y) / resolution) * size.y
-			var value := get_density(Vector3(world_x, 0.0, world_z))
+			var value := get_density(Vector2(world_x, world_z))
 			img.set_pixel(x, y, Color(value, value, value))
 	var result = ImageTexture.create_from_image(img)
 	added_mask_textures[key] = result

@@ -2,18 +2,29 @@
 
 [ext_resource type="Script" uid="uid://2wiayn662mfs" path="res://scripts/menus/pause_menu.gd" id="1_n87rw"]
 [ext_resource type="PackedScene" uid="uid://ctu74u6r3qwmt" path="res://scenes/inventory/inventory.tscn" id="2_myx47"]
-[ext_resource type="PackedScene" uid="uid://x1rpp6s6wxav" path="res://scenes/inventory/chest_inventory.tscn" id="3_kukqi"]
+[ext_resource type="PackedScene" uid="uid://d2oxvrcxnffpi" path="res://scenes/inventory/chest_inventory.tscn" id="3_kukqi"]
+[ext_resource type="Script" uid="uid://bslwuvpdd53d0" path="res://scripts/world_map/world_map.gd" id="4_5d2l8"]
 
 [node name="PauseMenu" type="CanvasLayer" unique_id=1665670921]
 script = ExtResource("1_n87rw")
 
 [node name="InventoryMenu" type="Node2D" parent="." unique_id=1677343541]
+visible = false
 
 [node name="Inventory" parent="InventoryMenu" unique_id=1196098309 instance=ExtResource("2_myx47")]
 position = Vector2(310, 118)
 
 [node name="ChestInventory" parent="InventoryMenu" unique_id=1620110195 instance=ExtResource("3_kukqi")]
 position = Vector2(816, 151)
+
+[node name="WorldMap" type="Control" parent="." unique_id=1051261076]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("4_5d2l8")
+world_view_size = 2000.0
+sample_resolution = 128
+metadata/_custom_type_script = "uid://bslwuvpdd53d0"
 
 [node name="SettingsMenu" type="Node2D" parent="." unique_id=296971025]
 visible = false
@@ -33,6 +44,7 @@ grow_vertical = 2
 color = Color(0.49747372, 0.49747366, 0.49747378, 1)
 
 [node name="SettingsSubmenu" type="Node2D" parent="SettingsMenu" unique_id=1375731787]
+visible = false
 
 [node name="SaveGameButton" type="Button" parent="SettingsMenu/SettingsSubmenu" unique_id=1659919905]
 anchors_preset = 8
@@ -105,6 +117,7 @@ grow_vertical = 2
 text = "Exit Game"
 
 [node name="ControlsSubmenu" type="Node2D" parent="SettingsMenu" unique_id=841604762]
+visible = false
 
 [node name="Controls" type="Label" parent="SettingsMenu/ControlsSubmenu" unique_id=178651441]
 anchors_preset = 8
@@ -125,6 +138,7 @@ Hold SHIFT to sprint
 E to interact with the world
 Left Mouse Button to use item
 F to put away item
+M to open world map
 I to open inventory
 1,2,3.. keys to switch equipped item"
 

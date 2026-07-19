@@ -54,7 +54,7 @@ func _add_meshes_from_pool(multimesh_chunk: MultiMeshChunk, step: int, noise_fun
 			var position = Vector3(pos_x, height, pos_z)
 
 			# Skip if outside of noise function threshold
-			if noise_function.above_threshold(position):
+			if noise_function.above_threshold(Vector2(position.x, position.z)):
 				continue
 
 			# Skip if terrain is too steep
