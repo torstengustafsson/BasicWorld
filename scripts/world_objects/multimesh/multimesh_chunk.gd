@@ -7,6 +7,8 @@ var multimesh: MultiMesh = null
 var static_body: StaticBody3D = null
 var model: Node3D # Instantiated .glb model
 
+var use_per_instance_color: bool = false
+
 var chunk_boundary: Rect2
 
 var active_objects: Quadtree # Reference to MultiMeshManagers active_objects
@@ -24,18 +26,20 @@ static func find_meshes(node: Node) -> Array[MeshInstance3D]:
 		result.append_array(find_meshes(child))
 	return result
 
-func _init(_chunk_boundary: Rect2, _active_objects: Quadtree, _deleted_objects: Quadtree, mesh_scene: PackedScene, instance_count: int = 0) -> void:
+func _init(_chunk_boundary: Rect2, _active_objects: Quadtree, _deleted_objects: Quadtree, mesh_scene: PackedScene, _use_per_instance_color = false) -> void:
 	active_objects = _active_objects
 	deleted_objects = _deleted_objects
 	model = mesh_scene.instantiate()
 	var meshes = find_meshes(model)
 	assert(meshes.size() == 1)
 	var mesh: Mesh = meshes[0].mesh
+	use_per_instance_color = _use_per_instance_color
 
 	chunk_boundary = _chunk_boundary
 	multimesh = MultiMesh.new()
 	multimesh.transform_format = MultiMesh.TRANSFORM_3D
-	multimesh.instance_count = instance_count if instance_count != 0 else Globals.MULTIMESH_CHUNK_MAX_INSTANCES
+	multimesh.use_colors = use_per_instance_color
+	multimesh.instance_count = Globals.MULTIMESH_CHUNK_MAX_INSTANCES
 	multimesh.visible_instance_count = 0
 	multimesh.mesh = mesh
 	multimesh_instance = MultiMeshInstance3D.new()
@@ -58,7 +62,9 @@ func place(object: WorldObject) -> WorldObject:
 		return null # Object has been deleted, should not be re-added to the scene
 	multimesh.visible_instance_count += 1
 	object.mesh_instance_id = _recycle_id(object_id_pool, added_objects.size())
-	object.initialize_model(model)
+	var color = object.initialize_model(model)
+	if use_per_instance_color:
+		multimesh.set_instance_color(object.mesh_instance_id, color)
 	object.multimesh_parent = self
 	added_objects.insert({"position": Vector2(object.position.x, object.position.z), "data": object})
 	_add_mesh(object)

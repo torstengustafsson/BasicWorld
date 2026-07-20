@@ -46,13 +46,20 @@ func _init(
 	collision_shape.position = _position
 	collision_shape.rotation = _rotation
 
-func initialize_model(_model: Node3D):
+# Returns a color multiplier of the object. Returns white (no change) for object types that do not use random color multipliers.
+func initialize_model(_model: Node3D) -> Color:
 	model = _model
 	model.transform = get_transform()
+
 	var rng = RandomNumberGenerator.new()
 	rng.seed = hash(position)
 	if npc:
 		npc.initialize(self, rng)
+
+	if object_id == ObjectId.TREE:
+		model.get_node("Tree").get_active_material(0).vertex_color_use_as_albedo = true
+		return Color(randf_range(1.0, 3.0), randf_range(0.8, 1.0), 1.0)
+	return Color.WHITE
 
 func get_transform() -> Transform3D:
 	return Transform3D(

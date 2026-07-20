@@ -71,7 +71,8 @@ func add_multimesh_chunks(boundary: Rect2, batch_size: int = 3):
 				# currently not be removed from the road, with this solution.
 				continue
 			var mesh_scene = MULTIMESH_MESH_ID_MAPPINGS[object_id]
-			var multimesh_chunk = MultiMeshChunk.new(chunk_boundary, active_objects, deleted_objects, mesh_scene)
+			var use_per_instance_color = object_id == WorldObject.ObjectId.TREE
+			var multimesh_chunk = MultiMeshChunk.new(chunk_boundary, active_objects, deleted_objects, mesh_scene, use_per_instance_color)
 			active_multimesh_chunks[chunk_boundary][object_id] = multimesh_chunk
 			add_child(multimesh_chunk)
 			WorldState.state.settlement_manager.add_settlement_objects(multimesh_chunk, object_id)
