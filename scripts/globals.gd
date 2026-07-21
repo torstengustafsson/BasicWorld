@@ -8,8 +8,8 @@ const MAX_INT = 9223372036854775807
 
 # Each terrain resolution halves the detail, and doubles the amount of chunks in the distance
 # Must be minimum 1, since that is the max resolution.
-const NUM_CHUNK_RESOLUTIONS: int = 4
-const TERRAIN_CHUNK_SIZE: int = 512
+const NUM_CHUNK_RESOLUTIONS: int = 3
+const TERRAIN_CHUNK_SIZE: int = 256
 const TERRAIN_RESOLUTION_MULTIPLIER: float = 0.25
 
 # Average distance between each object on generation.
@@ -53,7 +53,7 @@ const MULTIMESH_CHUNK_MAX_INSTANCES = 1000
 # player moves beyond LOD_UPDATE_DISTANCE from its position at the last update.
 # NOTE: LOD_DISTANCE_FULL must be >= LOD_UPDATE_DISTANCE.
 const LOD_DISTANCE_FULL = 64.0
-const LOD_DISTANCE_NO_COLLIDER = 384.0
+const LOD_DISTANCE_NO_COLLIDER = 192.0
 const LOD_UPDATE_DISTANCE = LOD_DISTANCE_FULL * 0.5 # Objects will spawn and despawn whenever player moves this distance
 const LOD_REMOVE_DISTANCE_MULTIPLIER = 3.0 # A value of 1.2 means wait to remove faraway objects until 20% more distance than LOD_DISTANCE_NO_COLLIDER away
 
