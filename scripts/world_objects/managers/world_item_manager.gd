@@ -38,14 +38,14 @@ func generate_starting_items(boundary: Rect2, amount: int):
 	spawn_item(pickaxe_position, ItemProperties.Item.PICKAXE)
 
 func spawn_item(pos: Vector3, item_id: ItemProperties.Item) -> WorldItem:
-	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-	rng.seed = hash(pos)
+	var item_rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	item_rng.seed = hash(pos)
 	var item = WorldItem.create_item(item_id)
 	item.object.position = pos
 	item.object.rotation = Vector3(
-		rng.randf_range(0.0, PI / 4),
-		rng.randf_range(0.0, PI / 4),
-		rng.randf_range(0.0, PI / 4))
+		item_rng.randf_range(0.0, PI / 4),
+		item_rng.randf_range(0.0, PI / 4),
+		item_rng.randf_range(0.0, PI / 4))
 	_add_item_to_world(item)
 	return item
 

@@ -51,7 +51,7 @@ func initalize_player_spawn():
 	# Make player spawn in a settlement if possible
 	var settlements = WorldState.state.settlement_manager.settlements.query_all()
 	if settlements.size() > 0:
-		var pos = settlements[0].position + Vector3(randf_range(-2.0, 2.0), 0.0, randf_range(-2.0, 2.0))
+		var pos = settlements[0].position + Vector3(WorldState.state.rng.randf_range(-2.0, 2.0), 0.0, WorldState.state.rng.randf_range(-2.0, 2.0))
 		var pos_with_height = Vector3(pos.x, WorldState.state.terrain_height_noise.get_height_at(pos.x, pos.z), pos.z)
 		WorldState.state.player.position = pos_with_height
 	update_world(INITIAL_BATCH_SIZE)
@@ -65,17 +65,26 @@ func update_world(batch_size: int = 3):
 
 # We use batched update here to avoid the worst of the performance hit of creating new multimesh chunks
 func _update_world_faraway(batch_size: int = 3):
-	const OUTER_BOUNDS = Globals.LOD_DISTANCE_NO_COLLIDER
+	# Create roads and settlements firther away that object. This is mainly to prevent objects (like trees) being
+	# created before them, which would lead to undesired behavior since object creation checks against collision with
+	# them, but not the other way around.
+	const OUTER_BOUNDS = Globals.LOD_DISTANCE_NO_COLLIDER * 1.5
 	var player_position = WorldState.state.player.position
-	var boundary: Rect2 = Rect2(
+	var outer_boundary: Rect2 = Rect2(
 		Vector2(player_position.x - OUTER_BOUNDS, player_position.z - OUTER_BOUNDS),
 		Vector2(OUTER_BOUNDS * 2, OUTER_BOUNDS * 2)
 	)
-	var nearby_settlements: Array[SettlementManager.SettlementData] = WorldState.state.settlement_manager.create_settlements(boundary)
+	var nearby_settlements: Array[SettlementManager.SettlementData] = WorldState.state.settlement_manager.create_settlements(outer_boundary)
 	WorldState.state.npc_manager.create_npcs_in_settlements(nearby_settlements)
-	WorldState.state.road_manager.generate_roads(boundary)
-	var nearby_road_segments: Array = WorldState.state.road_manager.get_roads_in_area(boundary)
+	WorldState.state.road_manager.generate_roads(outer_boundary)
+	var nearby_road_segments: Array = WorldState.state.road_manager.get_roads_in_area(outer_boundary)
 	WorldState.state.terrain_generator.update_shader_data(nearby_settlements, nearby_road_segments)
+
+	# Objects get the "normal" boundary
+	var boundary: Rect2 = Rect2(
+		Vector2(player_position.x - Globals.LOD_DISTANCE_NO_COLLIDER, player_position.z - Globals.LOD_DISTANCE_NO_COLLIDER),
+		Vector2(Globals.LOD_DISTANCE_NO_COLLIDER * 2, Globals.LOD_DISTANCE_NO_COLLIDER * 2)
+	)
 	WorldState.state.multimesh_manager.add_multimesh_chunks(boundary, batch_size)
 
 # Requires update_world_faraway to have been run before
